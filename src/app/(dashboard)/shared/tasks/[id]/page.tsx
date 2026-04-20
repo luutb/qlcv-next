@@ -386,7 +386,6 @@ export default function TaskDetailPage() {
         onSave={handleSaveContract}
         contract={contractEditId ? contracts.find((c) => c.id === contractEditId) || null : null}
         contractTypes={contractTypes}
-        taskId={Number(taskId)}
       />
     </TaskLayout>
   );
