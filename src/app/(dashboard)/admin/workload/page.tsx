@@ -10,7 +10,7 @@ import {
   PeopleAlt, Assignment, TrendingUp, Warning,
   Refresh, FilterList,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { workloadRepo, WorkloadUser, WorkloadMetrics } from '@/repositories/WorkloadRepository';
 import toast from 'react-hot-toast';
 
@@ -35,12 +35,11 @@ export default function WorkloadDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   
   // Filters
-  const [departmentFilter, setDepartmentFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
 
   useEffect(() => {
     fetchData();
-  }, [departmentFilter, roleFilter]);
+  }, [roleFilter]);
 
   const fetchData = async () => {
     try {
@@ -118,7 +117,7 @@ export default function WorkloadDashboard() {
 
       {/* Metrics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -138,7 +137,7 @@ export default function WorkloadDashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -158,7 +157,7 @@ export default function WorkloadDashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -178,7 +177,7 @@ export default function WorkloadDashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -201,7 +200,7 @@ export default function WorkloadDashboard() {
 
       {/* Charts */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Phân bố Workload
@@ -215,18 +214,14 @@ export default function WorkloadDashboard() {
                   outerRadius={80}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
+                />
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Workload theo Phòng ban
@@ -315,7 +310,7 @@ export default function WorkloadDashboard() {
                         {(user.workload_score * 100).toFixed(0)}%
                       </Typography>
                       <Chip
-                        label={WORKLOAD_LABELS[user.workload_level]}
+                        label={WORKLOAD_LABELS[user.workload_level as keyof typeof WORKLOAD_LABELS]}
                         size="small"
                         sx={{
                           backgroundColor: getWorkloadColor(user.workload_level),

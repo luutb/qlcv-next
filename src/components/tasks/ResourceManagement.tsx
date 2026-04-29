@@ -213,7 +213,7 @@ export default function ResourceManagement({
                 )}
               </Paper>
             </Grid>
-          ))}
+          )))}
         </Grid>
       </Paper>
 
@@ -275,7 +275,7 @@ export default function ResourceManagement({
                 )}
               </Paper>
             </Grid>
-          ))}
+          )))}
         </Grid>
       </Paper>
 
@@ -354,7 +354,7 @@ export default function ResourceManagement({
                 )}
               </Paper>
             </Grid>
-          ))}
+          )))}
         </Grid>
       </Paper>
 

@@ -161,7 +161,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
             </Typography>
             
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Tasks tuần này
@@ -189,7 +189,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
                 </Box>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Giờ làm tuần này
@@ -234,13 +234,13 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             {/* Basic Capacity */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 Giới hạn Capacity
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Số tasks tối đa mỗi tuần"
@@ -255,7 +255,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Số giờ tối đa mỗi tuần"
@@ -270,7 +270,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <FormControlLabel
                 control={
                   <Switch
@@ -289,13 +289,13 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
             </Grid>
 
             {/* Skills */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Kỹ năng & Sở thích
               </Typography>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Autocomplete
                 multiple
                 options={SKILL_OPTIONS}
@@ -326,7 +326,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Autocomplete
                 multiple
                 options={TASK_TYPE_OPTIONS}
@@ -358,13 +358,13 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
             </Grid>
 
             {/* Working Hours */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Thời gian làm việc
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Giờ làm việc"
@@ -378,7 +378,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 select
@@ -398,7 +398,7 @@ export default function UserCapacitySettings({ userId, onUpdate }: UserCapacityS
             </Grid>
 
             {/* Submit Button */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   type="submit"

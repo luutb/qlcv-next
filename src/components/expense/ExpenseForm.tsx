@@ -22,7 +22,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemSecondaryAction,
 } from '@mui/material';
 import {
   Save,
@@ -101,7 +100,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
         currency: formData.currency,
         expense_date: formData.expense_date,
         vendor_name: formData.vendor_name,
-        category_id: formData.category_id,
+        category_id: formData.category_id || undefined,
         expense_type: formData.expense_type,
         task_id: formData.task_id,
         contract_id: formData.contract_id,
@@ -171,13 +170,13 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
 
         <Grid container spacing={3}>
           {/* Basic Information */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Typography variant="h6" gutterBottom>
               Thông tin cơ bản
             </Typography>
           </Grid>
 
-          <Grid item xs={12} md={8}>
+          <Grid size={{ xs: 12, md: 8 }}>
             <TextField
               fullWidth
               label="Tiêu đề chi phí *"
@@ -187,7 +186,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
             />
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <FormControl fullWidth>
               <InputLabel>Danh mục</InputLabel>
               <Select
@@ -205,7 +204,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
             </FormControl>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
               label="Mô tả"
@@ -217,14 +216,14 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
           </Grid>
 
           {/* Financial Information */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h6" gutterBottom>
               Thông tin tài chính
             </Typography>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Số tiền *"
@@ -235,7 +234,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel>Tiền tệ</InputLabel>
               <Select
@@ -250,19 +249,19 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Ngày chi phí *"
               type="date"
               value={formData.expense_date}
               onChange={(e) => handleInputChange('expense_date', e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               required
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel>Loại chi phí</InputLabel>
               <Select
@@ -278,14 +277,14 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
           </Grid>
 
           {/* Vendor Information */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h6" gutterBottom>
               Thông tin nhà cung cấp
             </Typography>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Tên nhà cung cấp"
@@ -294,7 +293,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <TextField
               fullWidth
               label="ID Task liên quan"
@@ -304,7 +303,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <TextField
               fullWidth
               label="ID Contract liên quan"
@@ -315,14 +314,14 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
           </Grid>
 
           {/* File Attachments */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h6" gutterBottom>
               File đính kèm
             </Typography>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Box
               sx={{
                 border: '2px dashed #ccc',
@@ -355,7 +354,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
           </Grid>
 
           {formData.attachments.length > 0 && (
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="body2" fontWeight="medium" gutterBottom>
                 File đã chọn:
               </Typography>
@@ -369,16 +368,15 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
                       primary={file.name}
                       secondary={formatFileSize(file.size)}
                     />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        onClick={() => handleRemoveFile(index)}
-                        size="small"
-                        color="error"
-                      >
-                        <Delete />
-                      </IconButton>
-                    </ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleRemoveFile(index)}
+                      size="small"
+                      color="error"
+                      sx={{ ml: 'auto' }}
+                    >
+                      <Delete />
+                    </IconButton>
                   </ListItem>
                 ))}
               </List>
@@ -386,7 +384,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
           )}
 
           {/* Summary */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Divider sx={{ my: 2 }} />
             <Card variant="outlined">
               <CardContent>
@@ -394,7 +392,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
                   Tóm tắt chi phí
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="body2" color="text.secondary">
                       Tiêu đề:
                     </Typography>
@@ -402,7 +400,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
                       {formData.title || 'Chưa nhập'}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="body2" color="text.secondary">
                       Số tiền:
                     </Typography>
@@ -413,7 +411,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
                       }).format(formData.amount)}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="body2" color="text.secondary">
                       Loại chi phí:
                     </Typography>
@@ -426,7 +424,7 @@ export default function ExpenseForm({ budgetId, expense, onSubmit, onCancel }: E
                       color={formData.expense_type === 'actual' ? 'primary' : 'default'}
                     />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="body2" color="text.secondary">
                       Ngày chi phí:
                     </Typography>

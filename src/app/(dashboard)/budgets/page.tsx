@@ -217,7 +217,7 @@ export default function BudgetListPage() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 fullWidth
                 placeholder="Tìm kiếm ngân sách..."
@@ -228,7 +228,7 @@ export default function BudgetListPage() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Loại ngân sách</InputLabel>
                 <Select
@@ -244,7 +244,7 @@ export default function BudgetListPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Trạng thái</InputLabel>
                 <Select
@@ -261,7 +261,7 @@ export default function BudgetListPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -270,7 +270,7 @@ export default function BudgetListPage() {
                 onChange={(e) => handleFilterChange('fiscal_year', parseInt(e.target.value))}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Sắp xếp</InputLabel>
                 <Select
@@ -285,7 +285,7 @@ export default function BudgetListPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={1}>
+            <Grid size={{ xs: 12, md: 1 }}>
               <Tooltip title="Xuất Excel">
                 <IconButton>
                   <GetApp />

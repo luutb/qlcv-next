@@ -254,7 +254,7 @@ export default function ExpensesPage() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 fullWidth
                 placeholder="Tìm kiếm chi phí..."
@@ -265,7 +265,7 @@ export default function ExpensesPage() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Trạng thái</InputLabel>
                 <Select
@@ -281,7 +281,7 @@ export default function ExpensesPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Loại chi phí</InputLabel>
                 <Select
@@ -296,7 +296,7 @@ export default function ExpensesPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <TextField
                 fullWidth
                 label="Từ ngày"
@@ -306,7 +306,7 @@ export default function ExpensesPage() {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <TextField
                 fullWidth
                 label="Đến ngày"
@@ -316,7 +316,7 @@ export default function ExpensesPage() {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} md={1}>
+            <Grid size={{ xs: 12, md: 1 }}>
               <Tooltip title="Lọc nâng cao">
                 <IconButton>
                   <FilterList />
@@ -536,7 +536,7 @@ export default function ExpensesPage() {
               </Typography>
               <Grid container spacing={2}>
                 {budgets && budgets.length > 0 ? budgets.map((budget) => (
-                  <Grid item xs={12} md={6} key={budget.id}>
+                  <Grid size={{ xs: 12, md: 6 }} key={budget.id}>
                     <Card
                       sx={{
                         cursor: 'pointer',
@@ -561,7 +561,7 @@ export default function ExpensesPage() {
                     </Card>
                   </Grid>
                 )) : (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Typography variant="body2" color="text.secondary" textAlign="center">
                       Không có ngân sách nào. Vui lòng tạo ngân sách trước.
                     </Typography>
