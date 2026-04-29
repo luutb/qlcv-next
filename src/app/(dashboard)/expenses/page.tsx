@@ -76,13 +76,22 @@ export default function ExpensesPage() {
     sort_order: 'desc',
   });
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (budgetList: Budget[]) => {
     try {
       setLoading(true);
-      // Since we don't have a global expenses endpoint, we'll need to fetch from all budgets
-      // For now, let's create a mock implementation
-      setExpenses([]);
-      setTotal(0);
+      if (budgetList.length === 0) {
+        setExpenses([]);
+        setTotal(0);
+        setError(null);
+        return;
+      }
+      const params = { ...filters, page, limit };
+      const results = await Promise.all(
+        budgetList.map(b => budgetRepository.getBudgetExpenses(b.id, params).catch(() => ({ expenses: [], total: 0 })))
+      );
+      const allExpenses = results.flatMap(r => r.expenses);
+      setExpenses(allExpenses);
+      setTotal(results.reduce((sum, r) => sum + r.total, 0));
       setError(null);
     } catch (err) {
       setError('Không thể tải danh sách chi phí');
@@ -95,16 +104,18 @@ export default function ExpensesPage() {
   const fetchBudgets = async () => {
     try {
       const response = await budgetRepository.getBudgets({ limit: 100 });
-      setBudgets(response?.budgets || []);
+      const budgetList = response?.budgets || [];
+      setBudgets(budgetList);
+      return budgetList;
     } catch (err) {
       console.error('Error fetching budgets:', err);
       setBudgets([]);
+      return [];
     }
   };
 
   useEffect(() => {
-    fetchBudgets();
-    fetchExpenses();
+    fetchBudgets().then(fetchExpenses);
   }, [page, filters]);
 
   const handleFilterChange = (field: keyof ExpenseQueryParams, value: any) => {
@@ -125,7 +136,7 @@ export default function ExpensesPage() {
   const handleApprove = async (expenseId: number) => {
     try {
       await budgetRepository.approveExpense(expenseId);
-      fetchExpenses();
+      fetchBudgets().then(fetchExpenses);
     } catch (err) {
       console.error('Error approving expense:', err);
     }
@@ -137,7 +148,7 @@ export default function ExpensesPage() {
     if (reason) {
       try {
         await budgetRepository.rejectExpense(expenseId, reason);
-        fetchExpenses();
+        fetchBudgets().then(fetchExpenses);
       } catch (err) {
         console.error('Error rejecting expense:', err);
       }
@@ -149,7 +160,7 @@ export default function ExpensesPage() {
     if (confirm('Bạn có chắc chắn muốn xóa chi phí này?')) {
       try {
         await budgetRepository.deleteExpense(expenseId);
-        fetchExpenses();
+        fetchBudgets().then(fetchExpenses);
       } catch (err) {
         console.error('Error deleting expense:', err);
       }
@@ -168,7 +179,7 @@ export default function ExpensesPage() {
   };
 
   const handleExpenseSubmit = () => {
-    fetchExpenses();
+    fetchBudgets().then(fetchExpenses);
     handleCloseForm();
   };
 
