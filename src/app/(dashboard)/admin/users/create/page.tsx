@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, PersonAdd } from '@mui/icons-material';
 import toast from 'react-hot-toast';
-import { userRepo } from '@/repositories/user.repo';
+import { userRepo } from '@/repositories/UserRepo';
 import { Role, CreateUserRequest } from '@/types';
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [

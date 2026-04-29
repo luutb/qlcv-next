@@ -9,7 +9,7 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import SaveIcon from '@mui/icons-material/Save';
 import { useAuth } from '@/contexts/AuthContext';
-import { userRepo } from '@/repositories/user.repo';
+import { userRepo } from '@/repositories/UserRepo';
 import { UserDetail } from '@/types';
 import CertificateSection from '@/components/users/CertificateSection';
 import EducationSection from '@/components/users/EducationSection';

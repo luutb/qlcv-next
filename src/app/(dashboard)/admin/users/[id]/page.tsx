@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Save, Block, CheckCircle } from '@mui/icons-material';
 import toast from 'react-hot-toast';
-import { userRepo } from '@/repositories/user.repo';
+import { userRepo } from '@/repositories/UserRepo';
 import { UserDetail, Role } from '@/types';
 import CertificateSection from '@/components/users/CertificateSection';
 import EducationSection from '@/components/users/EducationSection';

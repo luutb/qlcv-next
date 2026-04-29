@@ -33,7 +33,7 @@ export function useTaskRepository(params: TaskQueryParams): UseTaskRepositoryRet
     } finally {
       setLoading(false);
     }
-  }, [repository, params.page, params.limit, params.status, params.keyword, params.workflow_id, params.step_status]);
+  }, [repository, params]);
 
   // Fetch on param changes
   useEffect(() => {

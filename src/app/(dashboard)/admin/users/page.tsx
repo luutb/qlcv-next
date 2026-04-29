@@ -16,7 +16,7 @@ import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { UserDetail, Role } from '@/types';
-import { userRepo } from '@/repositories/user.repo';
+import { userRepo } from '@/repositories/UserRepo';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Quản trị viên',
@@ -75,7 +75,7 @@ export default function UsersPage() {
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
     role: (roleFilter as Role) || undefined,
-    is_active: statusFilter === '' ? undefined : statusFilter === 'true',
+    is_active: statusFilter === '' ? undefined : statusFilter,
     search: debouncedKeyword || undefined,
   }), [paginationModel, roleFilter, statusFilter, debouncedKeyword]);
 

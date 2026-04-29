@@ -254,7 +254,7 @@ export default function TaskListPage() {
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           autoHeight
-          onRowClick={(params) => router.push(`/shared/tasks/${params.id}`)}
+          onRowClick={(params) => router.push(`/shared/tasks/${params.row.id}`)}
           sx={{
             border: 0,
             cursor: 'pointer',

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Workflow } from '@/types';
-import { workflowRepo } from '@/repositories/workflow.repo';
+import { workflowRepo } from '@/repositories/WorkflowRepo';
 
 interface UseWorkflowsOptions {
   activeOnly?: boolean;

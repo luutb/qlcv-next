@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Save, Edit, Check, Close } from '@mui/icons-material';
 import { WorkflowDetail, WorkflowStepConfig, Role } from '@/types';
-import { workflowRepo } from '@/repositories/workflow.repo';
+import { workflowRepo } from '@/repositories/WorkflowRepo';
 import toast from 'react-hot-toast';
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [

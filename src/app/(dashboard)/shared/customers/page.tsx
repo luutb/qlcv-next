@@ -14,7 +14,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
 import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { Customer, CreateCustomerRequest } from '@/types';
-import { customerRepo } from '@/repositories/customer.repo';
+import { customerRepo } from '@/repositories/CustomerRepo';
 import toast from 'react-hot-toast';
 
 interface CustomerForm {

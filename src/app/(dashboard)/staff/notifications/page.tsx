@@ -1,267 +1,184 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import {
-  Box, Typography, Paper, Button, IconButton, Chip,
-  TextField, MenuItem, Tooltip, CircularProgress,
-  List, ListItemButton, ListItemIcon, ListItemText,
-  Divider,
-} from '@mui/material';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import UndoIcon from '@mui/icons-material/Undo';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import PaymentIcon from '@mui/icons-material/Payment';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import InfoIcon from '@mui/icons-material/Info';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CircleIcon from '@mui/icons-material/Circle';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
-import { Notification } from '@/types';
-import { notificationRepo } from '@/repositories/notification.repo';
-import { useNotification } from '@/contexts/NotificationContext';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Alert } from '@mui/material';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
+import NotificationPreferences from '@/components/notifications/NotificationPreferences';
+import { useAuth } from '@/contexts/AuthContext';
 
-const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-  NEXT_STEP: { icon: <ArrowForwardIcon />, color: '#4F46E5', label: 'Chuyển bước' },
-  REJECT: { icon: <UndoIcon />, color: '#DC2626', label: 'Từ chối' },
-  ASSIGN: { icon: <PersonAddIcon />, color: '#059669', label: 'Phân công' },
-  PAYMENT: { icon: <PaymentIcon />, color: '#D97706', label: 'Thanh toán' },
-  UPLOAD: { icon: <UploadFileIcon />, color: '#7C3AED', label: 'Upload' },
-  SYSTEM: { icon: <InfoIcon />, color: '#64748B', label: 'Hệ thống' },
-  TASK_ASSIGNED: { icon: <PersonAddIcon />, color: '#059669', label: 'Phân công' },
-  TASK_UPDATED: { icon: <ArrowForwardIcon />, color: '#4F46E5', label: 'Cập nhật' },
-  TASK_REJECTED: { icon: <UndoIcon />, color: '#DC2626', label: 'Từ chối' },
-  TASK_COMPLETED: { icon: <CheckCircleIcon />, color: '#059669', label: 'Hoàn tất' },
-  PAYMENT_CONFIRMED: { icon: <PaymentIcon />, color: '#D97706', label: 'Thanh toán' },
-  APPROVE: { icon: <CheckCircleIcon />, color: '#059669', label: 'Phê duyệt' },
-  APPROVAL: { icon: <CheckCircleIcon />, color: '#059669', label: 'Phê duyệt' },
-};
-
-const FILTER_OPTIONS = [
-  { value: '', label: 'Tất cả' },
-  { value: 'unread', label: 'Chưa đọc' },
-  { value: 'read', label: 'Đã đọc' },
-];
-
-function formatRelativeTime(dateStr: string): string {
-  const now = Date.now();
-  const date = new Date(dateStr).getTime();
-  const diff = now - date;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Vừa xong';
-  if (mins < 60) return `${mins} phút trước`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} giờ trước`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} ngày trước`;
-  return new Date(dateStr).toLocaleDateString('vi-VN');
+interface Notification {
+  id: number;
+  title: string;
+  body: string;
+  type: 'task_update' | 'contract_expiry' | 'payment_reminder' | 'system' | 'workflow_update';
+  is_read: boolean;
+  created_at: string;
+  reference_id?: number;
 }
 
-const LIMIT = 20;
+interface NotificationPreferences {
+  email: boolean;
+  push: boolean;
+  in_app: boolean;
+  digest: boolean;
+  digest_frequency: 'instant' | 'hourly' | 'daily';
+}
 
 export default function NotificationsPage() {
-  const router = useRouter();
-  const { refreshUnreadCount, markAllRead: markAllReadCtx } = useNotification();
-
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [total, setTotal] = useState(0);
+  const [preferences, setPreferences] = useState<NotificationPreferences>({
+    email: true,
+    push: true,
+    in_app: true,
+    digest: false,
+    digest_frequency: 'instant',
+  });
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [readFilter, setReadFilter] = useState('');
 
-  const fetchNotifications = useCallback(async (p: number, append = false) => {
-    if (append) setLoadingMore(true); else setLoading(true);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await notificationRepo.getAll({
-        page: p,
-        limit: LIMIT,
-        is_read: readFilter === 'read' ? true : readFilter === 'unread' ? false : undefined,
-      });
-      if (append) {
-        setNotifications((prev) => [...prev, ...res.data]);
-      } else {
-        setNotifications(res.data);
-      }
-      setTotal(res.pagination.total);
-    } catch {
-      toast.error('Không thể tải thông báo');
+      // TODO: Replace with actual API calls
+      const mockNotifications: Notification[] = [
+        {
+          id: 1,
+          title: 'Hồ sơ mới',
+          body: 'Hồ sơ "Vay vốn mua nhà" đã được tạo',
+          type: 'task_update',
+          is_read: false,
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 2,
+          title: 'Hợp đồng sắp hết hạn',
+          body: 'Hợp đồng #123 sẽ hết hạn trong 15 ngày',
+          type: 'contract_expiry',
+          is_read: false,
+          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: 3,
+          title: 'Thanh toán',
+          body: 'Đã nhận thanh toán cho mốc #1',
+          type: 'payment_reminder',
+          is_read: true,
+          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      ];
+      setNotifications(mockNotifications);
+
+      const mockPreferences: NotificationPreferences = {
+        email: true,
+        push: true,
+        in_app: true,
+        digest: false,
+        digest_frequency: 'instant',
+      };
+      setPreferences(mockPreferences);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  }, [readFilter]);
-
-  // Initial load & filter change
-  useEffect(() => {
-    setPage(1);
-    fetchNotifications(1);
-  }, [fetchNotifications]);
-
-  const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchNotifications(nextPage, true);
   };
 
-  const hasMore = notifications.length < total;
-
-  const handleMarkAsRead = async (notif: Notification) => {
-    if (notif.is_read) return;
+  const handleMarkRead = async (notificationId: number) => {
     try {
-      await notificationRepo.markAsRead(notif.id);
-      setNotifications((prev) => prev.map((n) => n.id === notif.id ? { ...n, is_read: true } : n));
-      refreshUnreadCount();
-    } catch {
-      // silent
+      // TODO: Replace with actual API call
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
     }
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationRepo.markAllAsRead();
+      // TODO: Replace with actual API call
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      markAllReadCtx();
-      toast.success('Đã đánh dấu tất cả đã đọc');
-    } catch {
-      toast.error('Thao tác thất bại');
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
+  const handleDelete = async (notificationId: number) => {
     try {
-      await notificationRepo.delete(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-      setTotal((prev) => prev - 1);
-      refreshUnreadCount();
-    } catch {
-      toast.error('Xóa thất bại');
+      // TODO: Replace with actual API call
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
     }
   };
 
-  const handleClick = (notif: Notification) => {
-    handleMarkAsRead(notif);
-    if (notif.task_id) {
-      router.push(`/shared/tasks/${notif.task_id}`);
+  const handleDeleteAll = async () => {
+    try {
+      // TODO: Replace with actual API call
+      setNotifications([]);
+    } catch (error) {
+      console.error('Failed to delete all notifications:', error);
     }
   };
 
-  const unreadInView = notifications.filter((n) => !n.is_read).length;
+  const handlePreferencesChange = async (newPreferences: NotificationPreferences) => {
+    try {
+      // TODO: Replace with actual API call
+      setPreferences(newPreferences);
+    } catch (error) {
+      console.error('Failed to update preferences:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>Thông báo</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {total} thông báo{unreadInView > 0 && ` · ${unreadInView} chưa đọc`}
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined" startIcon={<DoneAllIcon />}
-          onClick={handleMarkAllRead} disabled={unreadInView === 0}
-        >
-          Đánh dấu tất cả đã đọc
-        </Button>
+        <Typography variant="h4" fontWeight={700}>
+          Trung tâm thông báo
+        </Typography>
+        <Chip
+          label={`${notifications.filter((n) => !n.is_read).length} chưa đọc`}
+          size="small"
+          color="error"
+        />
       </Box>
 
-      {/* Filter */}
-      <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2 }}>
-        <TextField
-          select label="Trạng thái" value={readFilter}
-          onChange={(e) => setReadFilter(e.target.value)}
-          size="small" sx={{ minWidth: 160 }}
-        >
-          {FILTER_OPTIONS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-          ))}
-        </TextField>
-      </Paper>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 350px' }, gap: 3 }}>
+        {/* Notification List */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Danh sách thông báo
+          </Typography>
+          <NotificationCenter
+            notifications={notifications}
+            onMarkRead={handleMarkRead}
+            onMarkAllRead={handleMarkAllRead}
+            onDelete={handleDelete}
+            onDeleteAll={handleDeleteAll}
+          />
+        </Paper>
 
-      {/* Notification List */}
-      <Paper>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : notifications.length === 0 ? (
-          <Box sx={{ py: 6, textAlign: 'center' }}>
-            <Typography color="text.secondary">Không có thông báo nào.</Typography>
-          </Box>
-        ) : (
-          <>
-            <List disablePadding>
-              {notifications.map((notif, idx) => {
-                const config = TYPE_CONFIG[notif.type] || TYPE_CONFIG.SYSTEM;
-                return (
-                  <Box key={notif.id}>
-                    {idx > 0 && <Divider />}
-                    <ListItemButton
-                      onClick={() => handleClick(notif)}
-                      sx={{
-                        py: 2, px: 3,
-                        bgcolor: notif.is_read ? 'transparent' : 'rgba(79, 70, 229, 0.04)',
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 48 }}>
-                        <Box sx={{
-                          width: 38, height: 38, borderRadius: '50%',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          bgcolor: `${config.color}14`, color: config.color,
-                        }}>
-                          {config.icon}
-                        </Box>
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {!notif.is_read && (
-                              <CircleIcon sx={{ fontSize: 8, color: 'primary.main', flexShrink: 0 }} />
-                            )}
-                            <Typography component="span" variant="body2" fontWeight={notif.is_read ? 400 : 600} noWrap>
-                              {notif.title}
-                            </Typography>
-                            <Chip label={config.label} size="small" variant="outlined"
-                              sx={{ fontSize: 11, height: 20, color: config.color, borderColor: config.color, flexShrink: 0 }} />
-                          </Box>
-                        }
-                        secondary={
-                          <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                            <Typography component="span" variant="body2" color="text.secondary" sx={{
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mr: 2, flex: 1,
-                            }}>
-                              {notif.body}
-                            </Typography>
-                            <Typography component="span" variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
-                              {formatRelativeTime(notif.created_at)}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                      <Tooltip title="Xóa">
-                        <IconButton size="small" onClick={(e) => handleDelete(e, notif.id)} sx={{ ml: 1 }}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </ListItemButton>
-                  </Box>
-                );
-              })}
-            </List>
-
-            {hasMore && (
-              <Box sx={{ py: 2, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
-                <Button onClick={handleLoadMore} disabled={loadingMore}>
-                  {loadingMore ? <CircularProgress size={20} /> : 'Tải thêm'}
-                </Button>
-              </Box>
-            )}
-          </>
-        )}
-      </Paper>
+        {/* Preferences */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Cài đặt
+          </Typography>
+          <NotificationPreferences
+            preferences={preferences}
+            onChange={handlePreferencesChange}
+          />
+        </Paper>
+      </Box>
     </Box>
   );
 }

@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Add, Delete } from '@mui/icons-material';
 import { Role, CreateWorkflowStep } from '@/types';
-import { workflowRepo } from '@/repositories/workflow.repo';
+import { workflowRepo } from '@/repositories/WorkflowRepo';
 import toast from 'react-hot-toast';
 
 interface WorkflowForm {

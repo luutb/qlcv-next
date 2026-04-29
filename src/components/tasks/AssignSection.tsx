@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { PersonAdd, Person, SwapHoriz } from '@mui/icons-material';
 import { User, Role } from '@/types';
-import { taskRepo } from '@/repositories/task.repo';
+import { taskRepo } from '@/repositories/TaskRepo';
 import toast from 'react-hot-toast';
 
 const ROLE_LABELS: Record<Role, string> = {

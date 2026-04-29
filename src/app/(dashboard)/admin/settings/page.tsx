@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import toast from 'react-hot-toast';
-import { settingsRepo, GeneralSettings } from '@/repositories/settings.repo';
+import { settingsRepo, GeneralSettings } from '@/repositories/SettingsRepo';
 
 const defaultGeneral: GeneralSettings = {
   app_name: '',

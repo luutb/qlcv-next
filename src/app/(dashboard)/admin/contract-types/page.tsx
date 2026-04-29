@@ -10,7 +10,7 @@ import {
   TextField,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import { contractTypeRepo } from '@/repositories/contract-type.repo';
+import { contractTypeRepo } from '@/repositories/ContractTypeRepo';
 import { ContractType } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -42,10 +42,16 @@ export default function ContractTypesPage() {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const data = await contractTypeRepo.getAll();
-      setContractTypes(Array.isArray(data) ? data : data.data ?? []);
-    } catch {
+      console.log('Contract types data:', data);
+      
+      // Ensure data is always an array
+      setContractTypes(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching contract types:', error);
       toast.error('Không thể tải danh sách loại hợp đồng');
+      setContractTypes([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -123,14 +129,14 @@ export default function ContractTypesPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {contractTypes.length === 0 && (
+              {(!contractTypes || contractTypes.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={4} align="center">
                     <Typography color="text.secondary">Chưa có loại hợp đồng nào</Typography>
                   </TableCell>
                 </TableRow>
               )}
-              {contractTypes.map((ct) => (
+              {contractTypes && contractTypes.map((ct) => (
                 <TableRow key={ct.id}>
                   <TableCell>{ct.name}</TableCell>
                   <TableCell>{ct.description || '-'}</TableCell>

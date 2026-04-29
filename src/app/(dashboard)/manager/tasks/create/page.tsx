@@ -9,10 +9,11 @@ import {
   Autocomplete, Dialog, DialogTitle, DialogContent,
 } from '@mui/material';
 import { ArrowBack, Add, PersonAdd } from '@mui/icons-material';
-import { taskRepo } from '@/repositories/task.repo';
-import { customerRepo } from '@/repositories/customer.repo';
+
 import { useWorkflows } from '@/hooks/useWorkflows';
 import { Customer } from '@/types';
+import { customerRepo } from '@/repositories/CustomerRepo';
+import { taskRepo } from '@/repositories/TaskRepo';
 import toast from 'react-hot-toast';
 
 interface CreateTaskForm {
@@ -148,14 +149,15 @@ export default function CreateTaskPage() {
               <Autocomplete
                 sx={{ flex: 1 }}
                 options={customers}
-                getOptionLabel={(opt) => [opt.full_name, opt.phone, opt.company_name].filter(Boolean).join(' - ')}
+                getOptionLabel={(opt) => opt ? [opt.full_name, opt.phone, opt.company_name].filter(Boolean).join(' - ') : ''}
                 value={selectedCustomer}
                 onChange={(_e, val) => { setSelectedCustomer(val); setValue('customer_id', val?.id); }}
-                onInputChange={(_e, val) => setCustomerSearch(val)}
+                onInputChange={(_e, val, reason) => { if (reason !== 'reset') setCustomerSearch(val); }}
                 loading={loadingCustomers}
-                isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                isOptionEqualToValue={(opt, val) => opt?.id === val?.id}
+                filterOptions={(x) => x}
                 renderInput={(params) => <TextField {...params} label="Khách hàng" placeholder="Tìm theo tên, SĐT, CCCD..." />}
-                noOptionsText="Không tìm thấy khách hàng"
+                noOptionsText={loadingCustomers ? 'Đang tải...' : 'Không tìm thấy khách hàng'}
               />
               <Button variant="outlined" onClick={() => setCustomerDialogOpen(true)}
                 sx={{ minWidth: 'auto', px: 1.5, height: 56 }} title="Tạo khách hàng mới">

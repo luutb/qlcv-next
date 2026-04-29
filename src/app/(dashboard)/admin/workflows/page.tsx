@@ -13,7 +13,7 @@ import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { useRouter } from 'next/navigation';
 import { Workflow } from '@/types';
 import { useWorkflows } from '@/hooks/useWorkflows';
-import { workflowRepo } from '@/repositories/workflow.repo';
+import { workflowRepo } from '@/repositories/WorkflowRepo';
 import toast from 'react-hot-toast';
 
 export default function WorkflowListPage() {

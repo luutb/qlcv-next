@@ -13,6 +13,8 @@ import {
 } from 'recharts';
 import apiClient from '@/api/client';
 import { useAuth } from '@/contexts/AuthContext';
+import BudgetSummaryWidget from '@/components/budget/BudgetSummaryWidget';
+import BudgetAlertsWidget from '@/components/budget/BudgetAlertsWidget';
 
 interface OverviewStats {
   tasks: { total: number; active: number; done: number; rejected: number };
@@ -49,6 +51,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<OverviewStats | null>(null);
   const [revenue, setRevenue] = useState<RevenueStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -164,6 +171,16 @@ export default function AdminDashboard() {
           </Typography>
         )}
       </Paper>
+
+      {/* Budget Widgets */}
+      <Grid container spacing={3} mt={2}>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <BudgetSummaryWidget refreshTrigger={refreshTrigger} />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <BudgetAlertsWidget refreshTrigger={refreshTrigger} onRefresh={handleRefresh} />
+        </Grid>
+      </Grid>
     </Box>
   );
 }
