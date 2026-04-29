@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Box, Typography, Card, CardContent, Grid,
-  List, ListItem, ListItemAvatar, ListItemText, ListItemSecondaryAction,
+  List, ListItem, ListItemAvatar, ListItemText,
   Avatar, Button, Chip, LinearProgress, Alert, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
@@ -46,7 +46,6 @@ export default function WorkloadBalancing({
   const [loading, setLoading] = useState(false);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(showAssignmentModal);
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<WorkloadUser | null>(null);
 
   useEffect(() => {
     if (initialUsers.length === 0) {
@@ -123,7 +122,7 @@ export default function WorkloadBalancing({
     <Box>
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Avatar sx={{ bgcolor: 'primary.main', mx: 'auto', mb: 1 }}>
@@ -139,7 +138,7 @@ export default function WorkloadBalancing({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Avatar sx={{ bgcolor: 'success.main', mx: 'auto', mb: 1 }}>
@@ -155,7 +154,7 @@ export default function WorkloadBalancing({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Avatar sx={{ bgcolor: 'error.main', mx: 'auto', mb: 1 }}>
@@ -171,7 +170,7 @@ export default function WorkloadBalancing({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Avatar sx={{ bgcolor: 'info.main', mx: 'auto', mb: 1 }}>
@@ -242,6 +241,8 @@ export default function WorkloadBalancing({
                   borderColor: 'error.main',
                   borderRadius: user.workload_level === 'overloaded' ? 1 : 0,
                   mb: user.workload_level === 'overloaded' ? 1 : 0,
+                  display: 'flex',
+                  alignItems: 'flex-start',
                 }}
               >
                 <ListItemAvatar>
@@ -353,18 +354,17 @@ export default function WorkloadBalancing({
                   }
                 />
 
-                <ListItemSecondaryAction>
-                  {taskId && user.is_available && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleAssignTask(user.user_id)}
-                      disabled={user.workload_level === 'overloaded'}
-                    >
-                      Assign
-                    </Button>
-                  )}
-                </ListItemSecondaryAction>
+                {taskId && user.is_available && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleAssignTask(user.user_id)}
+                    disabled={user.workload_level === 'overloaded'}
+                    sx={{ ml: 2, mt: 1 }}
+                  >
+                    Assign
+                  </Button>
+                )}
               </ListItem>
             ))}
           </List>
