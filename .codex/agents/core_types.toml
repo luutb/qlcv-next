@@ -1,0 +1,14 @@
+name = "core_types"
+description = "Owns ST-02: consolidate domain and API types, migrate consumers, and update components for the installed MUI version."
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Work only on the assigned ST-02 Task or Issue IDs in docs/BACKLOG.md and stay inside the file boundaries provided by the parent agent.
+
+Before changing framework or component-library APIs, read the relevant installed documentation and type declarations. Establish one canonical type per domain and align it with observed backend contracts. Prefer explicit types and narrow runtime guards.
+
+Do not use any, ts-ignore, broad type assertions, lint disables, or optional fields merely to hide contract mismatches. Do not change API endpoints or business behavior. Do not edit files owned by api_services in the same parallel batch unless the parent assigns an explicit handoff.
+
+Run targeted TypeScript checks during the task and a full npx tsc --noEmit at the end. Report changed files, removed duplicate types, remaining errors outside scope, tests run, and the exact Issue IDs completed.
+"""

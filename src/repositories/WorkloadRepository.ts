@@ -1,138 +1,66 @@
-import apiClient from '@/api/client';
+import apiClient from '@/services/api/client';
 
 export interface WorkloadUser {
-  user_id: number;
-  user_name: string;
-  department: string;
+  id: number;
+  name: string;
+  email: string;
   role: string;
-  active_tasks: number;
-  pending_tasks: number;
-  completed_tasks: number;
-  total_tasks: number;
-  average_completion_time: number;
-  workload_score: number;
-  workload_level: 'low' | 'medium' | 'high' | 'overloaded';
-  is_available: boolean;
-  last_assigned_at: string;
-  total_hours_this_week: number;
-  total_hours_this_month: number;
-  max_tasks_per_week: number;
-  max_hours_per_week: number;
-  capacity_utilization: number;
-  skills: string[];
-  preferred_task_types: string[];
+  department?: string;
+  capacity: number; // hours per week
+  current_workload: number; // current hours assigned
+  utilization_rate: number; // percentage
+  available_hours: number;
+  tasks_count: number;
+  avatar?: string;
 }
 
 export interface WorkloadMetrics {
   total_users: number;
-  available_users: number;
+  average_utilization: number;
   overloaded_users: number;
-  average_workload: number;
-  workload_distribution: {
-    low: number;
-    medium: number;
-    high: number;
-    overloaded: number;
-  };
-  department_metrics: Record<string, {
-    department_name: string;
-    total_users: number;
-    available_users: number;
-    average_workload: number;
-    total_active_tasks: number;
-    total_pending_tasks: number;
-    workload_level: string;
-  }>;
-  generated_at: string;
-}
-
-export interface TaskRecommendation {
-  user_id: number;
-  user_name: string;
-  department: string;
-  role: string;
-  recommendation_score: number;
-  reason: string;
-  workload_score: number;
-  skill_match: number;
-  availability_score: number;
-  estimated_completion_days: number;
-  workload_after_assignment: number;
-  capacity_after_assignment: number;
-  current_active_tasks: number;
-  average_task_completion_days: number;
+  underutilized_users: number;
+  total_capacity: number;
+  total_workload: number;
+  efficiency_score: number;
 }
 
 export interface UserCapacity {
   user_id: number;
-  user_name: string;
-  max_tasks_per_week: number;
-  max_hours_per_week: number;
-  is_available: boolean;
+  weekly_capacity: number; // hours per week
+  daily_capacity: number; // hours per day
+  overtime_limit: number; // max overtime hours per week
+  availability: {
+    monday: boolean;
+    tuesday: boolean;
+    wednesday: boolean;
+    thursday: boolean;
+    friday: boolean;
+    saturday: boolean;
+    sunday: boolean;
+  };
+  time_off_dates: string[]; // ISO date strings
   skills: string[];
-  preferences: {
-    preferred_task_types: string[];
-    working_hours: string;
-    timezone: string;
-  };
-  updated_at: string;
-  current_tasks_this_week: number;
-  current_hours_this_week: number;
-  task_utilization: number;
-  hour_utilization: number;
+  hourly_rate?: number;
 }
 
-export interface WorkloadHistoryPoint {
-  date: string;
-  active_tasks: number;
-  completed_tasks: number;
-  total_hours: number;
-  workload_score: number;
-}
-
-export interface WorkloadHistory {
+export interface WorkloadDistribution {
   user_id: number;
   user_name: string;
-  start_date: string;
-  end_date: string;
-  granularity: 'daily' | 'weekly' | 'monthly';
-  data_points: WorkloadHistoryPoint[];
-  summary: {
-    average_active_tasks: number;
-    average_completed_tasks: number;
-    average_total_hours: number;
-    average_workload_score: number;
-    peak_workload_score: number;
-    peak_workload_date: string;
-    total_tasks_completed: number;
-    total_hours_worked: number;
-  };
-}
-
-// Legacy interfaces for backward compatibility
-export interface UserWorkload {
-  user_id: number;
-  full_name: string;
-  avatar?: string;
-  department_name?: string;
-  total_tasks: number;
-  active_tasks: number;
-  completed_tasks: number;
-  pending_tasks: number;
+  tasks: {
+    id: string;
+    title: string;
+    estimated_hours: number;
+    priority: string;
+    due_date: string;
+    status: string;
+  }[];
   total_hours: number;
-  estimated_hours: number;
-  utilization: number;
-  capacity: number;
-}
-
-export interface AutoAssignRequest {
-  task_id: number;
-  user_id?: number;
-  strategy?: 'round_robin' | 'least_busy' | 'most_available';
+  capacity_percentage: number;
 }
 
 export class WorkloadRepository {
   private static instance: WorkloadRepository;
+  
   private constructor() {}
 
   static getInstance(): WorkloadRepository {
@@ -142,109 +70,157 @@ export class WorkloadRepository {
     return WorkloadRepository.instance;
   }
 
-  // New API methods
-  async getUsersWorkloadV2(params?: {
-    department_id?: number;
-    role?: string;
-    start_date?: string;
-    end_date?: string;
-  }): Promise<WorkloadUser[]> {
-    const response = await apiClient.get<{ data: WorkloadUser[] }>('/workload/users', { params });
-    return response.data.data;
-  }
-  
-  async getUserWorkloadV2(userId: number): Promise<WorkloadUser> {
-    const response = await apiClient.get<{ data: WorkloadUser }>(`/workload/user/${userId}`);
-    return response.data.data;
-  }
-  
-  async getMetrics(params?: { department_id?: number }): Promise<WorkloadMetrics> {
-    const response = await apiClient.get<{ data: WorkloadMetrics }>('/workload/metrics', { params });
-    return response.data.data;
+  // Get workload data for all users
+  async getWorkloadUsers(): Promise<WorkloadUser[]> {
+    try {
+      const response = await apiClient.get<{ data: WorkloadUser[] } | WorkloadUser[]>('/workload/users');
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (response.data && 'data' in response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching workload users:', error);
+      return [];
+    }
   }
 
-  async getRecommendationsV2(data: {
-    task_id: number;
-    required_skills?: string[];
-    preferred_role?: string;
-    department_id?: number;
-    priority?: string;
-    estimated_hours?: number;
-    deadline?: string;
-    max_recommendations?: number;
-  }): Promise<TaskRecommendation[]> {
-    const response = await apiClient.post<{ data: TaskRecommendation[] }>('/workload/recommendations', data);
-    return response.data.data;
+  // Get workload metrics
+  async getWorkloadMetrics(): Promise<WorkloadMetrics> {
+    try {
+      const response = await apiClient.get<{ data: WorkloadMetrics } | WorkloadMetrics>('/workload/metrics');
+      if (response.data && typeof response.data === 'object') {
+        return 'data' in response.data ? response.data.data : response.data as WorkloadMetrics;
+      }
+      return this.getDefaultMetrics();
+    } catch (error) {
+      console.error('Error fetching workload metrics:', error);
+      return this.getDefaultMetrics();
+    }
   }
 
-  async getAvailableUsersV2(params?: {
-    required_skills?: string;
-    role?: string;
-    max_workload_score?: number;
-    sort_by?: string;
-    limit?: number;
-  }): Promise<WorkloadUser[]> {
-    const response = await apiClient.get<{ data: WorkloadUser[] }>('/workload/available', { params });
-    return response.data.data;
-  }
-
+  // Get user capacity settings
   async getUserCapacity(userId: number): Promise<UserCapacity> {
-    const response = await apiClient.get<{ data: UserCapacity }>(`/users/${userId}/capacity`);
-    return response.data.data;
-  }
-  
-  async updateUserCapacity(userId: number, data: Partial<UserCapacity>): Promise<UserCapacity> {
-    const response = await apiClient.put<{ data: UserCapacity }>(`/users/${userId}/capacity`, data);
-    return response.data.data;
-  }
-  
-  async getCurrentUserCapacity(): Promise<UserCapacity> {
-    const response = await apiClient.get<{ data: UserCapacity }>('/auth/capacity');
-    return response.data.data;
-  }
-  
-  async updateCurrentUserCapacity(data: Partial<UserCapacity>): Promise<UserCapacity> {
-    const response = await apiClient.put<{ data: UserCapacity }>('/auth/capacity', data);
-    return response.data.data;
+    try {
+      const response = await apiClient.get<{ data: UserCapacity } | UserCapacity>(`/users/${userId}/capacity`);
+      if (response.data && typeof response.data === 'object') {
+        return 'data' in response.data ? response.data.data : response.data as UserCapacity;
+      }
+      return this.getDefaultCapacity(userId);
+    } catch (error) {
+      console.error('Error fetching user capacity:', error);
+      return this.getDefaultCapacity(userId);
+    }
   }
 
-  async getWorkloadHistory(params: {
-    user_id?: number;
-    start_date: string;
-    end_date: string;
-    granularity?: 'daily' | 'weekly' | 'monthly';
-  }): Promise<WorkloadHistory> {
-    const response = await apiClient.get<{ data: WorkloadHistory }>('/workload/history', { params });
-    return response.data.data;
+  // Update user capacity settings
+  async updateUserCapacity(userId: number, capacity: Partial<UserCapacity>): Promise<UserCapacity> {
+    try {
+      const response = await apiClient.put<{ data: UserCapacity } | UserCapacity>(`/users/${userId}/capacity`, capacity);
+      if (response.data && typeof response.data === 'object') {
+        return 'data' in response.data ? response.data.data : response.data as UserCapacity;
+      }
+      throw new Error('Invalid capacity update response');
+    } catch (error) {
+      console.error('Error updating user capacity:', error);
+      throw error;
+    }
   }
 
-  async refreshWorkloadData(): Promise<void> {
-    await apiClient.post('/workload/refresh');
+  // Get workload distribution
+  async getWorkloadDistribution(): Promise<WorkloadDistribution[]> {
+    try {
+      const response = await apiClient.get<{ data: WorkloadDistribution[] } | WorkloadDistribution[]>('/workload/distribution');
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (response.data && 'data' in response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching workload distribution:', error);
+      return [];
+    }
   }
 
-  // Legacy methods for backward compatibility
-  async getUsersWorkload(): Promise<UserWorkload[]> {
-    const response = await apiClient.get<UserWorkload[]>('/workload/users');
-    return response.data;
+  // Rebalance workload
+  async rebalanceWorkload(options: {
+    target_utilization?: number;
+    consider_skills?: boolean;
+    respect_priorities?: boolean;
+  }): Promise<{ success: boolean; message: string; changes: any[] }> {
+    try {
+      const response = await apiClient.post<{
+        success: boolean;
+        message: string;
+        changes: any[];
+      }>('/workload/rebalance', options);
+      return response.data;
+    } catch (error) {
+      console.error('Error rebalancing workload:', error);
+      return {
+        success: false,
+        message: 'Failed to rebalance workload',
+        changes: []
+      };
+    }
   }
 
-  async getUserWorkload(userId: number): Promise<UserWorkload> {
-    const response = await apiClient.get<UserWorkload>(`/workload/user/${userId}`);
-    return response.data;
+  // Get available users for task assignment
+  async getAvailableUsers(taskEstimatedHours: number, dueDate?: string): Promise<WorkloadUser[]> {
+    try {
+      const params = {
+        estimated_hours: taskEstimatedHours,
+        due_date: dueDate
+      };
+      const response = await apiClient.get<{ data: WorkloadUser[] } | WorkloadUser[]>('/workload/available-users', { params });
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (response.data && 'data' in response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching available users:', error);
+      return [];
+    }
   }
 
-  async getAvailableUsers(): Promise<UserWorkload[]> {
-    const response = await apiClient.get<UserWorkload[]>('/workload/available');
-    return response.data;
+  // Private helper methods
+  private getDefaultMetrics(): WorkloadMetrics {
+    return {
+      total_users: 0,
+      average_utilization: 0,
+      overloaded_users: 0,
+      underutilized_users: 0,
+      total_capacity: 0,
+      total_workload: 0,
+      efficiency_score: 0
+    };
   }
 
-  async autoAssign(request: AutoAssignRequest): Promise<void> {
-    await apiClient.post('/tasks/auto-assign', request);
-  }
-
-  async getRecommendations(taskId: number): Promise<any> {
-    const response = await apiClient.get(`/workload/recommendations?task_id=${taskId}`);
-    return response.data;
+  private getDefaultCapacity(userId: number): UserCapacity {
+    return {
+      user_id: userId,
+      weekly_capacity: 40,
+      daily_capacity: 8,
+      overtime_limit: 10,
+      availability: {
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: false,
+        sunday: false
+      },
+      time_off_dates: [],
+      skills: []
+    };
   }
 }
 

@@ -1,93 +1,119 @@
 'use client';
 
-import { Box, Paper, IconButton, Typography } from '@mui/material';
-import { DragIndicator, Close, Settings } from '@mui/icons-material';
-import { DashboardWidget as DashboardWidgetType } from '@/lib/config/types';
-import KPIWidget from './KPIWidget';
-import ChartWidget from './ChartWidget';
-import ForecastWidget from './ForecastWidget';
+import React from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem
+} from '@mui/material';
+import { MoreVert } from '@mui/icons-material';
 
-interface DashboardWidgetProps {
-  widget: DashboardWidgetType;
-  onRemove?: (id: string) => void;
-  onSettings?: (id: string) => void;
-  draggable?: boolean;
+export interface DashboardWidgetProps {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onRefresh?: () => void;
 }
 
-export default function DashboardWidget({
-  widget,
-  onRemove,
-  onSettings,
-  draggable = false,
-}: DashboardWidgetProps) {
-  const renderWidgetContent = () => {
-    switch (widget.type) {
-      case 'kpi':
-        return <KPIWidget config={widget.config} />;
-      case 'chart':
-        return <ChartWidget config={widget.config} />;
-      case 'forecast':
-        return <ForecastWidget config={widget.config} />;
-      case 'custom':
-        return (
-          <Box p={2}>
-            <Typography>Custom Widget</Typography>
-          </Box>
-        );
-      default:
-        return null;
-    }
+const DashboardWidget: React.FC<DashboardWidgetProps> = ({
+  id,
+  title,
+  children,
+  className,
+  onEdit,
+  onDelete,
+  onRefresh
+}) => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEdit = () => {
+    handleClose();
+    onEdit?.();
+  };
+
+  const handleDelete = () => {
+    handleClose();
+    onDelete?.();
+  };
+
+  const handleRefresh = () => {
+    handleClose();
+    onRefresh?.();
   };
 
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-      }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
+    <Card className={className} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardHeader
+        title={
+          <Typography variant="h6" component="div">
+            {title}
+          </Typography>
+        }
+        action={
+          <IconButton
+            aria-label="settings"
+            onClick={handleClick}
+            size="small"
+          >
+            <MoreVert />
+          </IconButton>
+        }
+        sx={{ pb: 1 }}
+      />
+      <CardContent sx={{ flex: 1, pt: 0 }}>
+        <Box sx={{ height: '100%' }}>
+          {children}
+        </Box>
+      </CardContent>
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {draggable && (
-            <DragIndicator
-              sx={{ cursor: 'grab', color: 'text.secondary' }}
-              className="drag-handle"
-            />
-          )}
-          <Typography variant="h6" component="h3">
-            {widget.title}
-          </Typography>
-        </Box>
-
-        <Box>
-          {onSettings && (
-            <IconButton size="small" onClick={() => onSettings(widget.id)}>
-              <Settings fontSize="small" />
-            </IconButton>
-          )}
-          {onRemove && (
-            <IconButton size="small" onClick={() => onRemove(widget.id)}>
-              <Close fontSize="small" />
-            </IconButton>
-          )}
-        </Box>
-      </Box>
-
-      {/* Content */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>{renderWidgetContent()}</Box>
-    </Paper>
+        {onRefresh && (
+          <MenuItem onClick={handleRefresh}>
+            Refresh
+          </MenuItem>
+        )}
+        {onEdit && (
+          <MenuItem onClick={handleEdit}>
+            Edit
+          </MenuItem>
+        )}
+        {onDelete && (
+          <MenuItem onClick={handleDelete}>
+            Delete
+          </MenuItem>
+        )}
+      </Menu>
+    </Card>
   );
-}
+};
+
+export default DashboardWidget;

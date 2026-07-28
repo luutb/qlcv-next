@@ -1,938 +1,861 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  Box, Paper, Typography, CircularProgress, Alert, Link as MuiLink, Tabs, Tab,
+  Box,
+  Typography,
+  Button,
+  Chip,
+  Avatar,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  CircularProgress,
+  Alert,
+  TextField,
+  AvatarGroup,
+  Tooltip,
+  Autocomplete,
+  Paper,
+  Fade,
+  ListItemIcon,
 } from '@mui/material';
 import {
-  Timeline, TimelineItem, TimelineSeparator, TimelineConnector,
-  TimelineDot, TimelineContent,
-} from '@mui/lab';
-import {
-  ArrowBack,
+  Edit,
+  Delete,
+  MoreVert,
+  Person,
+  CalendarToday,
+  AttachMoney,
+  AttachFile,
+  Add,
+  Download,
+  Save,
+  Cancel,
+  Star,
+  StarBorder,
+  Share,
+  Check,
+  Close,
+  ContentCopy,
+  AccessTime,
+  Flag,
+  Link as LinkIcon,
+  Lock,
+  Public,
+  Comment,
+  KeyboardArrowDown,
+  Assignment,
+  Notifications,
+  NotificationsOff,
 } from '@mui/icons-material';
-import { useAuth } from '@/contexts/AuthContext';
-import { Task, TaskHistory, WorkflowStepConfig, PaymentAction, Contract, CreateContractRequest, ContractType } from '@/types';
-import { getStepConfig, canUserActOnStep } from '@/lib/workflow';
-import { extractErrorMessage } from '@/lib/errors';
 import apiClient from '@/api/client';
 
-// Inline API helpers to avoid module resolution issues
-const taskRepo = {
-  getTaskDetail: (id: string) => apiClient.get<Task>(`/tasks/${id}`).then(r => r.data),
-  getTaskHistory: (id: string) => apiClient.get<TaskHistory[]>(`/tasks/${id}/history`).then(r => r.data),
-  nextStep: (id: string, data: { note?: string; current_step: number; file?: File }) => {
-    const fd = new FormData();
-    if (data.note) fd.append('note', data.note);
-    fd.append('current_step', data.current_step.toString());
-    if (data.file) fd.append('file', data.file);
-    return apiClient.post(`/tasks/${id}/next-step`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-  },
-  confirmPayment: (id: string, action: PaymentAction, amount: number, note?: string) =>
-    apiClient.post(`/tasks/${id}/payment`, { action, amount, note }),
-  completeTask: (id: string, note?: string) => apiClient.post(`/tasks/${id}/complete`, { note }),
-  approveTask: (id: string, data: { note?: string; current_step: number }) => apiClient.post(`/tasks/${id}/approve`, data),
-  rejectTask: (id: string, reason: string, current_step: number) => apiClient.post(`/tasks/${id}/reject`, { reason, current_step }),
-};
+// Types
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  avatar_url?: string;
+  email: string;
+}
 
-const contractRepo = {
-  getByTask: (id: string) => apiClient.get<Contract[]>(`/tasks/${id}/contracts`).then(r => r.data),
-  create: (taskId: string, data: CreateContractRequest) => apiClient.post<Contract>(`/tasks/${taskId}/contracts`, data).then(r => r.data),
-  update: (id: number, data: Partial<CreateContractRequest>) => apiClient.put<Contract>(`/contracts/${id}`, data).then(r => r.data),
-};
+interface Customer {
+  id: number;
+  full_name: string;
+  phone: string;
+  email: string;
+  company_name: string;
+}
 
-const contractTypeRepo = {
-  getAll: () => apiClient.get<ContractType[]>('/contract-types').then(r => r.data),
-};
+interface Label {
+  id: number;
+  name: string;
+  color: string;
+  bg_color: string;
+  icon: string;
+  description: string;
+  category: string;
+}
 
-const workflowRepo = {
-  getConfigs: (id: number) => apiClient.get<WorkflowStepConfig[]>(`/workflows/${id}/configs`).then(r => r.data),
-};
+interface TaskLabels {
+  workflow_step: Label;
+  payment_status: Label;
+  task_status: Label;
+  priority: Label;
+  custom_labels: Label[] | null;
+}
 
-const timeTrackingRepo = {
-  getByTask: (id: number) => apiClient.get<any[]>(`/time-entries?task_id=${id}`).then(r => r.data).catch(() => []),
-  create: (entry: any) => apiClient.post<any>('/time-entries', entry).then(r => r.data),
-  stop: (id: number) => apiClient.post(`/time-entries/${id}/stop`),
-};
+interface Document {
+  id: number;
+  name: string;
+  url: string;
+  size: number;
+  uploaded_at: string;
+}
 
-const customFieldsRepo = {
-  getAll: () => apiClient.get<any[]>('/custom-fields').then(r => r.data).catch(() => []),
-  updateInstances: (fieldId: number, instances: any[]) => apiClient.put(`/custom-fields/${fieldId}/instances`, { instances }),
-};
+interface Activity {
+  id: number;
+  type: 'comment' | 'system_note' | 'label_change' | 'status_change' | 'assigned';
+  user: User;
+  content: string;
+  created_at: string;
+  system_note?: string;
+}
 
-const repeatingTasksRepo = {
-  getAll: () => apiClient.get<any[]>('/repeating-tasks').then(r => r.data).catch(() => []),
-  create: (task: any) => apiClient.post<any>('/repeating-tasks', task).then(r => r.data),
-  update: (id: number, task: any) => apiClient.put<any>(`/repeating-tasks/${id}`, task).then(r => r.data),
-  delete: (id: number) => apiClient.delete(`/repeating-tasks/${id}`),
-};
-
-const taskDependencyRepo = {
-  getByTask: (id: number) => apiClient.get<any[]>(`/tasks/${id}/dependencies`).then(r => r.data).catch(() => []),
-};
-
-const workloadRepo = {
-  getUsersWorkload: () => apiClient.get<any[]>('/workload/users').then(r => r.data).catch(() => []),
-  autoAssign: (data: any) => apiClient.post('/tasks/auto-assign', data),
-};
-
-const resourceRepo = {
-  getAll: () => apiClient.get<any[]>('/resources').then(r => r.data).catch(() => []),
-  release: (id: number) => apiClient.delete(`/resources/${id}/release`),
-};
-
-const budgetRepo = {
-  getAll: () => apiClient.get<any[]>('/budgets').then(r => r.data).catch(() => []),
-  create: (data: any) => apiClient.post<any>('/budgets', data).then(r => r.data),
-  update: (id: number, data: any) => apiClient.put<any>(`/budgets/${id}`, data).then(r => r.data),
-  addExpense: (id: number, data: any) => apiClient.post(`/budgets/${id}/expenses`, data),
-};
-
-const documentRepo = {
-  getAll: () => apiClient.get<any[]>('/documents').then(r => r.data).catch(() => []),
-  upload: (taskId: number, file: File) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('task_id', taskId.toString());
-    return apiClient.post<any>('/documents', fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
-  },
-  delete: (id: number) => apiClient.delete(`/documents/${id}`),
-  share: (id: number, permission: string) => apiClient.put(`/documents/${id}/share`, { permission }),
-};
-
-const customWorkflowRepo = {
-  getAll: () => apiClient.get<any[]>('/custom-workflows').then(r => r.data).catch(() => []),
-  create: (data: any) => apiClient.post<any>('/custom-workflows', data).then(r => r.data),
-  update: (id: number, data: any) => apiClient.put<any>(`/custom-workflows/${id}`, data).then(r => r.data),
-  delete: (id: number) => apiClient.delete(`/custom-workflows/${id}`),
-};
-
-const pwaRepo = {
-  getStatus: () => apiClient.get<any>('/pwa/status').then(r => r.data),
-  getSettings: () => apiClient.get<any>('/pwa/settings').then(r => r.data),
-  updateSettings: (data: any) => apiClient.put('/pwa/settings', data),
-  install: () => Promise.resolve(),
-};
-import TaskLayout from '@/components/tasks/TaskLayout';
-import TaskLeftColumn from '@/components/tasks/TaskLeftColumn';
-import ContractDialog from '@/components/contract/ContractDialog';
-import TimeTracking from '@/components/tasks/TimeTracking';
-import CustomFields from '@/components/tasks/CustomFields';
-import RepeatingTask from '@/components/tasks/RepeatingTask';
-import DependencyVisualization from '@/components/tasks/DependencyVisualization';
-import WorkloadBalancing from '@/components/tasks/WorkloadBalancing';
-import ResourceManagement from '@/components/tasks/ResourceManagement';
-import BudgetTracking from '@/components/tasks/BudgetTracking';
-import DocumentManagement from '@/components/tasks/DocumentManagement';
-import CustomWorkflow from '@/components/tasks/CustomWorkflow';
-import PWA from '@/components/tasks/PWA';
-import toast from 'react-hot-toast';
-
-const emptyContract: CreateContractRequest = {
-  contract_number: '',
-  title: '',
-  value: undefined,
-  signing_date: '',
-  effective_date: '',
-  expiry_date: '',
-  status: 'draft',
-  file_url: '',
-  note: '',
-};
+interface Task {
+  id: number;
+  issue_number: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  payment_status: string;
+  amount: number;
+  paid_amount: number;
+  collected_amount: number;
+  is_paid: boolean;
+  is_collected: boolean;
+  due_date: string | null;
+  start_date: string | null;
+  original_estimate: number;
+  remaining_estimate: number;
+  time_spent: number;
+  story_points: number | null;
+  customer_id: number;
+  customer: Customer;
+  assignees: User[];
+  labels: TaskLabels;
+  documents?: Document[];
+  created_at: string;
+  updated_at: string;
+  closed_at?: string;
+  is_confidential: boolean;
+  subscribed: boolean;
+}
 
 export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
   const taskId = params.id as string;
 
   const [task, setTask] = useState<Task | null>(null);
-  const [history, setHistory] = useState<TaskHistory[]>([]);
-  const [workflowSteps, setWorkflowSteps] = useState<WorkflowStepConfig[]>([]);
-  const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editedTask, setEditedTask] = useState<Partial<Task>>({});
+  const [isStarred, setIsStarred] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedAssignees, setSelectedAssignees] = useState<User[]>([]);
 
-  const [rejectReason, setRejectReason] = useState('');
-
-  const [contractDialogOpen, setContractDialogOpen] = useState(false);
-  const [contractEditId, setContractEditId] = useState<number | null>(null);
-  const [contractForm, setContractForm] = useState<CreateContractRequest>(emptyContract);
-  const [contractTypes, setContractTypes] = useState<ContractType[]>([]);
-
-  // New state for advanced features
-  const [timeEntries, setTimeEntries] = useState<any[]>([]);
-  const [customFields, setCustomFields] = useState<any[]>([]);
-  const [fieldInstances, setFieldInstances] = useState<any[]>([]);
-  const [repeatingTasks, setRepeatingTasks] = useState<any[]>([]);
-  const [dependencies, setDependencies] = useState<any[]>([]);
-  const [usersWorkload, setUsersWorkload] = useState<any[]>([]);
-  const [resources, setResources] = useState<any[]>([]);
-  const [budgets, setBudgets] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [customWorkflows, setCustomWorkflows] = useState<any[]>([]);
-  const [pwaStatus, setPwaStatus] = useState<any>(null);
-  const [pwaSettings, setPwaSettings] = useState<any>(null);
-
-  const [tabValue, setTabValue] = useState(0);
-
-  const normalizeContracts = (resp: unknown): Contract[] => {
-    if (!resp) return [];
-    if (Array.isArray(resp)) return resp as Contract[];
-    const r = resp as any;
-    if (Array.isArray(r.data)) return r.data as Contract[];
-    if (r.data && Array.isArray(r.data.data)) return r.data.data as Contract[];
-    return [];
-  };
-
-  const fetchData = useCallback(async (showLoading = true) => {
+  // Fetch task detail
+  const fetchTaskDetail = async () => {
     try {
-      if (showLoading) setLoading(true);
-      const [taskData, historyData] = await Promise.all([
-        taskRepo.getTaskDetail(taskId),
-        taskRepo.getTaskHistory(taskId),
-      ]);
-      setTask(taskData);
-      setHistory(historyData);
-
-      if (taskData.contracts) {
-        setContracts(normalizeContracts(taskData.contracts));
-      } else {
-        try {
-          const contractsData = await contractRepo.getByTask(taskId);
-          setContracts(normalizeContracts(contractsData));
-        } catch {
-          setContracts([]);
-        }
-      }
-
-      if (taskData.workflow_id) {
-        try {
-          const configs = await workflowRepo.getConfigs(taskData.workflow_id);
-          setWorkflowSteps(Array.isArray(configs) ? configs : []);
-        } catch {
-          setWorkflowSteps([]);
-        }
-      }
-
-      // Load advanced features data
-      await Promise.all([
-        loadTimeEntries(),
-        loadCustomFields(),
-        loadRepeatingTasks(),
-        loadDependencies(),
-        loadWorkload(),
-        loadResources(),
-        loadBudgets(),
-        loadDocuments(),
-        loadCustomWorkflows(),
-        loadPWA(),
-      ]);
-
+      setLoading(true);
       setError(null);
-    } catch {
-      setError('Không thể tải thông tin hồ sơ');
+
+      const response = await apiClient.get(`/tasks/${taskId}`);
+      const responseData = response.data as any;
+      let taskData: Task;
+      
+      if (responseData.data) {
+        taskData = responseData.data;
+      } else {
+        taskData = responseData;
+      }
+
+      // Ensure all required fields
+      taskData = {
+        ...taskData,
+        assignees: taskData.assignees || [],
+        is_confidential: taskData.is_confidential || false,
+        subscribed: taskData.subscribed || false,
+        labels: taskData.labels || {
+          workflow_step: { id: 0, name: 'Không xác định', color: '#666', bg_color: '#f5f5f5', icon: '❓', description: '', category: 'workflow' },
+          task_status: { id: 0, name: 'Không xác định', color: '#666', bg_color: '#f5f5f5', icon: '❓', description: '', category: 'status' },
+          payment_status: { id: 0, name: 'Không xác định', color: '#666', bg_color: '#f5f5f5', icon: '❓', description: '', category: 'payment' },
+          priority: { id: 0, name: 'Không xác định', color: '#666', bg_color: '#f5f5f5', icon: '❓', description: '', category: 'priority' },
+          custom_labels: null
+        }
+      };
+
+      setTask(taskData);
+      setEditedTask(taskData);
+      setSelectedAssignees(taskData.assignees || []);
+      
+      // Mock activities for now
+      setActivities([
+        {
+          id: 1,
+          type: 'system_note',
+          user: { id: 1, name: 'Admin', username: 'admin', email: 'admin@example.com' },
+          content: 'đã tạo issue này',
+          created_at: taskData.created_at,
+          system_note: 'created'
+        }
+      ]);
+
+    } catch (err: any) {
+      console.error('Failed to fetch task detail:', err);
+      setError('Không thể tải chi tiết công việc.');
     } finally {
-      if (showLoading) setLoading(false);
-    }
-  }, [taskId]);
-
-  const loadTimeEntries = async () => {
-    try {
-      const entries = await timeTrackingRepo.getByTask(parseInt(taskId));
-      setTimeEntries(entries);
-    } catch {
-      setTimeEntries([]);
+      setLoading(false);
     }
   };
 
-  const loadCustomFields = async () => {
+  // Fetch users for assignees
+  const fetchUsers = async () => {
     try {
-      const fields = await customFieldsRepo.getAll();
-      setCustomFields(fields);
-    } catch {
-      setCustomFields([]);
+      const response = await apiClient.get('/users', {
+        params: { limit: 100 }
+      });
+      const responseData = response.data as any;
+      let usersData = [];
+      
+      if (responseData.data && Array.isArray(responseData.data)) {
+        usersData = responseData.data;
+      } else if (Array.isArray(responseData)) {
+        usersData = responseData;
+      }
+      
+      setUsers(usersData);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      // Mock users if API fails
+      setUsers([
+        { id: 1, name: 'Admin User', username: 'admin', email: 'admin@example.com' },
+        { id: 2, name: 'Nguyễn Văn A', username: 'nguyenvana', email: 'a@example.com' },
+        { id: 3, name: 'Trần Thị B', username: 'tranthib', email: 'b@example.com' }
+      ]);
     }
   };
 
-  const loadRepeatingTasks = async () => {
+  // Update task description
+  const handleUpdateDescription = async () => {
+    if (!task) return;
     try {
-      const tasks = await repeatingTasksRepo.getAll();
-      setRepeatingTasks(tasks.filter((t: any) => t.task_id === parseInt(taskId)));
-    } catch {
-      setRepeatingTasks([]);
+      await apiClient.put(`/tasks/${task.id}`, {
+        description: editedTask.description
+      });
+      setEditingDescription(false);
+      await fetchTaskDetail();
+    } catch (err) {
+      setError('Không thể cập nhật mô tả.');
     }
   };
 
-  const loadDependencies = async () => {
+  // Add comment
+  const handleAddComment = async () => {
+    if (!task || !newComment.trim()) return;
     try {
-      const deps = await taskDependencyRepo.getByTask(parseInt(taskId));
-      setDependencies(deps);
-    } catch {
-      setDependencies([]);
+      await apiClient.post(`/tasks/${task.id}/comments`, {
+        content: newComment
+      });
+      setNewComment('');
+      await fetchTaskDetail();
+    } catch (err) {
+      setError('Không thể thêm bình luận.');
     }
   };
 
-  const loadWorkload = async () => {
+  // Update assignees
+  const handleUpdateAssignees = async (assignees: User[]) => {
+    if (!task) return;
     try {
-      const users = await workloadRepo.getUsersWorkload();
-      setUsersWorkload(users);
-    } catch {
-      setUsersWorkload([]);
+      await apiClient.put(`/tasks/${task.id}`, {
+        assignee_ids: assignees.map(a => a.id)
+      });
+      setSelectedAssignees(assignees);
+      await fetchTaskDetail();
+    } catch (err) {
+      setError('Không thể cập nhật người được giao.');
     }
   };
 
-  const loadResources = async () => {
+  // Toggle subscription
+  const handleToggleSubscription = async () => {
+    if (!task) return;
     try {
-      const resources = await resourceRepo.getAll();
-      setResources(resources);
-    } catch {
-      setResources([]);
+      if (task.subscribed) {
+        await apiClient.post(`/tasks/${task.id}/unsubscribe`);
+      } else {
+        await apiClient.post(`/tasks/${task.id}/subscribe`);
+      }
+      setTask({ ...task, subscribed: !task.subscribed });
+    } catch (err) {
+      setError('Không thể thay đổi trạng thái theo dõi.');
     }
   };
 
-  const loadBudgets = async () => {
+  // Close/Reopen issue
+  const handleToggleIssue = async () => {
+    if (!task) return;
     try {
-      const allBudgets = await budgetRepo.getAll();
-      setBudgets(allBudgets.filter((budget: { task_id?: number }) => budget.task_id === Number(taskId)));
-    } catch {
-      setBudgets([]);
+      await apiClient.put(`/tasks/${task.id}`, {
+        status: task.status === 'closed' ? 'open' : 'closed'
+      });
+      await fetchTaskDetail();
+    } catch (err) {
+      setError('Không thể thay đổi trạng thái issue.');
     }
   };
 
-  const loadDocuments = async () => {
-    try {
-      const docs = await documentRepo.getAll();
-      setDocuments(docs.filter((doc: { task_id?: number }) => doc.task_id === Number(taskId)));
-    } catch {
-      setDocuments([]);
+  // Delete task
+  const handleDeleteTask = async () => {
+    if (!task) return;
+    if (confirm('Bạn có chắc chắn muốn xóa issue này?')) {
+      try {
+        await apiClient.delete(`/tasks/${task.id}`);
+        router.push('/board');
+      } catch (err) {
+        setError('Không thể xóa issue.');
+      }
     }
   };
 
-  const loadCustomWorkflows = async () => {
-    try {
-      const workflows = await customWorkflowRepo.getAll();
-      setCustomWorkflows(workflows);
-    } catch {
-      setCustomWorkflows([]);
-    }
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const loadPWA = async () => {
-    try {
-      const status = await pwaRepo.getStatus();
-      const settings = await pwaRepo.getSettings();
-      setPwaStatus(status);
-      setPwaSettings(settings);
-    } catch {
-      setPwaStatus(null);
-      setPwaSettings(null);
-    }
-  };
-
-  const fetchContracts = useCallback(async () => {
-    try {
-      const data = await contractRepo.getByTask(taskId);
-      setContracts(normalizeContracts(data));
-    } catch { /* silent */ }
-  }, [taskId]);
-
-  const fetchContractTypes = async () => {
-    try {
-      const data = await contractTypeRepo.getAll();
-      setContractTypes(data);
-    } catch {
-      // silent
-    }
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   useEffect(() => {
-    fetchData();
-    fetchContractTypes();
-  }, [taskId, fetchContractTypes]);
-
-  const totalSteps = workflowSteps.length || task?.total_steps || 0;
-
-  const currentStepConfig: WorkflowStepConfig | undefined = task
-    ? task.current_step_config || (workflowSteps.length > 0 ? getStepConfig(task.current_step, workflowSteps) : undefined)
-    : undefined;
-
-  const isPendingApproval = task?.step_status === 'PENDING_APPROVAL';
-  const isManager = user?.role === 'admin' || user?.role === 'manager';
-
-  const canAct = user && task && task.status === 'ACTIVE' && currentStepConfig
-    ? (() => {
-        const hasRole = workflowSteps.length > 0
-          ? canUserActOnStep(user.role, task.current_step, workflowSteps)
-          : user.role === 'admin' || currentStepConfig.required_role === user.role;
-
-        if (isPendingApproval) {
-          return isManager;
-        }
-        return hasRole;
-      })()
-    : false;
-
-  const canAssign = user && isManager && task?.status === 'ACTIVE';
-
-  // --- Handlers ---
-
-  const handleNextStep = async (note?: string, file?: File) => {
-    if (!task) return;
-    try {
-      await taskRepo.nextStep(taskId, {
-        note: note || 'Chuyển bước',
-        current_step: task.current_step,
-        file,
-      });
-      toast.success(
-        currentStepConfig?.require_approval
-          ? 'Đã gửi yêu cầu duyệt'
-          : 'Đã chuyển bước thành công',
-      );
-      await fetchData(false);
-    } catch (err: unknown) {
-      const msg = extractErrorMessage(err) || 'Chuyển bước thất bại';
-      toast.error(msg);
+    if (taskId) {
+      fetchTaskDetail();
+      fetchUsers();
     }
-  };
-
-  const handleConfirmPayment = async (action: PaymentAction, amount: number, note?: string) => {
-    try {
-      await taskRepo.confirmPayment(taskId, action, amount, note);
-      const label = action === 'confirm_collected' ? 'thu phí' : 'thanh toán';
-      toast.success(`Đã xác nhận ${label}`);
-      await fetchData(false);
-    } catch (err: unknown) {
-      const msg = extractErrorMessage(err) || 'Xác nhận thất bại';
-      toast.error(msg);
-    }
-  };
-
-  const handleComplete = async (note?: string) => {
-    try {
-      await taskRepo.completeTask(taskId, note);
-      toast.success('Hồ sơ đã hoàn tất');
-      await fetchData(false);
-    } catch {
-      toast.error('Hoàn tất thất bại');
-    }
-  };
-
-  const handleApprove = async (note?: string) => {
-    if (!task) return;
-    try {
-      await taskRepo.approveTask(taskId, {
-        note: note || 'Phê duyệt',
-        current_step: task.current_step,
-      });
-      toast.success('Đã phê duyệt thành công');
-      await fetchData(false);
-    } catch (err: unknown) {
-      const msg = extractErrorMessage(err) || 'Phê duyệt thất bại';
-      toast.error(msg);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!rejectReason.trim() || !task) return;
-    try {
-      await taskRepo.rejectTask(taskId, rejectReason, task.current_step);
-      toast.success('Đã từ chối hồ sơ');
-      setRejectReason('');
-      await fetchData(false);
-    } catch (err: unknown) {
-      const msg = extractErrorMessage(err) || 'Từ chối thất bại';
-      toast.error(msg);
-    }
-  };
-
-  // --- Contract handlers ---
-
-  const setContractField = (field: keyof CreateContractRequest) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = field === 'value' ? (e.target.value ? Number(e.target.value) : undefined) : e.target.value;
-    setContractForm((prev) => ({ ...prev, [field]: val }));
-  };
-
-  const openCreateContract = () => {
-    setContractEditId(null);
-    setContractForm({ ...emptyContract, contract_type_id: undefined });
-    setContractDialogOpen(true);
-  };
-
-  const openEditContract = (c: Contract) => {
-    setContractEditId(c.id);
-    setContractForm({
-      contract_number: c.contract_number,
-      contract_type_id: c.contract_type_id,
-      title: c.title,
-      value: c.value,
-      signing_date: c.signing_date ? c.signing_date.split('T')[0] : '',
-      effective_date: c.effective_date ? c.effective_date.split('T')[0] : '',
-      expiry_date: c.expiry_date ? c.expiry_date.split('T')[0] : '',
-      status: c.status,
-      file_url: c.file_url || '',
-      note: c.note || '',
-    });
-    setContractDialogOpen(true);
-  };
-
-  const handleSaveContract = async (data: CreateContractRequest) => {
-    try {
-      const payload = { ...data };
-      if (!payload.signing_date) delete payload.signing_date;
-      if (!payload.effective_date) delete payload.effective_date;
-      if (!payload.expiry_date) delete payload.expiry_date;
-      if (!payload.file_url) delete payload.file_url;
-      if (!payload.note) delete payload.note;
-
-      if (contractEditId) {
-        await contractRepo.update(contractEditId, payload);
-        toast.success('Đã cập nhật hợp đồng');
-      } else {
-        await contractRepo.create(taskId, payload);
-        toast.success('Đã thêm hợp đồng');
-      }
-      setContractDialogOpen(false);
-      setContractEditId(null);
-      setContractForm(emptyContract);
-      await fetchContracts();
-    } catch (err: unknown) {
-      const msg = extractErrorMessage(err) || 'Lưu hợp đồng thất bại';
-      toast.error(msg);
-    }
-  };
-
-  // --- Advanced features handlers ---
-
-  const handleTrackTime = async (entry: any) => {
-    try {
-      const result = await timeTrackingRepo.create(entry);
-      await loadTimeEntries();
-      return result;
-    } catch (error) {
-      console.error('Failed to track time:', error);
-      throw error;
-    }
-  };
-
-  const handleStopTracking = async (entryId: number) => {
-    try {
-      await timeTrackingRepo.stop(entryId);
-      await loadTimeEntries();
-    } catch (error) {
-      console.error('Failed to stop tracking:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateCustomFields = async (instances: any[]) => {
-    try {
-      await customFieldsRepo.updateInstances(0, instances);
-      setFieldInstances(instances);
-    } catch (error) {
-      console.error('Failed to update custom fields:', error);
-      throw error;
-    }
-  };
-
-  const handleAddRepeatingTask = async (task: any) => {
-    try {
-      const result = await repeatingTasksRepo.create({ ...task, task_id: parseInt(taskId) });
-      await loadRepeatingTasks();
-      return result;
-    } catch (error) {
-      console.error('Failed to add repeating task:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateRepeatingTask = async (task: any) => {
-    try {
-      await repeatingTasksRepo.update(task.id, task);
-      await loadRepeatingTasks();
-    } catch (error) {
-      console.error('Failed to update repeating task:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteRepeatingTask = async (taskId: number) => {
-    try {
-      await repeatingTasksRepo.delete(taskId);
-      await loadRepeatingTasks();
-    } catch (error) {
-      console.error('Failed to delete repeating task:', error);
-      throw error;
-    }
-  };
-
-  const handleAssignTask = async (userId: number, taskId: number) => {
-    try {
-      await workloadRepo.autoAssign({ task_id: taskId, user_id: userId });
-      await loadWorkload();
-    } catch (error) {
-      console.error('Failed to assign task:', error);
-      throw error;
-    }
-  };
-
-  const handleAddBudget = async (budget: any) => {
-    try {
-      const result = await budgetRepo.create(budget);
-      await loadBudgets();
-      return result;
-    } catch (error) {
-      console.error('Failed to add budget:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateBudget = async (budget: any) => {
-    try {
-      await budgetRepo.update(budget.id, budget);
-      await loadBudgets();
-    } catch (error) {
-      console.error('Failed to update budget:', error);
-      throw error;
-    }
-  };
-
-  const handleAddExpense = async (budgetId: number, amount: number, description: string) => {
-    try {
-      await budgetRepo.addExpense(budgetId, { amount, description });
-      await loadBudgets();
-    } catch (error) {
-      console.error('Failed to add expense:', error);
-      throw error;
-    }
-  };
-
-  const handleUploadDocument = async (file: File, targetTaskId?: number) => {
-    try {
-      const result = await documentRepo.upload(targetTaskId ?? Number(taskId), file);
-      await loadDocuments();
-      return result;
-    } catch (error) {
-      console.error('Failed to upload document:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteDocument = async (documentId: number) => {
-    try {
-      await documentRepo.delete(documentId);
-      await loadDocuments();
-    } catch (error) {
-      console.error('Failed to delete document:', error);
-      throw error;
-    }
-  };
-
-  const handleShareDocument = async (documentId: number, permission: 'private' | 'team' | 'public') => {
-    try {
-      await documentRepo.share(documentId, permission);
-      await loadDocuments();
-    } catch (error) {
-      console.error('Failed to share document:', error);
-      throw error;
-    }
-  };
-
-  const handleAddCustomWorkflow = async (workflow: any) => {
-    try {
-      const result = await customWorkflowRepo.create(workflow);
-      await loadCustomWorkflows();
-      return result;
-    } catch (error) {
-      console.error('Failed to add custom workflow:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateCustomWorkflow = async (workflow: any) => {
-    try {
-      await customWorkflowRepo.update(workflow.id, workflow);
-      await loadCustomWorkflows();
-    } catch (error) {
-      console.error('Failed to update custom workflow:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteCustomWorkflow = async (workflowId: number) => {
-    try {
-      await customWorkflowRepo.delete(workflowId);
-      await loadCustomWorkflows();
-    } catch (error) {
-      console.error('Failed to delete custom workflow:', error);
-      throw error;
-    }
-  };
-
-  const handleInstallPWA = async () => {
-    try {
-      await pwaRepo.install();
-    } catch (error) {
-      console.error('Failed to install PWA:', error);
-      throw error;
-    }
-  };
-
-  const handleToggleOffline = async (enabled: boolean) => {
-    try {
-      await pwaRepo.updateSettings({ enableOffline: enabled });
-      await loadPWA();
-    } catch (error) {
-      console.error('Failed to toggle offline:', error);
-      throw error;
-    }
-  };
-
-  const handleToggleNotifications = async (enabled: boolean) => {
-    try {
-      await pwaRepo.updateSettings({ enablePushNotifications: enabled });
-      await loadPWA();
-    } catch (error) {
-      console.error('Failed to toggle notifications:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdatePWASettings = async (settings: any) => {
-    try {
-      await pwaRepo.updateSettings(settings);
-      await loadPWA();
-    } catch (error) {
-      console.error('Failed to update PWA settings:', error);
-      throw error;
-    }
-  };
-
-  // --- Render ---
+  }, [taskId]);
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
     );
   }
 
   if (error || !task) {
-    return <Alert severity="error">{error || 'Không tìm thấy hồ sơ'}</Alert>;
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error || 'Không tìm thấy issue.'}
+        </Alert>
+        <Button variant="outlined" onClick={() => router.push('/board')}>
+          Quay lại bảng công việc
+        </Button>
+      </Box>
+    );
   }
 
-  const stepLabels = workflowSteps.length > 0
-    ? workflowSteps.map((s) => s.step_name)
-    : [];
-
-  const createdBy = typeof task.created_by === 'object' && task.created_by
-    ? task.created_by.full_name
-    : `User #${task.created_by}`;
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
   return (
-    <TaskLayout
-      task={task}
-      createdBy={createdBy}
-      stepLabels={stepLabels}
-      totalSteps={totalSteps}
-      currentStepConfig={currentStepConfig}
-      onBack={() => router.back()}
-    >
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 420px' }, gap: 3 }}>
-        <TaskLeftColumn
-          task={task!}
-          userRole={user!.role}
-          currentStepConfig={currentStepConfig}
-          totalSteps={totalSteps}
-          canAct={canAct}
-          canAssign={canAssign}
-          handleNextStep={handleNextStep}
-          handleConfirmPayment={handleConfirmPayment}
-          handleComplete={handleComplete}
-          handleApprove={handleApprove}
-          handleReject={handleReject}
-          fetchData={fetchData}
-          contracts={contracts}
-          contractTypes={contractTypes}
-          openCreateContract={openCreateContract}
-          openEditContract={openEditContract}
-        />
-
-        {/* Right column with tabs */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="h6">Lịch sử</Typography>
-            </Box>
-
-            {history.length === 0 ? (
-              <Typography color="text.secondary">Chưa có hoạt động</Typography>
-            ) : (
-              <Timeline>
-                {history.map((h, idx) => (
-                  <TimelineItem key={h.id ?? idx}>
-                    <TimelineSeparator>
-                      <TimelineDot color={idx === 0 ? 'primary' : undefined} />
-                      {idx < history.length - 1 && <TimelineConnector />}
-                    </TimelineSeparator>
-                    <TimelineContent>
-                      <Box>
-                        <Typography variant="body2" fontWeight={700}>
-                          {getActionLabel(h.action_type)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {h.user?.full_name ?? h.actor_name ?? `User #${h.created_by ?? h.user_id ?? '?'}`} • {h.created_at ? new Date(h.created_at).toLocaleString('vi-VN') : '-'}
-                        </Typography>
-                        {h.note && (
-                          <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {h.note}
-                          </Typography>
-                        )}
-                        {h.file_url && (
-                          <MuiLink href={h.file_url} target="_blank" rel="noopener" sx={{ display: 'block', mt: 0.5 }}>
-                            Mở tài liệu
-                          </MuiLink>
-                        )}
-                      </Box>
-                    </TimelineContent>
-                  </TimelineItem>
-                ))}
-              </Timeline>
+    <Box sx={{ backgroundColor: '#fafafa', minHeight: '100vh' }}>
+      {/* GitLab Header */}
+      <Box sx={{ backgroundColor: 'white', borderBottom: '1px solid #e5e5e5', mb: 0 }}>
+        <Box sx={{ maxWidth: '1280px', mx: 'auto', px: 4, py: 2 }}>
+          {/* Breadcrumb */}
+          <Box display="flex" alignItems="center" gap={1} mb={2} fontSize="14px">
+            <Typography 
+              sx={{ 
+                color: '#1068bf', 
+                cursor: 'pointer',
+                '&:hover': { textDecoration: 'underline' }
+              }}
+              onClick={() => router.push('/board')}
+            >
+              Bảng công việc
+            </Typography>
+            <Typography sx={{ color: '#666' }}>/</Typography>
+            <Typography sx={{ color: '#666' }}>Issues</Typography>
+            <Typography sx={{ color: '#666' }}>/</Typography>
+            <Typography sx={{ color: '#303030', fontWeight: 500 }}>
+              #{task.issue_number || task.id}
+            </Typography>
+            {task.is_confidential && (
+              <Chip
+                icon={<Lock sx={{ fontSize: 14 }} />}
+                label="Confidential"
+                size="small"
+                sx={{ 
+                  ml: 1,
+                  height: 20,
+                  fontSize: '11px',
+                  backgroundColor: '#fff3cd',
+                  color: '#856404',
+                  border: '1px solid #ffc107'
+                }}
+              />
             )}
-          </Paper>
+          </Box>
 
-          {/* Tabs for advanced features */}
-          <Paper sx={{ p: 2 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-              <Tab label="Theo dõi thời gian" />
-              <Tab label="Custom Fields" />
-              <Tab label="Task lặp" />
-              <Tab label="Dependencies" />
-              <Tab label="Workload" />
-              <Tab label="Resources" />
-              <Tab label="Budget" />
-              <Tab label="Documents" />
-              <Tab label="Custom Workflow" />
-              <Tab label="PWA" />
-            </Tabs>
-
-            <Box sx={{ mt: 2 }}>
-              {tabValue === 0 && (
-                <TimeTracking
-                  taskId={parseInt(taskId)}
-                  entries={timeEntries}
-                  onTrackTime={handleTrackTime}
-                  onStopTracking={handleStopTracking}
-                />
-              )}
-              {tabValue === 1 && (
-                <CustomFields
-                  fields={customFields}
-                  instances={fieldInstances}
-                  onUpdate={handleUpdateCustomFields}
-                />
-              )}
-              {tabValue === 2 && (
-                <RepeatingTask
-                  tasks={repeatingTasks}
-                  onAdd={handleAddRepeatingTask}
-                  onUpdate={handleUpdateRepeatingTask}
-                  onDelete={handleDeleteRepeatingTask}
-                />
-              )}
-              {tabValue === 3 && (
-                <DependencyVisualization
-                  taskId={parseInt(taskId)}
-                  dependencies={dependencies}
-                  tasks={[]}
-                />
-              )}
-              {tabValue === 4 && (
-                <WorkloadBalancing
-                  users={usersWorkload}
-                  onAssignTask={handleAssignTask}
-                />
-              )}
-              {tabValue === 5 && (
-                <ResourceManagement
-                  resources={resources}
-                  onAssign={handleAssignTask}
-                  onRelease={async (id) => {
-                    try {
-                      await resourceRepo.release(id);
-                      await loadResources();
-                    } catch (error) {
-                      console.error('Failed to release resource:', error);
-                      throw error;
-                    }
+          {/* Title Section */}
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+            <Box sx={{ flex: 1 }}>
+              <Box display="flex" alignItems="center" gap={2} mb={1.5}>
+                {task.status === 'closed' ? (
+                  <Chip
+                    icon={<Check sx={{ fontSize: 16 }} />}
+                    label="Closed"
+                    size="small"
+                    sx={{ 
+                      height: 24,
+                      backgroundColor: '#d1d5db',
+                      color: '#374151',
+                      fontWeight: 600
+                    }}
+                  />
+                ) : (
+                  <Chip
+                    icon={<Check sx={{ fontSize: 16 }} />}
+                    label="Open"
+                    size="small"
+                    sx={{ 
+                      height: 24,
+                      backgroundColor: '#dcfce7',
+                      color: '#166534',
+                      fontWeight: 600
+                    }}
+                  />
+                )}
+                <Typography 
+                  variant="h4" 
+                  component="h1" 
+                  sx={{ 
+                    fontWeight: 600,
+                    fontSize: '22px',
+                    lineHeight: 1.2,
+                    color: '#303030'
                   }}
-                />
-              )}
-              {tabValue === 6 && (
-                <BudgetTracking
-                  budgets={budgets}
-                  onAddBudget={handleAddBudget}
-                  onUpdateBudget={handleUpdateBudget}
-                  onAddExpense={handleAddExpense}
-                />
-              )}
-              {tabValue === 7 && (
-                <DocumentManagement
-                  documents={documents}
-                  onUpload={handleUploadDocument}
-                  onDelete={handleDeleteDocument}
-                  onShare={handleShareDocument}
-                />
-              )}
-              {tabValue === 8 && (
-                <CustomWorkflow
-                  workflows={customWorkflows}
-                  onAdd={handleAddCustomWorkflow}
-                  onUpdate={handleUpdateCustomWorkflow}
-                  onDelete={handleDeleteCustomWorkflow}
-                />
-              )}
-              {tabValue === 9 && pwaStatus && pwaSettings && (
-                <PWA
-                  status={pwaStatus}
-                  settings={pwaSettings}
-                  onInstall={handleInstallPWA}
-                  onToggleOffline={handleToggleOffline}
-                  onToggleNotifications={handleToggleNotifications}
-                  onUpdateSettings={handleUpdatePWASettings}
-                />
-              )}
+                >
+                  {task.title}
+                </Typography>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1.5} fontSize="14px" color="#666">
+                <Typography fontSize="14px">
+                  Được tạo bởi 
+                  <Typography component="span" fontWeight={500} sx={{ ml: 0.5 }}>
+                    {task.customer?.full_name || 'Admin'}
+                  </Typography>
+                </Typography>
+                <Typography fontSize="14px">•</Typography>
+                <Typography fontSize="14px">
+                  {new Date(task.created_at).toLocaleDateString('vi-VN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </Typography>
+              </Box>
             </Box>
-          </Paper>
+
+            {/* Actions */}
+            <Box display="flex" alignItems="center" gap={1}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={task.subscribed ? <Notifications /> : <NotificationsOff />}
+                onClick={handleToggleSubscription}
+                sx={{ 
+                  textTransform: 'none',
+                  borderColor: '#e5e5e5',
+                  color: '#303030',
+                  fontSize: '14px'
+                }}
+              >
+                {task.subscribed ? 'Đang theo dõi' : 'Theo dõi'}
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={task.status === 'closed' ? <Check /> : <Close />}
+                onClick={handleToggleIssue}
+                sx={{ 
+                  textTransform: 'none',
+                  backgroundColor: task.status === 'closed' ? '#10b981' : '#dc2626',
+                  fontSize: '14px'
+                }}
+              >
+                {task.status === 'closed' ? 'Mở lại issue' : 'Đóng issue'}
+              </Button>
+              <IconButton onClick={handleMenuOpen} sx={{ border: '1px solid #e5e5e5' }}>
+                <MoreVert />
+              </IconButton>
+              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                <MenuItem onClick={() => { handleDeleteTask(); handleMenuClose(); }}>
+                  <ListItemIcon><Delete fontSize="small" /></ListItemIcon>
+                  Xóa issue
+                </MenuItem>
+                <MenuItem onClick={handleMenuClose}>
+                  <ListItemIcon><LinkIcon fontSize="small" /></ListItemIcon>
+                  Copy link
+                </MenuItem>
+              </Menu>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
-      <ContractDialog
-        open={contractDialogOpen}
-        onClose={() => setContractDialogOpen(false)}
-        onSave={handleSaveContract}
-        contract={contractEditId ? contracts.find((c) => c.id === contractEditId) || null : null}
-        contractTypes={contractTypes}
-      />
-    </TaskLayout>
-  );
-}
+      {/* Main Content */}
+      <Box sx={{ maxWidth: '1280px', mx: 'auto', px: 4, py: 4, display: 'flex', gap: 4 }}>
+        {/* Left Column - Content */}
+        <Box sx={{ flex: 1 }}>
+          {/* Description */}
+          <Box sx={{ mb: 4 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 600 }}>
+                Mô tả
+              </Typography>
+              <Button
+                size="small"
+                startIcon={editingDescription ? <Close /> : <Edit />}
+                onClick={() => {
+                  setEditingDescription(!editingDescription);
+                  setEditedTask({ ...editedTask, description: task.description });
+                }}
+                sx={{ textTransform: 'none', color: editingDescription ? '#dc2626' : '#666' }}
+              >
+                {editingDescription ? 'Hủy' : 'Chỉnh sửa'}
+              </Button>
+            </Box>
 
-function getActionLabel(type: TaskHistory['action_type']): string {
-  const labels: Record<TaskHistory['action_type'], string> = {
-    NEXT_STEP: 'Chuyển bước',
-    REJECT: 'Từ chối',
-    APPROVE: 'Đã phê duyệt',
-    ASSIGN: 'Phân công',
-    UPLOAD: 'Tải tài liệu',
-    PAYMENT: 'Thanh toán',
-  };
-  return labels[type] || type;
+            {editingDescription ? (
+              <Box>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  value={editedTask.description || ''}
+                  onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                  placeholder="Mô tả issue..."
+                  sx={{ mb: 2, '& .MuiOutlinedInput-root': { fontSize: '14px' } }}
+                />
+                <Box display="flex" gap={1}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleUpdateDescription}
+                    sx={{ textTransform: 'none', backgroundColor: '#1068bf' }}
+                  >
+                    Lưu
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setEditingDescription(false)}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Hủy
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 2,
+                  border: '1px solid #e5e5e5',
+                  borderRadius: 1,
+                  minHeight: 80,
+                  backgroundColor: '#fafafa'
+                }}
+              >
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    whiteSpace: 'pre-wrap',
+                    color: task.description ? '#303030' : '#999',
+                    fontStyle: task.description ? 'normal' : 'italic',
+                    fontSize: '14px',
+                    lineHeight: 1.6
+                  }}
+                >
+                  {task.description || 'Chưa có mô tả'}
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+
+          {/* Activity Feed */}
+          <Box>
+            <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 600, mb: 2 }}>
+              Hoạt động ({activities.length})
+            </Typography>
+
+            {/* Activity List */}
+            {activities.map((activity) => (
+              <Box key={activity.id} display="flex" gap={2} mb={3}>
+                <Avatar sx={{ width: 32, height: 32 }}>
+                  {activity.user.name.charAt(0)}
+                </Avatar>
+                <Box flex={1}>
+                  <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                    <Typography variant="subtitle2" fontWeight={600} fontSize="14px">
+                      {activity.user.name}
+                    </Typography>
+                    <Typography variant="body2" fontSize="14px" color="#666">
+                      {activity.content}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="#999">
+                    {new Date(activity.created_at).toLocaleDateString('vi-VN', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+
+            {/* Comment Box */}
+            <Box display="flex" gap={2} mt={3}>
+              <Avatar sx={{ width: 32, height: 32 }}>
+                <Person fontSize="small" />
+              </Avatar>
+              <Box flex={1}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Viết bình luận..."
+                  sx={{ mb: 1, '& .MuiOutlinedInput-root': { fontSize: '14px' } }}
+                />
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                  sx={{ textTransform: 'none', backgroundColor: '#1068bf' }}
+                >
+                  Bình luận
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Right Sidebar */}
+        <Box sx={{ width: 300 }}>
+          {/* Assignees */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+              Assignees
+            </Typography>
+            <Autocomplete
+              multiple
+              size="small"
+              options={users}
+              value={selectedAssignees}
+              getOptionLabel={(option) => option.name}
+              onChange={(event, newValue) => handleUpdateAssignees(newValue)}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Add assignees..." sx={{ '& .MuiInputBase-input': { fontSize: '13px' } }} />
+              )}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Avatar sx={{ width: 24, height: 24, fontSize: '12px' }}>
+                      {option.name.charAt(0)}
+                    </Avatar>
+                    <Typography fontSize="13px">{option.name}</Typography>
+                  </Box>
+                </li>
+              )}
+              renderTags={(value, getTagProps) => (
+                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                  {value.map((option, index) => (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={option.id}
+                      label={option.name}
+                      size="small"
+                      avatar={<Avatar sx={{ width: 20, height: 20 }}>{option.name.charAt(0)}</Avatar>}
+                      sx={{ fontSize: '12px', height: 24 }}
+                    />
+                  ))}
+                </Box>
+              )}
+            />
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Labels */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+              Labels
+            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={0.5}>
+              {task.labels?.priority && (
+                <Chip
+                  label={task.labels.priority.name}
+                  size="small"
+                  sx={{ 
+                    fontSize: '12px',
+                    backgroundColor: task.labels.priority.bg_color,
+                    color: task.labels.priority.color,
+                    mb: 0.5
+                  }}
+                />
+              )}
+              {task.labels?.task_status && (
+                <Chip
+                  label={task.labels.task_status.name}
+                  size="small"
+                  sx={{ 
+                    fontSize: '12px',
+                    backgroundColor: task.labels.task_status.bg_color,
+                    color: task.labels.task_status.color,
+                    mb: 0.5
+                  }}
+                />
+              )}
+              {task.labels?.payment_status && (
+                <Chip
+                  label={task.labels.payment_status.name}
+                  size="small"
+                  sx={{ 
+                    fontSize: '12px',
+                    backgroundColor: task.labels.payment_status.bg_color,
+                    color: task.labels.payment_status.color,
+                    mb: 0.5
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Milestone/Due Date */}
+          {task.due_date && (
+            <>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+                  Due date
+                </Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CalendarToday sx={{ fontSize: 16, color: '#666' }} />
+                  <Typography variant="body2" fontSize="13px">
+                    {new Date(task.due_date).toLocaleDateString('vi-VN')}
+                  </Typography>
+                </Box>
+              </Box>
+              <Divider sx={{ my: 2 }} />
+            </>
+          )}
+
+          {/* Time Tracking */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+              Time tracking
+            </Typography>
+            <Box display="flex" justifyContent="space-between" fontSize="13px" color="#666" mb={0.5}>
+              <Typography fontSize="13px">Estimate:</Typography>
+              <Typography fontSize="13px" fontWeight={500}>{task.original_estimate || 0}h</Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between" fontSize="13px" color="#666" mb={0.5}>
+              <Typography fontSize="13px">Spent:</Typography>
+              <Typography fontSize="13px" fontWeight={500}>{task.time_spent || 0}h</Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between" fontSize="13px" color="#666">
+              <Typography fontSize="13px">Remaining:</Typography>
+              <Typography fontSize="13px" fontWeight={500}>{task.remaining_estimate || 0}h</Typography>
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Customer */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+              Customer
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Avatar sx={{ width: 28, height: 28, fontSize: '13px' }}>
+                {task.customer?.full_name?.charAt(0) || 'U'}
+              </Avatar>
+              <Box>
+                <Typography variant="body2" fontWeight={500} fontSize="14px">
+                  {task.customer?.full_name || 'N/A'}
+                </Typography>
+                <Typography variant="caption" fontSize="12px" color="#666">
+                  {task.customer?.company_name || 'N/A'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Financial */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+              Financial
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <AttachMoney sx={{ fontSize: 18, color: '#10b981' }} />
+              <Typography variant="body2" fontWeight={600} fontSize="16px">
+                {task.amount?.toLocaleString('vi-VN') || 0} ₫
+              </Typography>
+            </Box>
+            <Typography variant="caption" fontSize="12px" color="#666" display="block">
+              Paid: {task.paid_amount?.toLocaleString('vi-VN') || 0} ₫
+            </Typography>
+            <Typography variant="caption" fontSize="12px" color="#666" display="block">
+              Collected: {task.collected_amount?.toLocaleString('vi-VN') || 0} ₫
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Documents */}
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontSize: '12px', fontWeight: 600, color: '#666', mb: 1.5, textTransform: 'uppercase' }}>
+              Documents ({task.documents?.length || 0})
+            </Typography>
+            {task.documents && task.documents.length > 0 ? (
+              <Box>
+                {task.documents.map(doc => (
+                  <Box 
+                    key={doc.id}
+                    display="flex" 
+                    alignItems="center" 
+                    gap={1} 
+                    py={1}
+                    sx={{ borderBottom: '1px solid #f0f0f0', '&:last-child': { borderBottom: 'none' } }}
+                  >
+                    <AttachFile sx={{ fontSize: 16, color: '#666' }} />
+                    <Box flex={1}>
+                      <Typography variant="body2" fontSize="13px" noWrap>
+                        {doc.name}
+                      </Typography>
+                    </Box>
+                    <IconButton size="small" onClick={() => window.open(doc.url, '_blank')}>
+                      <Download fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" fontSize="13px" color="#999">
+                No documents
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
 }

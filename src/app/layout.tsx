@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ThemeRegistry from "@/components/ThemeRegistry";
+import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
@@ -34,17 +35,20 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ThemeRegistry>
-          <AuthProvider>
-            <NotificationProvider>
-              {children}
-              <Toaster position="top-right" />
-            </NotificationProvider>
-          </AuthProvider>
-        </ThemeRegistry>
+        <QueryProvider>
+          <ThemeRegistry>
+            <AuthProvider>
+              <NotificationProvider>
+                {children}
+                <Toaster position="top-right" />
+              </NotificationProvider>
+            </AuthProvider>
+          </ThemeRegistry>
+        </QueryProvider>
       </body>
     </html>
   );

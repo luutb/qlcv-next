@@ -1,10 +1,31 @@
 {
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-4a431126685085ec-5eluqj-c0501fe2",
+    "ANTHROPIC_BASE_URL": "https://claude.cvnl.me/v1",
+    "API_TIMEOUT_MS": "3000000"
+  },
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(npx --yes tsc --noEmit)",
       "Bash(npx next:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(python3 *)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git checkout *)",
+      "Bash(npm list *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:6060)",
+      "Bash(curl -s http://localhost:6060/cases)",
+      "Bash(npm test *)",
+      "Bash(lsof -ti:6060)",
+      "Bash(ps *)",
+      "Bash(kill 11498 *)",
+      "Bash(yarn run *)",
+      "Bash(yarn add *)",
+      "Bash([ -d \"/Users/sapo/golang/qlcv-frontend/src/app/\\(dashboard\\)/$path\" ])",
+      "Bash(git add *)",
+      "Bash(curl -s http://localhost:6060/admin/labels)"
     ]
   }
 }

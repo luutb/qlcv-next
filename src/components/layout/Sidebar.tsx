@@ -14,18 +14,17 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ContactsIcon from '@mui/icons-material/Contacts';
-import ContractIcon from '@mui/icons-material/Description';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import FolderIcon from '@mui/icons-material/Folder';
 import SecurityIcon from '@mui/icons-material/Security';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import BusinessIcon from '@mui/icons-material/Business';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
+import LabelIcon from '@mui/icons-material/Label';
 import { Role } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -44,28 +43,11 @@ const ROLE_HOME: Record<string, string> = {
 };
 
 const MENU_ITEMS: MenuItem[] = [
-  { label: 'Tổng quan', path: '/admin', icon: <DashboardIcon />, authorizedRoles: ['admin'] },
-  { label: 'Tổng quan', path: '/manager', icon: <DashboardIcon />, authorizedRoles: ['manager'] },
-  { label: 'Tổng quan', path: '/staff', icon: <DashboardIcon />, authorizedRoles: ['staff'] },
-  { label: 'Tổng quan', path: '/accountant', icon: <DashboardIcon />, authorizedRoles: ['accountant'] },
-  { label: 'Quản lý khách hàng', path: '/shared/customers', icon: <ContactsIcon />, authorizedRoles: ['admin', 'manager'] },
-  { label: 'Quản lý hồ sơ', path: '/manager/tasks', icon: <AssignmentIcon />, authorizedRoles: ['admin', 'manager'] },
-  { label: 'Duyệt task', path: '/manager/review', icon: <CheckCircleIcon />, authorizedRoles: ['admin', 'manager'] },
-  { label: 'Công việc của tôi', path: '/staff/my-tasks', icon: <TaskIcon />, authorizedRoles: ['admin', 'manager', 'staff'] },
-  { label: 'Gantt View', path: '/manager/tasks/gantt', icon: <TimelineIcon />, authorizedRoles: ['admin', 'manager'] },
-  { label: 'Quản lý ngân sách', path: '/budgets', icon: <AccountBalanceIcon />, authorizedRoles: ['admin', 'manager', 'accountant'] },
-  { label: 'Phân tích ngân sách', path: '/budgets/analytics', icon: <TrendingUpIcon />, authorizedRoles: ['admin', 'manager', 'accountant'] },
-  { label: 'Quản lý chi phí', path: '/expenses', icon: <ReceiptIcon />, authorizedRoles: ['admin', 'manager', 'accountant', 'staff'] },
-  { label: 'Trung tâm chi phí', path: '/cost-centers', icon: <BusinessIcon />, authorizedRoles: ['admin', 'manager', 'accountant'] },
-  { label: 'Thanh toán', path: '/accountant/payments', icon: <PaymentIcon />, authorizedRoles: ['admin', 'accountant'] },
-  { label: 'Analytics', path: '/analytics', icon: <AnalyticsIcon />, authorizedRoles: ['admin', 'manager'] },
-  { label: 'Báo cáo doanh thu', path: '/admin/reports', icon: <BarChartIcon />, authorizedRoles: ['admin', 'manager'] },
-  { label: 'Quản lý file', path: '/shared/files', icon: <FolderIcon />, authorizedRoles: ['admin', 'manager', 'staff'] },
-  { label: 'Thông báo', path: '/staff/notifications', icon: <NotificationsIcon />, authorizedRoles: ['admin', 'manager', 'staff', 'accountant'] },
+  { label: 'Dashboard', path: '/', icon: <DashboardIcon />, authorizedRoles: ['admin', 'manager', 'staff', 'accountant'] },
+  { label: 'Bảng công việc', path: '/board', icon: <ViewKanbanIcon />, authorizedRoles: ['admin', 'manager', 'staff'] },
+  { label: 'Quản lý hồ sơ (Cases)', path: '/cases', icon: <AssignmentIcon />, authorizedRoles: ['admin', 'manager', 'staff'] },
   { label: 'Quản lý người dùng', path: '/admin/users', icon: <PeopleIcon />, authorizedRoles: ['admin'] },
-  { label: 'Quản lý quy trình', path: '/admin/workflows', icon: <AccountTreeIcon />, authorizedRoles: ['admin'] },
-  { label: 'Quản lý loại hợp đồng', path: '/admin/contract-types', icon: <ContractIcon />, authorizedRoles: ['admin'] },
-  { label: 'Nhật ký hệ thống', path: '/admin/audit-logs', icon: <SecurityIcon />, authorizedRoles: ['admin'] },
+  { label: 'Quản lý Labels', path: '/admin/labels', icon: <LabelIcon />, authorizedRoles: ['admin', 'manager'] },
   { label: 'Cấu hình hệ thống', path: '/admin/settings', icon: <SettingsIcon />, authorizedRoles: ['admin'] },
 ];
 
@@ -81,10 +63,13 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const pathname = usePathname();
 
-  if (!user) return null;
+  // Don't render anything while loading to prevent hydration mismatch
+  if (isLoading || !user) {
+    return null;
+  }
 
   const visibleItems = filterMenuByRole(MENU_ITEMS, user.role);
 

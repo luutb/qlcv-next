@@ -22,6 +22,7 @@ interface Props {
   onDelete: (certId: number) => Promise<void>;
 }
 
+// Certificate types - these are standard types that should remain static
 const TYPE_OPTIONS = [
   { value: 'degree', label: 'Bằng cấp' },
   { value: 'certificate', label: 'Chứng chỉ' },

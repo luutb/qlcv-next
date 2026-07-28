@@ -1,31 +1,352 @@
-export type Role = 'admin' | 'manager' | 'staff' | 'accountant';
+// Core Domain Types
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  REVIEW = 'review',
+  DONE = 'done',
+  CANCELLED = 'cancelled'
+}
 
+export enum PaymentStatus {
+  UNPAID = 'unpaid',
+  PARTIAL = 'partial',
+  PAID = 'paid',
+  OVERDUE = 'overdue',
+  REFUNDED = 'refunded'
+}
+
+export enum UserRole {
+  STAFF = 'staff',
+  ACCOUNTANT = 'accountant',
+  MANAGER = 'manager',
+  ADMIN = 'admin'
+}
+
+export enum Priority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
+
+export enum CaseStatus {
+  OPEN = 'open',
+  IN_PROGRESS = 'in_progress',
+  CLOSED = 'closed',
+  ARCHIVED = 'archived'
+}
+
+// Core Interfaces
 export interface User {
-  id: number;
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  role: UserRole;
+  permissions: Permission[];
+  department?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Permission {
+  id: string;
+  resource: string;
+  actions: string[];
+  conditions?: {
+    ownedOnly?: boolean;
+    departmentOnly?: boolean;
+    timeRestricted?: boolean;
+  };
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  company?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Case {
+  id: string;
+  caseCode: string;
+  title: string;
+  description: string;
+  status: CaseStatus;
+  priority: Priority;
+  client: Client;
+  assignedTo: User;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  dueDate?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  members: User[];
+}
+
+export interface Task {
+  id: string;
+  taskCode: string;
+  caseId: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: Priority;
+  assignee: User;
+  reporter: User;
+  tags: string[];
+  dueDate?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  dependencies: string[];
+  attachments: Attachment[];
+  comments: Comment[];
+  subtasks: Task[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payment {
+  id: string;
+  caseId: string;
+  invoiceId?: string;
+  amount: number;
+  paidAmount: number;
+  currency: string;
+  status: PaymentStatus;
+  dueDate: string;
+  paidDate?: string;
+  paymentMethod?: PaymentMethod;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  caseId: string;
+  clientId: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+  uploadedBy: User;
+  createdAt: string;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  author: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkLog {
+  id: string;
+  taskId: string;
+  userId: string;
+  description: string;
+  timeSpent: number; // in minutes
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// API Response Types
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// Form Types
+export interface LoginForm {
   username: string;
-  full_name: string;
-  role: Role;
-  is_active?: boolean;
+  password: string;
+  rememberMe?: boolean;
 }
 
-export interface AuthTokens {
-  token: string;
-  refresh_token?: string;
-}
-
+// API Request Types
 export interface LoginRequest {
   username: string;
   password: string;
 }
 
+// API Response Types
 export interface LoginResponse {
   token: string;
   refresh_token: string;
   user: User;
 }
 
-export type StepStatus = 'PROCESSING' | 'PENDING_APPROVAL';
+export interface TaskForm {
+  title: string;
+  description: string;
+  priority: Priority;
+  assigneeId: string;
+  dueDate?: string;
+  estimatedHours?: number;
+  tags: string[];
+  caseId: string;
+}
 
+export interface CaseForm {
+  title: string;
+  description: string;
+  priority: Priority;
+  clientId: string;
+  assignedToId: string;
+  dueDate?: string;
+  estimatedHours?: number;
+  tags: string[];
+}
+
+// Query Parameters
+export interface TaskQueryParams {
+  page?: number;
+  limit?: number;
+  status?: TaskStatus;
+  priority?: Priority;
+  assigneeId?: string;
+  caseId?: string;
+  search?: string;
+  tags?: string[];
+  dueDate?: string;
+}
+
+export interface CaseQueryParams {
+  page?: number;
+  limit?: number;
+  status?: CaseStatus;
+  priority?: Priority;
+  assignedToId?: string;
+  clientId?: string;
+  search?: string;
+  tags?: string[];
+  createdAt?: string;
+}
+
+// UI State Types
+export interface BoardColumn {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  tasks: Task[];
+  limit?: number;
+}
+
+export interface FilterState {
+  status: TaskStatus[];
+  priority: Priority[];
+  assignee: string[];
+  tags: string[];
+  dateRange: {
+    start?: string;
+    end?: string;
+  };
+}
+
+export interface SortState {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+// Notification Types
+export interface Notification {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  actionUrl?: string;
+}
+
+// Dashboard Types
+export interface DashboardStats {
+  totalCases: number;
+  activeCases: number;
+  myTasks: number;
+  overdueTasks: number;
+  pendingPayments: number;
+  totalRevenue: number;
+}
+
+export interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor?: string[];
+    borderColor?: string;
+    borderWidth?: number;
+  }[];
+}
+
+// Error Types
+export interface ApiError {
+  message: string;
+  code: string;
+  details?: any;
+}
+
+// Theme Types
+export interface ThemeConfig {
+  mode: 'light' | 'dark';
+  primaryColor: string;
+  fontSize: 'sm' | 'md' | 'lg';
+}
+
+// Customer Types
 export interface Customer {
   id: number;
   full_name: string;
@@ -36,8 +357,6 @@ export interface Customer {
   company_name?: string;
   tax_code?: string;
   note?: string;
-  created_by?: number;
-  creator?: { id: number; full_name: string; role: string };
   created_at: string;
   updated_at: string;
 }
@@ -59,335 +378,7 @@ export interface CustomerQueryParams {
   search?: string;
 }
 
-export interface Contract {
-  id: number;
-  task_id: number;
-  contract_number: string;
-  contract_type_id?: number;
-  contract_type_name?: string;
-  title: string;
-  value?: number;
-  signing_date?: string;
-  effective_date?: string;
-  expiry_date?: string;
-  status: 'draft' | 'signed' | 'active' | 'expired' | 'cancelled';
-  file_url?: string;
-  note?: string;
-  created_by?: number;
-  creator?: { id: number; full_name: string; role: string };
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateContractRequest {
-  contract_number: string;
-  contract_type_id?: number;
-  title: string;
-  value?: number;
-  signing_date?: string;
-  effective_date?: string;
-  expiry_date?: string;
-  status?: Contract['status'];
-  file_url?: string;
-  note?: string;
-}
-
-export interface ContractType {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateContractTypeRequest {
-  name: string;
-  description?: string;
-  is_active?: boolean;
-}
-
-export interface UpdateContractTypeRequest {
-  name?: string;
-  description?: string;
-  is_active?: boolean;
-}
-
-export interface Task {
-  id: number;
-  workflow_id?: number;
-  customer_id?: number | null;
-  // customer model (nếu chưa có, đảm bảo bạn có interface Customer ở file này)
-  customer?: Customer | null;
-
-  title: string;
-  description?: string;
-  current_step: number;
-  // step status e.g. PROCESSING
-  step_status?: StepStatus | string;
-  // role required for current step
-  current_step_role?: string;
-  // flag if this is last step
-  is_last_step?: boolean;
-
-  status: 'ACTIVE' | 'REJECTED' | 'DONE';
-  is_paid: boolean;
-  is_collected: boolean;
-  amount?: number | null;
-  paid_amount?: number | null;
-  collected_amount?: number | null;
-  paid_at?: string | null;
-  collected_at?: string | null;
-
-  assignee?: { id: number; full_name: string } | null;
-  assignee_id?: number | null;
-
-  // created_by can be id or user object
-  created_by?: number | { id: number; full_name: string } | null;
-
-  // documents / contracts may be null from API
-  documents?: TaskDocument[] | null;
-  contracts?: Contract[] | null;
-
-  // current step config (may be present)
-  current_step_config?: WorkflowStepConfig | null;
-
-  workflow_name?: string;
-  total_steps?: number;
-
-  // API uses "deadline"
-  deadline?: string | null;
-
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TaskDocument {
-  id: number;
-  step: number;
-  version: number;
-  file_name: string;
-  file_url: string;
-  file_size: number;
-  uploaded_by: string;
-  created_at: string;
-}
-
-export interface TaskHistory {
-  id: number;
-  action_type: 'NEXT_STEP' | 'REJECT' | 'APPROVE' | 'ASSIGN' | 'UPLOAD' | 'PAYMENT' | string;
-  note?: string | null;
-  file_url?: string | null;
-  // actor info (API may provide one of these)
-  created_by?: number | null;
-  user_id?: number | null;
-  actor_name?: string | null;
-  // optional embedded user object (some endpoints include nested user)
-  user?: {
-    id?: number;
-    full_name?: string | null;
-    email?: string | null;
-  } | null;
-  created_at?: string | null;
-  // extendable: any other metadata
-  [key: string]: any;
-}
-
-export interface WorkflowStepConfig {
-  step: number;
-  step_name: string;
-  required_role: Role;
-  require_file: boolean;
-  require_payment: boolean;
-  require_approval?: boolean;
-  is_active?: boolean;
-  is_fixed?: boolean;
-  description?: string;
-}
-
-// ── Workflow ──
-
-export interface Workflow {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  step_count: number;
-  created_at: string;
-}
-
-export interface WorkflowDetail extends Workflow {
-  steps: WorkflowStepConfig[];
-  creator?: { id: number; full_name: string };
-  updated_at: string;
-}
-
-export interface CreateWorkflowStep {
-  step_name: string;
-  required_role: Role;
-  require_file?: boolean;
-  require_approval?: boolean;
-  description?: string;
-}
-
-export interface CreateWorkflowRequest {
-  name: string;
-  description?: string;
-  steps_before_payment: CreateWorkflowStep[];
-  processing_steps: CreateWorkflowStep[];
-}
-
-export interface UpdateWorkflowRequest {
-  name?: string;
-  description?: string;
-  is_active?: boolean;
-  steps_before_payment?: CreateWorkflowStep[];
-  processing_steps?: CreateWorkflowStep[];
-}
-
-export interface Notification {
-  id: number;
-  title: string;
-  body: string;
-  type: string;
-  is_read: boolean;
-  task_id?: number;
-  created_at: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-  };
-}
-
-// ── User Management ──
-
-export interface UserCertificate {
-  id: number;
-  user_id: number;
-  name: string;
-  type: 'degree' | 'certificate';
-  issuing_organization?: string;
-  issue_date?: string;
-  expiry_date?: string;
-  credential_id?: string;
-  file_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserEducation {
-  id: number;
-  user_id: number;
-  institution: string;
-  degree?: string;
-  field_of_study?: string;
-  start_year?: number;
-  end_year?: number;
-  gpa?: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserDetail extends User {
-  email?: string;
-  phone?: string;
-  avatar_url?: string;
-  department?: string;
-  position?: string;
-  address?: string;
-  date_of_birth?: string;
-  gender?: 'male' | 'female' | 'other';
-  created_by?: number;
-  created_at: string;
-  updated_at: string;
-  last_login_at?: string;
-  certificates: UserCertificate[];
-  educations: UserEducation[];
-}
-
-export interface CreateUserRequest {
-  username: string;
-  password: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  role: Role;
-  department?: string;
-  position?: string;
-  address?: string;
-  date_of_birth?: string;
-  gender?: 'male' | 'female' | 'other';
-  is_active?: boolean;
-}
-
-export interface UpdateUserRequest {
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  role?: Role;
-  department?: string;
-  position?: string;
-  address?: string;
-  date_of_birth?: string;
-  gender?: 'male' | 'female' | 'other';
-  is_active?: boolean;
-}
-
-export interface UserQueryParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  role?: Role | '';
-  is_active?: boolean | '';
-  department?: string;
-  sort_by?: string;
-  sort_order?: 'asc' | 'desc';
-}
-
-export interface CreateCertificateRequest {
-  name: string;
-  type: 'degree' | 'certificate';
-  issuing_organization?: string;
-  issue_date?: string;
-  expiry_date?: string;
-  credential_id?: string;
-  file_url?: string;
-}
-
-export interface CreateEducationRequest {
-  institution: string;
-  degree?: string;
-  field_of_study?: string;
-  start_year?: number;
-  end_year?: number;
-  gpa?: string;
-  description?: string;
-}
-
-export interface UpdateProfileRequest {
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  date_of_birth?: string;
-  gender?: 'male' | 'female' | 'other';
-}
-
-export type PaymentAction = 'confirm_paid' | 'confirm_collected';
-
-export interface PaymentRequest {
-  action: PaymentAction;
-  amount: number;
-  note?: string;
-}
-
-export interface ApiError {
-  code: string;
-  message: string;
-}
+// Export all enums and types
+export type PaymentMethod = 'bank_transfer' | 'cash' | 'check' | 'card' | 'crypto';
+export type FileType = 'pdf' | 'docx' | 'xlsx' | 'image' | 'video' | 'other';
+export type ViewMode = 'board' | 'list' | 'calendar' | 'gantt';

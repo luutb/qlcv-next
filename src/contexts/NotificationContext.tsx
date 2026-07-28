@@ -27,12 +27,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   const refreshUnreadCount = useCallback(async () => {
+    if (process.env.NEXT_PUBLIC_DISABLE_NOTIFICATIONS === 'true') {
+      return;
+    }
+
     try {
       const { data } = await apiClient.get<{ count: number }>(
         '/notifications/unread-count',
       );
       setUnreadCount(data.count);
-    } catch {
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
       // silently fail – the count will stay at its previous value
     }
   }, []);
