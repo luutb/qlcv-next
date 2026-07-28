@@ -542,3 +542,343 @@ The TypeScript diagnostic is expected to find errors under the documented pre-ST
 5. Migration/deletion prerequisites protect consumers and potential stored data.
 6. Later Story impacts and the missing dedicated Notification implementation backlog item are explicit.
 7. No secret, token, environment value, remote URL, private file content, application file, backlog checkbox, review record, Git index/ref, or commit was changed by this Issue.
+
+---
+
+## IS-01.2.3 — Legacy Contract and Workflow scope
+
+### Decision summary
+
+| Capability | Decision | Exact outcome |
+|---|---|---|
+| Contract Types / configuration | **KEEP** | Retain a small administrator-owned Contract Type taxonomy: list, create, update, activate/deactivate, and safe deletion rules. Migrate it to the canonical service architecture and add an explicit implementation backlog item. |
+| Full Contract lifecycle, Contract documents, e-signature, and Contract payment milestones | **REMOVE FROM MVP** | Keep the deleted lifecycle UI/repository deleted. No Contract record CRUD, document signing, signature capture, or Contract-specific milestone ledger is part of the current MVP. A later accepted Contract Story is required to reintroduce any part. |
+| Core Workflow definitions, steps, and Task transitions | **KEEP** | Retain Workflow administration and the server-authoritative Workflow/Task step contract because Task creation, filtering, approval, rejection, file requirements, payment gates, completion, and Board rules depend on it. |
+| Workflow templates/library | **REMOVE FROM MVP** | Do not restore the deleted template library or import the separate workflow-template settings UI. Core Workflow CRUD uses one confirmed contract without a template layer. |
+| Workflow version-history compare/restore UI | **REMOVE FROM MVP** | Do not restore the deleted history UI. Backend immutability/snapshot semantics for in-use Workflows remain a prerequisite for safe core editing, but a user-facing version browser/restore flow is not an MVP deliverable. |
+| Workflow auto-assign rules | **REMOVE FROM MVP** | Do not restore the deleted rules UI. Task assignment remains explicit unless a later Story defines algorithms, capacity inputs, fairness, overrides, audit, and backend execution. |
+| Legacy custom Workflow execution UI/repository | **REMOVE FROM MVP** | Keep `CustomWorkflow` and `/custom-workflows` execution/history artifacts deleted; they duplicate the retained core Workflow concept without a current consumer or accepted contract. |
+| Separate workflow-board / issue-board lineage | **REMOVE FROM MVP** | Do not merge or copy the non-ancestor `qlcv/src/features/workflow-board` implementation into this application. Its macro-column/template API and Ant Design UI are a separate architecture, not evidence for the current MUI/Next tree. |
+
+No capability is `DEFER` in this decision. Legal, backend, data, RBAC, Files, and Payment unknowns are explicit implementation gates. They do not require keeping deleted legacy surfaces in a third, ambiguous state. A later product decision may add a new Story; it must not silently reinterpret `KEEP` or `REMOVE FROM MVP`.
+
+This Issue changes no application code and authorizes no restoration or deletion.
+
+### Decision ownership and custody
+
+- Decision authority: **ST-01 owner / Tech Lead**.
+- Decision-record custodian: **`repo_stabilizer`** for `IS-01.2.3`.
+- Core Workflow delivery owner: **Feature Team Admin — Configuration** in ST-12.
+- Task transition consumer owner: **Feature Team Core — Task** in ST-09; Board enforcement follows ST-10.
+- Contract Type delivery owner proposed by this decision: **Feature Team Admin — Configuration**, subject to the backlog refinement below.
+- Canonical types and data-layer owners: **`core_types`** in ST-02 and **`api_services`** in ST-03.
+- Full Contract lifecycle product authority: unassigned because no current Story owns it. Product/legal/finance ownership must be established before a future Contract Story is accepted.
+- Independent Issue acceptance: **`qa_reviewer`**.
+
+These are role assignments rather than named human owners. The repository contains no evidence naming the people holding those roles.
+
+## Evidence audit
+
+### Current routes, admin pages, and navigation
+
+The current tree retains four direct routes:
+
+- `src/app/(dashboard)/admin/contract-types/page.tsx`
+- `src/app/(dashboard)/admin/workflows/page.tsx`
+- `src/app/(dashboard)/admin/workflows/create/page.tsx`
+- `src/app/(dashboard)/admin/workflows/[id]/page.tsx`
+
+The Contract Types route renders list/create/edit/delete controls through `ContractTypeRepo`. The Workflow routes render list/delete, create with configured steps, and detail/edit/activation controls through `WorkflowRepo`.
+
+The current `src/components/layout/Sidebar.tsx:45`–`52` exposes neither route. Immediately before commit `1daaac7`, the Sidebar exposed both “Quản lý quy trình” and “Quản lý loại hợp đồng” to `admin`. Historical menu roles are intent evidence, not a current authorization policy. Direct URL access and API mutations still require server-side and route-level authorization review under ST-07.
+
+There is no current Contract list/detail/create route, Customer Contract surface, or Contract-specific Task panel. Therefore the surviving Contract Type route is a bounded configuration artifact, not evidence that a full Contract journey exists.
+
+### Current Contract artifacts and linkages
+
+| Artifact / linkage | Evidence | Scope interpretation |
+|---|---|---|
+| `src/app/(dashboard)/admin/contract-types/page.tsx` | Current CRUD UI for name, description, and active state | Supports `KEEP` for the small taxonomy only; it is currently unreachable from Sidebar and not type-safe. |
+| `src/repositories/ContractTypeRepo.ts` | Current legacy-client calls to `/contract-types` for list/create/update/delete | Endpoint strings show intended integration, not backend existence or safe-delete behavior. Must migrate to a canonical service before acceptance. |
+| `src/types/index.ts` | Current file no longer exports `ContractType`, create/update requests, `Contract`, or `CreateContractRequest` | Focused TypeScript diagnostics confirm the surviving page/repository do not compile. Recreate only verified Contract Type DTOs under ST-02; do not restore the entire old type block. |
+| Task/customer current code | Task creation selects Workflow and Customer; current Task and Customer models/routes expose no Contract CRUD relationship | No current consumer justifies restoring a full Contract lifecycle. |
+| `src/types/label.types.ts` and labels UI | A `contract` label category exists | A label category is classification metadata, not a Contract record, signature, document, or lifecycle contract. |
+| `src/types/budget.ts` | Budget/Expense requests may contain `contract` reference fields | Optional identifiers do not prove a Contract module or endpoint. They remain unverified DTO fields under the finance decision. |
+| Audit-log filter | Admin audit UI includes `contract` as a selectable category | A filter option is not proof of persisted Contract events or a product journey. |
+
+Before `1daaac7`, the Task type embedded `contracts?: Contract[]`, `ContractRepo` called Task-scoped and Contract-scoped endpoints, and `ContractDialog` modeled number/type/value/dates/status/file URL. Commit `1daaac7` removed those types and artifacts while retaining Contract Types. This split is evidence to keep configuration bounded and leave the full lifecycle out of MVP.
+
+### Historical full Contract capabilities
+
+The parent of `1daaac7` contained:
+
+- `src/components/contract/ContractDialog.tsx`
+- `src/components/contract/ContractFileUpload.tsx`
+- `src/components/contract/ESignaturePad.tsx`
+- `src/components/contract/PaymentMilestoneTracker.tsx`
+- `src/repositories/ContractRepo.ts`
+
+Those files were deleted together by `1daaac7`. The observed implementations do not justify restoration:
+
+- `ContractDialog` was a form and callback surface, not a complete route/authorization/audit journey.
+- `ContractFileUpload` depended on the now-removed generic document layer addressed by `IS-01.2.2`.
+- `ESignaturePad` stored a drawn canvas image plus client-supplied signer fields/time. No identity proof, consent ceremony, tamper-evident envelope, certificate, trusted timestamp, evidence export, revocation, retention, or legal-jurisdiction contract was found.
+- `PaymentMilestoneTracker` held local callback-driven state and could toggle/mark payment. No ledger, invoice, idempotency, reconciliation, or ST-13 Payment integration was found.
+- `ContractRepo` used the legacy client and offered only Task-scoped list/create plus Contract update/delete; there was no full lifecycle service or test evidence.
+
+Accordingly, full Contract lifecycle, documents, e-signature, and milestones are **REMOVE FROM MVP**, not dormant code to recover.
+
+### Current core Workflow consumers
+
+| Consumer | Current dependency | Finding |
+|---|---|---|
+| `src/hooks/useWorkflows.ts` | Loads Workflows and supports active-only filtering through `WorkflowRepo` | Shared current consumer used by admin and Task pages; migrate rather than delete. |
+| Manager Task create | Requires a selected `workflowId` and sends `workflow_id` with Task creation | Direct product dependency on retained core Workflow definitions. |
+| Manager and staff Task lists | Display `workflow_name`, filter by `workflow_id`, and display current step configuration | Current type definitions no longer support these fields, but user journeys still depend on the contract. |
+| `src/services/task.service.ts` | Defines next-step, approve, reject, complete, assign, and payment actions | Core transitions exist as canonical-service intent and must be server-authoritative/idempotent. |
+| Workflow admin create/detail | Models named custom steps around fixed payment/completion steps, required roles, file requirement, approval, activation, and edit behavior | Strong core Workflow intent, but the fixed-step/payment layout must be confirmed with backend and finance; it must not become frontend-only authority. |
+| `src/lib/workflow.ts` | Looks up step config, checks required role, and builds next-step payloads | Useful behavior intent; client checks cannot replace backend authorization. |
+| `src/components/tasks/steps/*` | Contains default, file, payment, approval, and final step renderers | Dormant/broken: no outside consumer of `StepRenderer` was found and focused typecheck reports missing Workflow/Task/Payment types. Retain the required behaviors, not an assumption that these components work. |
+| Board | Current Board groups primarily by Task status; ST-10 explicitly requires invalid drops to be blocked according to Workflow | Board transition validity must consume the same canonical server rules rather than inventing a second state machine. |
+
+Core Workflow is therefore a required domain contract across ST-09, ST-10, and ST-12, not an isolated admin screen.
+
+### Workflow services, repositories, and types
+
+- `src/services/workflow.service.ts` was added by `1daaac7` and exported from `src/services/index.ts`. It is the target architecture but currently uses `any` for create/update data and imports Workflow types that no longer exist.
+- `src/repositories/WorkflowRepo.ts` and `src/hooks/useWorkflows.ts` still use the legacy `src/api/client.ts` response convention.
+- The current admin pages call `WorkflowRepo` directly instead of `workflowService`.
+- Commit `1daaac7` replaced `src/types/index.ts` and removed `Role`, Workflow, Workflow detail/step/create/update types, Task workflow/step/payment fields, and Contract types while leaving their consumers intact.
+- Focused TypeScript diagnostics report missing Contract/Workflow/Role/Payment exports across Contract Types, all Workflow pages, the hook, repository, service, workflow helpers, Task lists, and step renderers.
+
+This is an incomplete type/service migration. It supports `KEEP` plus repair of core Workflow and Contract Type configuration; it does not support restoring every removed legacy capability.
+
+### Advanced Workflow history and separate lineage
+
+Commit `0e912b5` added `CustomWorkflow`, a `/custom-workflows` repository with execute/history methods, Workflow template/library UI, Workflow version compare/restore UI, and auto-assign rules. These surfaces were callback-heavy, used local `any` shapes, and had no tests discovered. Across exactly `src/components/contract/{ContractDialog,ContractFileUpload,ESignaturePad,PaymentMilestoneTracker}.tsx`, `src/components/tasks/CustomWorkflow.tsx`, `src/components/workflow/{AutoAssignRules,WorkflowTemplateLibrary,WorkflowVersionHistory}.tsx`, `src/repositories/{ContractRepo,CustomWorkflowRepository}.ts`, and the added `src/services/workflow.service.ts`, `git diff --numstat 1daaac7^ 1daaac7` reports 2,469 deletions and 33 additions. Including `src/types/**` broadens that count to 2,785 deletions and 712 additions; it is not the scoped legacy Contract/advanced Workflow/service count.
+
+A separate commit `5c7d80d` contains `qlcv/src/features/workflow-board` and `/api/v1/workflow-templates` using macro columns, financial triggers, a different application root, and Ant Design. Read-only ancestry inspection shows that commit is not an ancestor of the current Story branch and is reachable through a separate branch lineage. It is not a prior version of the current Workflow UI and must not be copied as a shortcut.
+
+The current MUI application also has an existing Board with its own Task status/milestone views. Introducing the separate workflow-board would create competing Board, Workflow, payment-trigger, styling, API, and state-machine contracts. It remains **REMOVE FROM MVP** unless a future architecture decision explicitly replaces the current system.
+
+### Tests, backlog, and roadmap
+
+- The only current test file discovered is `src/components/ui/__tests__/SkeletonLoader.test.tsx`; no Contract or Workflow test/spec exists.
+- ST-09 explicitly retains Task workflow step, approval, rejection, completion, history, payment action, and attachment behavior (`docs/BACKLOG.md:352` onward).
+- ST-10 requires Board drops to respect Workflow validity.
+- ST-12 explicitly retains Workflow list/create/detail/edit and asks for a decision on versioning/template/auto-assign (`docs/BACKLOG.md:455`–`479`). This section resolves `IS-12.1.5` as **REMOVE FROM MVP** for those legacy UI capabilities.
+- ST-13 owns Payment behavior; Workflow payment gates cannot create a second financial source of truth.
+- ST-17 schedules Workflow fixtures and Workflow/Label admin E2E coverage.
+- The roadmap retains list/create/detail/edit Workflow and asks to intentionally restore or remove old versioning/auto-assign UI.
+- No Story/Task/Issue currently implements or accepts Contract Type configuration, and no Story owns the full Contract lifecycle.
+
+## Contract Types / configuration — KEEP
+
+### Precise MVP boundary
+
+In scope:
+
+1. Administrator-only list of Contract Types.
+2. Create and update `name`, optional `description`, and active/inactive state after backend confirmation.
+3. Prefer deactivate/archive over deletion when a type is referenced.
+4. Delete only if the backend proves no reference from persisted data and returns a stable domain error otherwise.
+5. Loading, empty, validation, duplicate-name, conflict, permission, and retry-safe error behavior.
+6. Canonical Contract Type DTO/service and focused service/component tests.
+7. Navigation only after route authorization and the complete flow pass.
+
+Out of scope:
+
+- Contract records, customers' Contracts, Contract value/date/status management, document upload, signature, payment milestones, renewal, reminders, reporting, or audit export.
+- Reintroducing old `Contract`/`CreateContractRequest` types solely to make deleted code compile.
+- Treating an active Contract Type as permission to expose a full Contract feature.
+- Keeping `ContractTypeRepo` after its page migrates to a tested canonical service.
+
+Current paths to protect until migration succeeds are the Contract Types admin page and `ContractTypeRepo`. Their behavior may be replaced, but neither may be deleted before the `KEEP` decision is implemented or explicitly revised.
+
+## Full Contract lifecycle/documents/e-signature/payment milestones — REMOVE FROM MVP
+
+### Precise boundary
+
+Keep all deleted full-Contract artifacts deleted. Do not expose endpoint strings, placeholder routes, dormant buttons, or label/audit options as proof that Contract management works.
+
+A future Contract capability requires a new accepted Story with, at minimum:
+
+1. Business owner, record/customer/task ownership model, lifecycle/status state machine, identifiers, dates, amendments, termination, renewal, and audit rules.
+2. Backend API/schema, migration/retention policy, optimistic concurrency, authorization, deletion/archive policy, and existing-data inventory.
+3. Document classification, storage, access, version/retention, malware scanning, download authorization, and the `IS-01.2.2` attachment decision.
+4. Legal review for jurisdiction, consent, signer authentication, signature intent, integrity/evidence envelope, timestamp, certificate, revocation, privacy, retention, and admissibility before any e-signature UI.
+5. ST-13 alignment for invoices, payment milestones, partial/overpayment, currency, ledger ownership, idempotency, reconciliation, refund/cancel, and audit. A UI toggle cannot mark financial truth.
+6. RBAC/tenant isolation, notifications, accessibility, contract tests, E2E, security review, UAT, and release acceptance.
+
+Until those prerequisites have a funded Story and owner, Contract lifecycle is not an implementation dependency for the retained Contract Type taxonomy.
+
+## Core Workflow definitions/steps/Task transitions — KEEP
+
+### Precise MVP boundary
+
+In scope:
+
+1. Workflow list/detail plus create/update of name, description, active state, and ordered steps.
+2. Step name/key/order, required role, file requirement, approval requirement, payment-gate reference, terminal state, and allowed transitions only as confirmed by backend DTOs.
+3. Task selection of an active Workflow at creation and stable Workflow identity on existing Tasks.
+4. Server-authoritative next-step, approve, reject, complete, assign, and permitted Board transition behavior with current-step/version preconditions.
+5. History/audit of Task transitions sufficient to explain actor, prior/new state, timestamp, note, failure, file reference, and payment reference.
+6. Deactivate/archive and reference-aware delete behavior for Workflows used by Tasks.
+7. Permission enforcement on the server plus consistent client affordances.
+8. Focused type/service/admin/Task/Board tests and E2E coverage.
+
+Out of the retained MVP:
+
+- Template library/default templates as a separate domain.
+- User-facing Workflow version comparison or restore.
+- Auto-assign, custom expression execution, arbitrary triggers, execution-history dashboard, macro columns, financial-tag DSL, or a second Workflow Board.
+- Frontend hard-coding of step number `9`, localized step names, fixed payment positions, or role checks as the source of truth.
+- Hard deletion of a Workflow with persisted Tasks unless the backend proves a safe policy.
+- Bulk migration of live Tasks to edited Workflow steps without an explicit data plan.
+
+The core Workflow UI may be rewritten. `KEEP` protects the capability and consumer contracts, not the current broken repository/pages line-for-line.
+
+## Advanced Workflow capabilities — REMOVE FROM MVP
+
+### No-wholesale-restore policy
+
+Do not revert, cherry-pick, or copy these deleted/separate surfaces wholesale:
+
+- `src/components/tasks/CustomWorkflow.tsx`
+- `src/repositories/CustomWorkflowRepository.ts`
+- `src/components/workflow/WorkflowTemplateLibrary.tsx`
+- `src/components/workflow/WorkflowVersionHistory.tsx`
+- `src/components/workflow/AutoAssignRules.tsx`
+- `qlcv/src/features/workflow-board/**`
+- `qlcv/src/api/workflow.api.ts`
+
+Historical code may inform requirements only. Any future selected feature needs its own Story, backend contract, data/RBAC design, current framework/library implementation, tests, and acceptance gates.
+
+Removing version-history UI does not permit unsafe mutation of live Workflows. ST-12 must still choose and test one backend-safe rule: immutable published versions/snapshots, edit-only-when-unused, clone-on-change, or explicit migration of affected Tasks. That safety rule belongs to core Workflow data integrity, not to the removed compare/restore UI.
+
+## Backend, data, RBAC, legal, Files, and Payment prerequisites
+
+### Contract Types
+
+1. Confirm `/contract-types` response envelope, IDs, uniqueness, active semantics, pagination if any, reference/conflict errors, and delete/archive rules.
+2. Inventory persisted references before deleting or renaming a type; no database was available in this Issue.
+3. Restrict mutations to the confirmed admin/configuration permission and enforce it server-side.
+
+### Core Workflow
+
+1. Confirm whether the canonical backend uses `/workflows`, `/workflows/{id}/configs`, another versioned path, or separate definition/instance resources.
+2. Define Workflow publication/activation, step IDs versus order, fixed/terminal steps, validation, transition graph, concurrency/version precondition, and behavior when definitions change while Tasks are active.
+3. Define Task transition idempotency, duplicate submission, rollback/failure response, approval/rejection authority, audit, and current-state conflict handling.
+4. Align `require_file` with the `IS-01.2.2` Task attachment gate: file ownership, validation, storage, and transition atomicity must be explicit.
+5. Align payment gates with ST-13: Workflow references a verified Payment condition; it must not calculate, confirm, or duplicate ledger truth independently.
+6. Define route/menu and action permissions through ST-07; client role checks are presentation only.
+7. Inventory existing Workflows and Tasks and produce a migration/rollback plan before changing IDs, steps, status values, or response shapes.
+
+### Removed Contract capabilities
+
+Legal/e-signature/payment prerequisites are not workarounds for MVP removal. They are entry criteria for a future Story. No historical canvas, file callback, or milestone component may be activated before all applicable prerequisites and independent security/legal/product reviews pass.
+
+## Safe migration and deletion gates
+
+1. **ST-02:** reconstruct verified `Role`, Contract Type, Workflow, Workflow step/detail/request, Task transition/history, and Payment action types. Do not restore the old all-in-one type block or use `any` to mask conflicts.
+2. **ST-03:** implement/mend canonical Contract Type and Workflow services on `src/services/api/client.ts`; migrate Contract Types page, Workflow pages, `useWorkflows`, Task consumers, and Board consumers away from repositories/direct clients.
+3. Delete `ContractTypeRepo.ts` only after its only current page uses the canonical service and focused CRUD/conflict tests pass.
+4. Delete `WorkflowRepo.ts` only after admin, hook, Task create/filter/list, transition, and Board consumers use tested canonical services.
+5. Remove or replace dormant step components only after each retained file/payment/approval/default/final behavior maps to a tested successor or an accepted out-of-scope decision.
+6. Keep already deleted full Contract and advanced Workflow files deleted; do not create stubs or dead navigation for them.
+7. Before modifying active Workflow definitions, prove backend reference/version safety and prepare data migration plus rollback for existing Tasks.
+8. Before adding navigation, require route functionality, loading/error/empty states, server authorization, accessibility, and focused E2E.
+9. Before any hard delete, confirm consumer imports, backend references, stored data, audit/retention policy, and recovery path. This Issue proves none of those external states.
+10. Follow the pre-ST-05 baseline/no-regression policy until all quality gates become mandatory green.
+
+## Dependency risks
+
+| Risk | Impact | Control |
+|---|---|---|
+| Surviving Contract Types and Workflow routes import deleted types | Current routes do not typecheck | ST-02 verified DTO reconstruction; no wholesale type rollback |
+| Current pages/hooks call repositories while new `workflowService` exists | Competing response/error/auth semantics | ST-03 migration to one service/client before repository deletion |
+| Workflow create/detail hard-code fixed payment positions and infer steps by localized names | Wrong transition/payment behavior if backend differs | Backend-defined stable step keys/types and validation |
+| Workflow edit can affect Tasks already in progress | Orphaned or semantically changed Task instances | Immutable snapshot/clone/edit-only-unused/migration rule before edit acceptance |
+| Client role helper and UI controls are mistaken for authorization | Unauthorized definition or transition actions | Server RBAC/tenant checks; ST-07 negative tests |
+| File-required steps and payment-required steps span other domains | Non-atomic transition, orphan file, double payment confirmation | Explicit Files/ST-13 contracts, idempotency, transaction/audit rules |
+| Contract Type is retained without a backlog delivery item | Broken, unreachable page persists indefinitely | Add the refinement below before implementation scheduling |
+| Full Contract labels/audit filters imply a working module | Misleading UX and reporting | Hide/remove unsupported affordances in owning Stories or document them as generic taxonomy only |
+| Canvas signature is mistaken for legally valid e-signature | Legal, identity, integrity, and privacy exposure | Full Contract/e-sign remains out of MVP; future legal/security design required |
+| Payment milestones compete with Task/Payment finance flow | Multiple sources of truth and reconciliation failure | Keep Contract milestones out; future finance-owned ledger integration only |
+| Separate workflow-board lineage is copied into current app | Duplicate framework/API/state machine/Board | Architecture decision and replacement Story required; no current import/cherry-pick |
+| No Contract/Workflow tests | High regression and data-integrity risk | ST-04/ST-12/ST-17 focused contract, transition, admin, and E2E tests |
+
+## Required backlog refinement
+
+The coordinator should record these refinements in a separately reviewed backlog/document Issue; this implementation does not edit `docs/BACKLOG.md`:
+
+1. Add **Contract Type configuration** as an explicit Task or Issue, preferably under ST-12 Admin Configuration or another named configuration Story. Include canonical service migration, verified DTO, validation, reference-aware deactivate/delete, RBAC, navigation decision, tests, and E2E acceptance.
+2. Record `IS-12.1.5` outcome: legacy template library, version-history UI, and auto-assign are **REMOVE FROM MVP**. Replace vague “keep or remove” implementation work with cleanup/evidence checks.
+3. Add a core Workflow data-integrity Issue under ST-12 for published/in-use definition edit semantics, snapshots/version preconditions, Task migration, and rollback. This is required even though version-history UI is removed.
+4. Make ST-09/ST-10 explicitly share one server-authoritative transition contract, including conflict/idempotency, approval/rejection, file and payment gates, history, and invalid Board drops.
+5. Link Workflow payment gates to ST-13.1 and file-required steps to `IS-09.3.3` plus the `IS-01.2.2` attachment decision.
+6. Do not add a full Contract lifecycle item to an existing Story implicitly. If product later wants Contract CRUD/documents/e-signature/milestones, create a new Story with named product/legal/finance/security owners and the prerequisites in this section.
+7. Extend ST-17 coverage with Contract Type admin CRUD/conflict only if the `KEEP` capability is implemented; do not add full Contract fixtures under the current MVP.
+
+## Effect on later Stories
+
+| Story | Required effect |
+|---|---|
+| ST-02 | Restore/consolidate only verified Contract Type and core Workflow/Task transition types. Full Contract and advanced Workflow types remain absent unless a future Story is accepted. |
+| ST-03 | Add/mend canonical Contract Type and Workflow services; migrate all retained consumers; then remove legacy repositories with proof. |
+| ST-04/ST-05 | Add service/type/admin/transition tests and resolve current missing-type errors without increasing the baseline; enforce all-green gates after ST-05. |
+| ST-07 | Define admin configuration permissions and Task transition/file/payment permissions; test direct-route and API denial, not Sidebar visibility alone. |
+| ST-09 | Use the canonical Workflow instance/step contract for Task create, next, approve, reject, complete, history, file, and payment actions. |
+| ST-10 | Validate Board moves against the same server Workflow rules and recover from rejected/conflicting transitions. Do not import the separate workflow-board. |
+| ST-12 | Deliver core Workflow list/create/detail/edit safely; implement the Contract Type refinement if assigned; remove advanced Workflow UI from MVP and define in-use edit semantics. |
+| ST-13 | Own payment truth and reconciliation. Workflow may gate on a confirmed condition; Contract milestones remain out of MVP. |
+| ST-14 | Avoid reporting/setting claims for full Contracts; audit filters must reflect real event sources. |
+| ST-15/ST-16 | Add admin navigation only after retained routes work with RBAC and accessibility; no dead links for removed capabilities. |
+| ST-17/ST-18 | Add Workflow/Task transition and retained Contract Type admin E2E/UAT. Full Contract/e-sign/milestone scenarios are not MVP release criteria. |
+
+## Reproducible read-only commands
+
+Run from the repository root. These commands avoid environment values, remote URLs, credentials, author emails, and private Contract/document content:
+
+```sh
+git status --porcelain=v2 --branch
+rg --files src docs | rg -i 'contract|workflow|e-sign|esign|signature|milestone|auto.?assign|template|version'
+rg -n -i --glob '!node_modules/**' '\b(contract|contracts|contract.?type|workflow|workflows|e.?sign|signature|milestone|auto.?assign|versioning|template)\b' src docs
+rg -n 'ContractType|ContractRepo|ContractDialog|WorkflowRepo|workflowService|useWorkflows|WorkflowStep|workflow_id|workflow_name|current_step|require_payment|require_approval' src
+rg --files src/app/'(dashboard)' | sort
+rg -n -i 'contract|workflow' src/components/layout/Sidebar.tsx
+rg --files | rg -i '(test|spec)\.(ts|tsx|js|jsx)$'
+rg -n -i --glob '*.{test,spec}.{ts,tsx,js,jsx}' 'contract|workflow' .
+git log --all --format='%h%x09%ad%x09%s' --date=iso-strict --name-status -- ':(glob)**/*ontract*' ':(glob)**/*orkflow*'
+git ls-tree -r --name-only 1daaac7^ | rg -i 'contract|workflow|e-sign|esign|signature|milestone|auto.?assign|template|version'
+git diff-tree --no-commit-id --name-status -r 1daaac7 | rg -i 'contract|workflow|signature|milestone|auto.?assign|template|version'
+git show --format='%h%n%ad%n%s' --date=iso-strict --stat 1daaac7 -- src/types 'src/components/contract/**' 'src/components/workflow/**' src/components/tasks/CustomWorkflow.tsx src/repositories/ContractRepo.ts src/repositories/CustomWorkflowRepository.ts src/services/workflow.service.ts
+git diff 1daaac7^ 1daaac7 -- src/types/index.ts
+git merge-base --is-ancestor 5c7d80d HEAD
+git branch --all --contains 5c7d80d
+npx tsc --noEmit --pretty false --incremental false 2>&1 | rg -i 'contract|workflow|step(renderer|approval|payment|upload|final|default)|manager/tasks|staff/my-tasks'
+```
+
+The ancestry command exits `1` because `5c7d80d` is not an ancestor of current HEAD. The TypeScript diagnostic is expected to exit non-zero under the documented pre-ST-05 baseline. Both are read-only and did not alter the worktree.
+
+## Limitations
+
+- No backend repository, OpenAPI schema, database, Workflow instance inventory, Contract/Contract Type records, deployed environment, product analytics, stakeholder interview, legal opinion, signature provider, certificate/timestamp service, document store, payment ledger, or audit/event store was available.
+- Frontend endpoint strings and historical DTOs do not prove backend existence, response shape, authorization, data integrity, legal validity, or production use.
+- Static imports prove current source coupling, not runtime traffic. The lack of imports/tests does not prove that no external system or stored data depends on an endpoint.
+- Generic commit subjects do not explain why capabilities were removed or who approved removal.
+- The separate workflow-board lineage was inspected only as source/history evidence; no network, remote URL, private document, environment value, credential, token, or author email was inspected or recorded.
+- `KEEP` protects bounded capability intent, not current broken code. `REMOVE FROM MVP` is not authorization to delete stored data or incompatible backend resources.
+- Any revision requires a later explicit decision record with product/backend/data/security evidence and the normal QA/PO gates.
+
+## Independent QA readiness
+
+`IS-01.2.3` is ready for independent QA when the focused diff contains only this appended section in `docs/audits/ST-01-MODULE-SCOPE.md`. QA should verify:
+
+1. Contract Types, full Contract lifecycle/documents/e-sign/milestones, core Workflow, templates, version-history UI, auto-assign, custom Workflow, and separate workflow-board each have an explicit decision.
+2. Contract Types and core Workflow are `KEEP`; full Contract and every advanced/legacy Workflow surface are `REMOVE FROM MVP`.
+3. Decisions cite current routes/consumers, missing types/typecheck evidence, backlog/roadmap, tests, and relevant history without treating endpoint strings as backend proof.
+4. MVP in/out boundaries are precise and no deleted surface is approved for wholesale restoration.
+5. Backend/data/RBAC/legal/e-signature/Files/Payment gates and safe migration/deletion rules protect retained consumers and possible stored data.
+6. The missing Contract Type backlog work, ST-12.1.5 resolution, in-use Workflow edit safety, shared Task/Board transition contract, and future full Contract Story requirement are explicit.
+7. No application file, backlog checkbox, review record, Git index/ref/commit, environment value, credential, remote URL, author email, or private Contract/document content was changed or exposed by this Issue.
