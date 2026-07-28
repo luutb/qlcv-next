@@ -203,6 +203,71 @@ describe('canonical API client transport', () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it('does not write request, response, or error logs in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { default: apiClient } = await import('../client');
+    Cookies.set('token', 'production-secret-token');
+
+    apiClient.axios.defaults.adapter = async (config) => successfulResponse(config, {
+      data: { secret: 'production-response-secret' },
+      success: true,
+    });
+    await apiClient.post('/login?secret=production-query-secret', {
+      password: 'production-password-secret',
+    });
+
+    apiClient.axios.defaults.adapter = (config) => Promise.reject(
+      new AxiosError('Request failed', 'ERR_BAD_RESPONSE', config, undefined, {
+        config,
+        data: { message: 'production-error-secret' },
+        headers: {},
+        status: 500,
+        statusText: 'Internal Server Error',
+      })
+    );
+    await expect(apiClient.get('/failure?secret=production-error-query')).rejects.toBeDefined();
+
+    expect(log).not.toHaveBeenCalled();
+    expect(errorLog).not.toHaveBeenCalled();
+  });
+
+  it('logs only non-sensitive request metadata in development', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { default: apiClient } = await import('../client');
+    Cookies.set('token', 'development-secret-token');
+
+    apiClient.axios.defaults.adapter = async (config) => successfulResponse(config, {
+      data: { secret: 'development-response-secret' },
+      success: true,
+    });
+    await apiClient.post('/login?secret=development-query-secret', {
+      password: 'development-password-secret',
+    });
+
+    apiClient.axios.defaults.adapter = (config) => Promise.reject(
+      new AxiosError('development-transport-secret', 'ERR_BAD_RESPONSE', config, undefined, {
+        config,
+        data: { message: 'development-error-secret' },
+        headers: {},
+        status: 500,
+        statusText: 'Internal Server Error',
+      })
+    );
+    await expect(apiClient.get('/failure?secret=development-error-query')).rejects.toBeDefined();
+
+    const serializedLogs = JSON.stringify([
+      ...log.mock.calls,
+      ...errorLog.mock.calls,
+    ]);
+    expect(log).toHaveBeenCalled();
+    expect(errorLog).toHaveBeenCalled();
+    expect(serializedLogs).not.toMatch(/development-(secret-token|response-secret|query-secret|password-secret|transport-secret|error-secret|error-query)/);
+  });
+
   it('rejects every queued request when refresh fails', async () => {
     const [{ default: apiClient }, { ApiClientError }] = await Promise.all([
       import('../client'),

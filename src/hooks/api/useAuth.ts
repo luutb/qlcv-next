@@ -58,10 +58,8 @@ export const useAuth = () => {
       return authService.login(loginData);
     },
     onSuccess: (response) => {
-      console.log('Login success response:', response);
       const { token, refresh_token, user } = response;
-      
-      console.log('Setting cookies and localStorage...');
+
       // Store tokens
       Cookies.set('token', token, { sameSite: 'Lax' });
       Cookies.set('refresh_token', refresh_token, { sameSite: 'Lax' });
@@ -73,19 +71,11 @@ export const useAuth = () => {
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('role', user.role);
 
-      console.log('Cookies set:', {
-        token: Cookies.get('token'),
-        role: Cookies.get('role'),
-        user: Cookies.get('user')
-      });
-
       // Update query cache
       queryClient.setQueryData(['auth', 'user'], user);
-      
-      console.log('Redirecting based on role...');
+
       // Redirect directly to role-specific page
       setTimeout(() => {
-        console.log('Executing redirect...');
         const roleHome = {
           admin: '/admin',
           manager: '/manager', 
@@ -93,12 +83,8 @@ export const useAuth = () => {
           accountant: '/accountant'
         };
         const targetUrl = roleHome[user.role as keyof typeof roleHome] || '/staff';
-        console.log('Redirecting to:', targetUrl);
         window.location.href = targetUrl;
       }, 200);
-    },
-    onError: (error) => {
-      console.error('Login failed:', error);
     },
   });
 
@@ -122,8 +108,7 @@ export const useAuth = () => {
       // Redirect to login
       router.push('/login');
     },
-    onError: (error) => {
-      console.error('Logout failed:', error);
+    onError: () => {
       // Force logout even if API call fails
       Cookies.remove('token');
       Cookies.remove('refresh_token');

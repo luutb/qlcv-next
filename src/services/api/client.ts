@@ -28,7 +28,7 @@ class ApiClient {
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         if (isDevelopment) {
-          console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
+          console.log('API request', { method: config.method?.toUpperCase() });
         }
 
         const token = this.getAuthToken();
@@ -43,7 +43,7 @@ class ApiClient {
       },
       (error: unknown) => {
         if (isDevelopment) {
-          console.error('❌ Request Error:', error);
+          console.error('API request failed');
         }
         return Promise.reject(normalizeApiError(error));
       }
@@ -53,13 +53,19 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => {
         if (isDevelopment) {
-          console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+          console.log('API response', {
+            method: response.config.method?.toUpperCase(),
+            status: response.status,
+          });
         }
         return response;
       },
       async (error: AxiosError<unknown>) => {
         if (isDevelopment) {
-          console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data);
+          console.error('API response failed', {
+            method: error.config?.method?.toUpperCase(),
+            status: error.response?.status,
+          });
         }
         
         const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
