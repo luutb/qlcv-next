@@ -1,5 +1,7 @@
-export type TaskStatus = 'ACTIVE' | 'REJECTED' | 'DONE';
-export type StepStatus = 'PROCESSING' | 'PENDING_APPROVAL';
+import type { TaskStatus, TaskStepStatus } from '@/types/task.types';
+
+export type { TaskStatus } from '@/types/task.types';
+export type StepStatus = TaskStepStatus;
 
 type Option<T extends string> = {
   value: T | '';

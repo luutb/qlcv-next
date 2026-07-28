@@ -1,4 +1,5 @@
 import type { User } from './user.types';
+import type { Task, TaskStatus } from './task.types';
 
 export type {
   CreateCertificateRequest,
@@ -13,16 +14,17 @@ export type {
   UserEducation,
   UserQueryParams,
 } from './user.types';
+export type {
+  PaymentAction,
+  Task,
+  TaskHistory,
+  TaskHistoryAction,
+  TaskStatus,
+  TaskStepStatus,
+  WorkflowStepConfig,
+} from './task.types';
 
 // Core Domain Types
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-  CANCELLED = 'cancelled'
-}
-
 export enum PaymentStatus {
   UNPAID = 'unpaid',
   PARTIAL = 'partial',
@@ -84,28 +86,6 @@ export interface Case {
   estimatedHours?: number;
   actualHours?: number;
   members: User[];
-}
-
-export interface Task {
-  id: string;
-  taskCode: string;
-  caseId: string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  priority: Priority;
-  assignee: User;
-  reporter: User;
-  tags: string[];
-  dueDate?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  dependencies: string[];
-  attachments: Attachment[];
-  comments: Comment[];
-  subtasks: Task[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Payment {
