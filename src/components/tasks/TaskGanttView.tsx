@@ -134,7 +134,7 @@ const TaskGanttView: React.FC<TaskGanttViewProps> = ({ workflowId, className }) 
       ) : (
         <Grid container spacing={2}>
           {tasks.map((task) => (
-            <Grid item xs={12} key={task.id}>
+            <Grid size={12} key={task.id}>
               <Card variant="outlined">
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -149,27 +149,27 @@ const TaskGanttView: React.FC<TaskGanttViewProps> = ({ workflowId, className }) 
                   </Box>
                   
                   <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                       <Typography variant="body2" color="textSecondary">
                         Start: {formatDate(task.start)}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                       <Typography variant="body2" color="textSecondary">
                         End: {formatDate(task.end)}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={2}>
+                    <Grid size={{ xs: 12, sm: 2 }}>
                       <Typography variant="body2" color="textSecondary">
                         Duration: {calculateDuration(task.start, task.end)} days
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={2}>
+                    <Grid size={{ xs: 12, sm: 2 }}>
                       <Typography variant="body2" color="textSecondary">
                         Progress: {task.progress}%
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={2}>
+                    <Grid size={{ xs: 12, sm: 2 }}>
                       {task.assignee && (
                         <Typography variant="body2" color="textSecondary">
                           Assignee: {task.assignee}

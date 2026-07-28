@@ -175,7 +175,7 @@ export default function CreateTaskForm({
         )}
 
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               label="Tên công việc *"
@@ -192,7 +192,7 @@ export default function CreateTaskForm({
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               label="Mô tả chi tiết"
@@ -206,7 +206,7 @@ export default function CreateTaskForm({
             />
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <UserSelect
               value={formData.assignee_id}
               onChange={(value) => setFormData({ ...formData, assignee_id: value })}
@@ -222,7 +222,7 @@ export default function CreateTaskForm({
             </Typography>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               type="date"

@@ -148,7 +148,7 @@ export default function CreateCasePage() {
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Mã hồ sơ"
@@ -160,7 +160,7 @@ export default function CreateCasePage() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Tên hồ sơ *"
@@ -175,7 +175,7 @@ export default function CreateCasePage() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Tên khách hàng *"
@@ -189,7 +189,7 @@ export default function CreateCasePage() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   type="button"

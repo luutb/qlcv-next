@@ -193,7 +193,7 @@ export default function CaseMembers({
               {members.map((member) => {
                 const user = getUserById(member.user_id);
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={member.id}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={member.id}>
                     <Box
                       sx={{
                         p: 2,

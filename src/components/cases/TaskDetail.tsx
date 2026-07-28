@@ -178,7 +178,7 @@ export default function TaskDetail({
 
           <Grid container spacing={2}>
             {/* Title and Status */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h5" gutterBottom>
@@ -228,7 +228,7 @@ export default function TaskDetail({
             </Grid>
 
             {/* Description */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -245,7 +245,7 @@ export default function TaskDetail({
             </Grid>
 
             {/* Assignee */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -276,7 +276,7 @@ export default function TaskDetail({
             </Grid>
 
             {/* Timeline */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -299,7 +299,7 @@ export default function TaskDetail({
 
             {/* Due Date Warning */}
             {overdue && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Alert severity="error">
                   <Typography variant="body2">
                     <strong>Cảnh báo:</strong> Công việc này đã quá hạn ({new Date(task.due_date!).toLocaleDateString('vi-VN')})

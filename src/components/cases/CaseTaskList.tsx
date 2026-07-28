@@ -200,7 +200,7 @@ export default function CaseTaskList({
 
           {/* Filters */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
                 size="small"
@@ -212,7 +212,7 @@ export default function CaseTaskList({
                 }}
               />
             </Grid>
-            <Grid item xs={6} sm={3} md={2}>
+            <Grid size={{ xs: 6, sm: 3, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Sắp xếp</InputLabel>
                 <Select
@@ -226,7 +226,7 @@ export default function CaseTaskList({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={6} sm={3} md={2}>
+            <Grid size={{ xs: 6, sm: 3, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Thứ tự</InputLabel>
                 <Select
