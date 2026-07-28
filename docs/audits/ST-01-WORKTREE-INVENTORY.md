@@ -168,3 +168,77 @@ Git commits preserve tree snapshots, not the transient division between index an
 ### Independent QA readiness
 
 `IS-01.1.2` is ready for independent QA. QA can reproduce the clean-state checks with the commands above and should verify that this section is the only Issue-owned file change before accepting the Issue.
+
+---
+
+## IS-01.1.3 — Ownership and provenance by change group
+
+### Scope and attribution model
+
+- Issue: `IS-01.1.3` — attach an owner or an evidence-backed origin to every change group.
+- Observation time: 2026-07-28 (Asia/Ho_Chi_Minh).
+- Comparison: merge-base diff `develop...HEAD` on `story/st-01-git-baseline` at observed HEAD `b69db8f3505a403437f2499c586ba9a00b5ca9b8`.
+- Inspection was read-only. Remote configuration, credential-bearing URLs, and author email fields were not used as evidence.
+
+This section distinguishes two forms of attribution:
+
+1. **Role ownership** identifies the project role responsible for the artifact according to the repository workflow, the artifact's stated purpose, and its contents.
+2. **Git author provenance** identifies the local Git author name and commit that recorded a tree change. It does not prove which project role or agent produced each line, especially when one commit bundles coordinator, implementer, and reviewer artifacts.
+
+### Path and change-group matrix
+
+| Domain / change group | Paths in `develop...HEAD` | Change origin | Role ownership / custody | Git author provenance | Confidence and unresolved ownership |
+|---|---|---|---|---|---|
+| Project tracking and backlog state | `docs/BACKLOG.md` | `IS-01.1.1` and `IS-01.1.2` changed their checkboxes from open to complete | **Coordinator-owned tracking state.** The project workflow assigns the primary coordinator responsibility for recording review evidence before updating backlog checkboxes; this is not implementation evidence owned by `repo_stabilizer`. | Recorded in `9926e39` and `b69db8f`, both under the same configured Git author name, `luunbsapo`. | Role attribution is evidence-backed by `AGENTS.md` workflow rules and the checkbox-only diff. The named human accountable for coordinator custody is not recorded in the changed file and remains unresolved. |
+| Git audit evidence | `docs/audits/ST-01-WORKTREE-INVENTORY.md` | Added for `IS-01.1.1`; extended for `IS-01.1.2`; this section is the working-tree output of `IS-01.1.3` | **`repo_stabilizer`-owned audit evidence** for ST-01/TK-01.1. Each labeled section declares its Issue scope and read-only evidence. | The committed portions were recorded in `9926e39` and `b69db8f` under Git author name `luunbsapo`. The current `IS-01.1.3` section is not assigned commit provenance until a later authorized commit occurs. | High confidence for role ownership from the Story mapping and labeled Issue sections. Git metadata cannot distinguish agent execution from the Git identity that recorded the commits. |
+| Workflow and review evidence | `docs/reviews/ST-01.md` | Created with the `IS-01.1.1` review record and extended with the `IS-01.1.2` QA verdict/history | **Coordinator-custodied review record**, containing **`qa_reviewer`-owned verdict evidence**. The file itself identifies `repo_stabilizer` as Story owner, but that does not make the implementation agent the owner of its independent QA verdicts. | Added in `9926e39` and modified in `b69db8f`, both under Git author name `luunbsapo`. | Role separation is evidenced by the review table/history and the mandatory independent-review workflow. The commits bundle the record with implementation evidence, so Git history alone cannot identify who typed or transcribed each QA entry; individual human ownership remains unresolved. |
+| Application source | none | N/A — zero changed files in `develop...HEAD` | N/A | N/A | No owner is assigned because there is no changed path in this domain. |
+| Tests and quality configuration | none | N/A — zero changed files in `develop...HEAD` | N/A | N/A | No owner is assigned because there is no changed path in this domain. |
+| Dependencies and generated artifacts | none | N/A — zero changed files in `develop...HEAD` | N/A | N/A | No owner is assigned because there is no changed path in this domain. |
+
+All three changed paths are documentation or workflow evidence. There are no application, test/configuration, dependency, build-output, or generated-artifact changes to assign.
+
+### Commit-to-path provenance
+
+| Commit | Subject | Paths recorded | Provenance interpretation |
+|---|---|---|---|
+| `9926e39` | `IS-01.1.1: inventory worktree changes` | Modified `docs/BACKLOG.md`; added the audit and review records | One Git snapshot recorded artifacts with three different role contexts. The commit subject proves Issue association, not exclusive role authorship of every path. |
+| `b69db8f` | `IS-01.1.2: identify ambiguous git states` | Modified all three paths | The audit addition belongs to `repo_stabilizer`; the backlog and QA record are coordinator/reviewer workflow evidence. Their shared Git author identity does not collapse those roles. |
+
+### Reproducible read-only commands
+
+Run from the repository root. These commands intentionally omit author email and remote configuration:
+
+```sh
+git branch --show-current
+git rev-parse HEAD
+git merge-base develop HEAD
+git status --porcelain=v2 --branch
+git diff --name-status develop...HEAD
+git diff --stat develop...HEAD
+git diff develop...HEAD -- docs/BACKLOG.md
+git log --format='%h%x09%an%x09%ad%x09%s' --date=iso-strict develop..HEAD
+git log --format='%h%x09%s' --name-status --find-renames develop..HEAD
+git show --format='%h%n%an%n%ad%n%s' --date=iso-strict --stat 9926e39
+git show --format='%h%n%an%n%ad%n%s' --date=iso-strict --stat b69db8f
+```
+
+Interpretation:
+
+- `git diff --name-status develop...HEAD` reports exactly one modified backlog, one added audit file, and one added review file.
+- Per-commit name-status shows that both Story commits touched all three paths.
+- The backlog diff contains only completion-state changes for `IS-01.1.1` and `IS-01.1.2`.
+- The audit and review contents supply the role context that the bundled commit metadata cannot provide.
+
+### Unresolved ownership and limitations
+
+- No changed artifact names a human accountable owner for the coordinator, `repo_stabilizer`, or `qa_reviewer` roles. This report therefore assigns project roles, not people.
+- The same configured Git author name appears on both commits. Git author provenance shows who the repository recorded, but it cannot authenticate agent identity, prove who typed a line, or demonstrate that independent review happened outside the commit process.
+- The two commits bundle implementation audit evidence with coordinator and QA evidence. A future commit policy could improve provenance by recording reviewer evidence separately, but changing history or commit policy is outside this Issue.
+- `IS-01.1.3` itself is currently an uncommitted modification to this audit file. Its final commit author and hash cannot be stated before an explicitly authorized commit.
+- This attribution is limited to `develop...HEAD`. Ignored files, reflogs, remote-only commits, external tickets, chats, and CI identities were not inspected.
+- Later changes to the branch invalidate the path and commit matrix and require rerunning the commands.
+
+### Independent QA readiness
+
+`IS-01.1.3` is ready for independent QA when the focused diff contains only this appended section in `docs/audits/ST-01-WORKTREE-INVENTORY.md`. QA should reproduce the path matrix, confirm that every non-empty change group has an evidence-backed role owner/origin, confirm that zero-change domains are marked N/A, and verify that no role attribution is presented as equivalent to Git author provenance.
