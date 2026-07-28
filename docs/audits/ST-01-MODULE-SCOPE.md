@@ -1,5 +1,70 @@
 # ST-01 Module Scope Decisions
 
+## Canonical consolidated decision register — IS-01.2.4
+
+### Record control
+
+| Field | Value |
+|---|---|
+| Decision set | ST-01 / TK-01.2 module scope |
+| Effective date | 2026-07-28 (Asia/Ho_Chi_Minh) |
+| Decision authority | ST-01 owner / Tech Lead, as assigned in `docs/BACKLOG.md` |
+| Register custodian | `repo_stabilizer` for `IS-01.2.4`; the primary coordinator retains review-record/backlog custody |
+| Source decisions | `IS-01.2.1` (`da5bc56`), `IS-01.2.2` (`223c2b8`), `IS-01.2.3` (`0d6ccae`) |
+| Source QA | All three source Issues are independently recorded `PASS` in `docs/reviews/ST-01.md`; evidence hashes, findings, and residual risks remain in that review record |
+| Register status | **Canonical — independent QA `PASS` for `IS-01.2.4` on 2026-07-28.** The coordinator recorded the gate in `docs/reviews/ST-01.md`; future changes require the supersession process below. |
+
+This register is the normative summary of the already QA-approved source decisions. The linked Issue sections below remain the evidence record and define detailed MVP boundaries, risks, migration/deletion gates, and prerequisites.
+
+### Canonical decisions
+
+| Capability | Decision | MVP consequence | Owner / downstream work | Unresolved prerequisites | Source / QA trace |
+|---|---|---|---|---|---|
+| Budget | **KEEP** | Deliver only the bounded Budget model, CRUD/status/approval, categories, summary/alerts, and finance linkage; no wholesale legacy UI restoration. | Finance / ST-13; types ST-02; service migration ST-03; RBAC ST-07. | Verified backend DTO/endpoints, money/status rules, permissions, canonical client, tests, navigation and E2E. | [IS-01.2.1 evidence](#is-0121--budget-and-expenses); source QA `PASS`. |
+| Expenses | **KEEP** | Deliver Budget-linked Expense CRUD/approval and reconciliation impact; advanced global/bulk/export/payment behavior remains outside the retained MVP. | Finance / ST-13, especially TK-13.2; ST-02/ST-03/ST-07. | Backend/pagination/status/payment ownership, Budget consistency, permissions, tests, and attachment gate below. | [IS-01.2.1 evidence](#is-0121--budget-and-expenses); source QA `PASS`. |
+| Task and Expense attachments | **KEEP** | Provide record-owned metadata, authorized upload/download, and policy-controlled deletion inside Task/Expense flows; no generic Files product dependency. | Task / `IS-09.3.3`; Expense / ST-13; ST-02/ST-03/ST-07. | Endpoint/storage contract, tenant ownership, MIME/size/malware controls, signed/authorized download, retention/audit, transition atomicity, data migration and tests. | [IS-01.2.2 evidence](#is-0122--files-and-notifications); source QA `PASS`. |
+| Generic Files workspace, quota, version UI, public/team sharing and generic administration | **REMOVE FROM MVP** | Keep the deleted generic Files route/components deleted; a future accepted Story may add a specifically justified capability. | No current delivery owner; future product-owned Story required. | New business owner, backend/storage/RBAC/data-retention design, migration and acceptance; removal does not authorize stored-data deletion. | [IS-01.2.2 evidence](#is-0122--files-and-notifications); source QA `PASS`. |
+| Direct browser-to-Firebase Storage | **DEFER** | MVP defaults to backend-mediated canonical upload/download; do not activate or delete the shared helper until provider ownership is decided. | Architecture/data owners with ST-03 and security review; no scheduled feature Issue. | Provider decision, server-side authorization/audit, key/path isolation, lifecycle, migration, secure configuration and consumer split from Messaging. | [IS-01.2.2 evidence](#is-0122--files-and-notifications); source QA `PASS`. |
+| Minimal authenticated in-app Notifications | **KEEP** | Implement user-scoped list/count/read-one/read-all and safe deep links, or hide the current dead link until the verified route exists. | Backlog refinement required; likely ST-03/ST-06/ST-07/ST-15/ST-17 owners after assignment. | Dedicated Task/Issue and owner, canonical DTO/service, backend event/list/count/read contract, user isolation, retention, deep-link authorization, tests and E2E. | [IS-01.2.2 evidence](#is-0122--files-and-notifications); source QA `PASS`. |
+| Push/FCM, Notification preferences, email/digest and PWA Notifications | **DEFER** | Do not request/claim push delivery or restore preferences; placeholder service-worker behavior is not production scope. | No current delivery owner; future product/security-owned Story required. | Product need, consent, token registration/rotation/revocation/logout, backend delivery, service-worker lifecycle, secure config/CSP, preferences, privacy/security review and UAT. | [IS-01.2.2 evidence](#is-0122--files-and-notifications); source QA `PASS`. |
+| Deleted mock Notification page/components | **REMOVE FROM MVP** | Do not restore mock data or local-only callbacks; any retained in-app route must use the canonical service. | Same future refinement as minimal in-app Notifications. | Retained route/service acceptance; removal of mock UI is not removal of the `KEEP` in-app capability. | [IS-01.2.2 evidence](#is-0122--files-and-notifications); source QA `PASS`. |
+| Contract Types / configuration | **KEEP** | Retain administrator list/create/update/activate/deactivate and reference-safe delete/archive only; it does not imply Contract records. | Admin Configuration / proposed ST-12 refinement; ST-02/ST-03/ST-07/ST-17. | Explicit backlog Issue/owner, verified DTO/API/reference rules, canonical service migration, RBAC, tests, navigation and E2E. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| Full Contract lifecycle, Contract documents, e-signature and Contract payment milestones | **REMOVE FROM MVP** | Keep deleted Contract CRUD/doc/signature/milestone surfaces deleted; no current Story may absorb them implicitly. | No current owner; a new Contract Story with product/legal/finance/security owners is mandatory. | Full backend/data/RBAC/retention design, attachment controls, legal signature evidence, finance ledger ownership, migration, security, E2E and UAT. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| Core Workflow definitions, steps and server-authoritative Task/Board transitions | **KEEP** | Deliver bounded Workflow admin plus safe Task next/approve/reject/complete/file/payment gates and Board validation using one backend state machine. | Admin / ST-12; Task / ST-09; Board / ST-10; ST-02/ST-03/ST-07/ST-13/ST-17. | Verified DTO/API, publication/in-use edit rule, concurrency/idempotency, Task migration/rollback, RBAC/audit, Files and Payment contracts, tests and E2E. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| Workflow template library | **REMOVE FROM MVP** | Do not restore or import a template layer; core Workflow CRUD uses the confirmed canonical contract. | ST-12 `IS-12.1.5` must record this resolved outcome. | Any future template capability requires a separate accepted requirement, data/API/RBAC model and tests. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| User-facing Workflow version compare/restore history | **REMOVE FROM MVP** | Do not restore the UI; safe immutable/snapshot/edit-only-unused/clone/migration semantics remain mandatory for core Workflow integrity. | ST-12 data-integrity refinement. | Backend version/reference rule, active-Task inventory, migration/rollback and audit; future UI needs a new accepted scope. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| Workflow auto-assign rules | **REMOVE FROM MVP** | Assignment remains explicit; do not restore rules UI or hidden automatic execution. | ST-12 `IS-12.1.5` outcome; future Task/Workload Story if reconsidered. | Algorithm, capacity/fairness inputs, overrides, server execution, RBAC/audit, tests and product acceptance. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| Legacy custom Workflow execution/history | **REMOVE FROM MVP** | Keep `CustomWorkflow` and `/custom-workflows` artifacts deleted; do not create a second execution model. | No current owner; future architecture/product Story required. | Demonstrated need, canonical state-machine relationship, API/data/RBAC/migration design and acceptance. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+| Separate workflow-board / issue-board lineage | **REMOVE FROM MVP** | Do not copy/import the non-ancestor implementation; retain the current app's Board governed by core Workflow rules. | Board / ST-10 owns current integration; replacement needs a separate architecture decision. | Explicit replacement strategy, framework/API/state migration, finance-trigger ownership, tests and release plan. | [IS-01.2.3 evidence](#is-0123--legacy-contract-and-workflow-scope); source QA `PASS`. |
+
+### Precedence, supersession and implementation rule
+
+1. After `IS-01.2.4` QA `PASS`, the register above is the canonical decision lookup. The source sections remain authoritative for exact boundaries and prerequisites; they are not deprecated.
+2. If a summary row appears inconsistent with its source section, use the more restrictive interpretation and stop implementation until the Tech Lead records a clarification reviewed through the normal QA gate. An agent, PR description, code comment, mock, endpoint string, historical file, or current consumer cannot resolve the conflict silently.
+3. `KEEP` protects only the bounded MVP capability, not every current/historical file. It requires verified contracts, migration and acceptance before exposure.
+4. `REMOVE FROM MVP` forbids restoration or new MVP implementation but does not authorize deletion of current consumers, persisted/backend data, audit history, or migration paths.
+5. `DEFER` forbids activation and product claims until a new accepted backlog item resolves every listed entry prerequisite. Deferred code is not presumed production-ready and is not automatically retained forever.
+6. A later decision may supersede a row only when it names the affected capability, cites this register and source Issue, records authority/owner/date/rationale and migration impact, passes the required QA/PO gates, and explicitly states the old decision it supersedes. Newer application code or a PR alone has no precedence.
+7. Every implementation or cleanup PR touching these capabilities must cite the relevant register row and source Issue, remain within its MVP consequence, satisfy downstream prerequisites, and include migration/test evidence. Reviewers must reject a PR that reinterprets `KEEP`, `REMOVE FROM MVP`, or `DEFER` without an approved superseding decision.
+
+### Register verification and limitations
+
+Read-only consistency checks for this consolidated record:
+
+```sh
+rg -n '^## (Budget decision|Expenses decision|Files decision details|Notifications decision details|Contract Types / configuration|Full Contract lifecycle|Core Workflow definitions|Advanced Workflow capabilities)' docs/audits/ST-01-MODULE-SCOPE.md
+rg -n '\*\*(KEEP|REMOVE FROM MVP|DEFER)\*\*' docs/audits/ST-01-MODULE-SCOPE.md
+rg -n 'IS-01\.2\.[123]|source QA `PASS`|Pending independent QA' docs/audits/ST-01-MODULE-SCOPE.md
+rg -n 'IS-01\.2\.[123].*PASS|TK-01\.2' docs/reviews/ST-01.md
+git log --oneline develop..HEAD
+git status --short
+git diff --check -- docs/audits/ST-01-MODULE-SCOPE.md
+```
+
+This register consolidates repository evidence only. It does not verify backend/storage/data/legal/runtime state, assign unnamed people, create missing backlog work, approve implementation, open a PR, or authorize Git/data mutation. Source limitations and residual risks continue to apply.
+
+`IS-01.2.4` is ready for independent QA when the focused diff contains only this register addition. QA should confirm every source capability and decision is represented without contradiction, every row is traceable to a source Issue with recorded `PASS`, unresolved prerequisites/owners are explicit, and the precedence rule prevents silent reinterpretation.
+
 ## IS-01.2.1 — Budget and Expenses
 
 ### Decision summary

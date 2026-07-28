@@ -84,7 +84,7 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 - [x] `IS-01.2.1` Quyết định giữ hay loại bỏ module budget và expenses.
 - [x] `IS-01.2.2` Quyết định giữ hay loại bỏ module files và notifications.
 - [x] `IS-01.2.3` Quyết định giữ hay loại bỏ module contract và workflow cũ.
-- [ ] `IS-01.2.4` Ghi quyết định phạm vi vào pull request hoặc decision log.
+- [x] `IS-01.2.4` Ghi quyết định phạm vi vào pull request hoặc decision log.
 
 ### TK-01.3 — Tạo lịch sử commit có thể review
 
