@@ -242,3 +242,78 @@ Interpretation:
 ### Independent QA readiness
 
 `IS-01.1.3` is ready for independent QA when the focused diff contains only this appended section in `docs/audits/ST-01-WORKTREE-INVENTORY.md`. QA should reproduce the path matrix, confirm that every non-empty change group has an evidence-backed role owner/origin, confirm that zero-change domains are marked N/A, and verify that no role attribution is presented as equivalent to Git author provenance.
+
+---
+
+## IS-01.1.4 — Pre-cleanup protection manifest
+
+### Scope and baseline
+
+- Issue: `IS-01.1.4` — record files that must not be lost before any future staging or worktree cleanup.
+- Observation time: 2026-07-28 (Asia/Ho_Chi_Minh).
+- Branch: `story/st-01-git-baseline`.
+- Observed HEAD: `5f61491850b5597fe4ef874ac7d89612f1bfa50c` (`IS-01.1.3: map change ownership and provenance`).
+- Merge base with local `develop`: `8d454afa43adfd579cfd21356201b87c53fec9b9`.
+- The worktree and index were clean before this section was appended. No current staging cleanup is needed.
+
+“Protected” means verify that the item is recoverable before a future cleanup operation. It does not mean every local or ignored item belongs in Git.
+
+### Protection manifest
+
+| Protected item / group | Why it must not be lost | Current tracking and commit evidence | Recovery source | Required pre-cleanup verification |
+|---|---|---|---|---|
+| `docs/BACKLOG.md` | Holds coordinator-managed completion state and the Story/Task/Issue contract used by implementers and reviewers. | Tracked; modified in `develop...HEAD`; recorded by the three current Story commits. | Current Story HEAD/commits; base version also exists on `develop`. | Confirm its intended diff appears in `git diff --name-status develop...HEAD`; confirm no additional staged/unstaged edits exist; retain the Story commits before altering the branch. |
+| `docs/audits/ST-01-WORKTREE-INVENTORY.md` | Primary implementation evidence for `IS-01.1.1` through `IS-01.1.4`; losing it would remove the audit trail needed for QA. | Tracked; added in `develop...HEAD`; prior sections recorded across `9926e39`, `b69db8f`, and `5f61491`; this section remains a working-tree edit until separately authorized handling. | Committed prior sections from current Story HEAD; the current `IS-01.1.4` diff must be preserved as a patch or committed through the normal Issue gate before cleanup. | Run focused status/diff and `git diff --check`; do not restore, discard, or clean this file while the current Issue section is uncommitted. |
+| `docs/reviews/ST-01.md` | Coordinator-custodied independent QA evidence gates backlog completion and later Story acceptance. | Tracked; added in `develop...HEAD`; recorded and extended by the three current Story commits. | Current Story HEAD/commits; template guidance is in tracked `docs/reviews/README.md`. | Confirm the file remains in the merge-base diff and that review entries correspond to the checked backlog items before cleanup. |
+| `AGENTS.md`, `.codex/config.toml`, `.codex/agents/*.toml` | Define mandatory project workflow, agent roles, concurrency, ownership boundaries, and QA/PO separation. | All tracked and present at current HEAD; unchanged in `develop...HEAD`, so their committed source is the `develop` baseline. | `develop` or current HEAD. | Use `git ls-files` to confirm tracking; ensure no local diff exists before any reset/restore/clean operation. |
+| `docs/DEVELOPMENT_WORKFLOW.md`, `docs/QUALITY_BASELINE.md`, `docs/reviews/README.md`, `README.md` | Define branch/review procedure, pre-ST-05 quality expectations, evidence format, and project entry-point instructions. | All tracked and unchanged in `develop...HEAD`. | `develop` or current HEAD. | Confirm tracking and a clean focused diff; do not delete them as “old docs” without a separately reviewed replacement decision. |
+| `package.json`, `package-lock.json`, `yarn.lock` | Preserve the declared dependency set and both currently committed lockfile snapshots used to reproduce the existing baseline. | All tracked and unchanged in `develop...HEAD`. Their simultaneous presence may require a later package-manager decision, but is not authorization to delete either during cleanup. | `develop` or current HEAD. | Confirm all three are tracked and unchanged; resolve package-manager ownership in a separate scoped Issue before removing a lockfile. |
+| `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.ts`, `middleware.ts` | Preserve framework, compiler, lint, test, and request-middleware behavior required for later quality and security Stories. | All tracked and unchanged in `develop...HEAD`. | `develop` or current HEAD. | Confirm tracking and no local diff. Read the installed Next.js guides before making later Next.js changes, as required by `AGENTS.md`. |
+| `.env.local`, `.env.production.example` | Local environment values or templates may be needed to run the project and could be destroyed by aggressive ignored-file cleanup. | Present locally and ignored by `.gitignore` rule `.env*`; not tracked and not included in normal commits. Contents were not inspected. | User-controlled secure local backup or secrets/configuration system; Git is not a recovery source. | Before any manual deletion or `git clean -x/-X`, verify required local configuration is backed up securely. Never stage or commit secrets merely to satisfy this manifest. Review an example file for sensitive values before any explicit opt-in tracking decision. |
+
+The ignored dependency/build groups `node_modules/` and `.next/` are reproducible/disposable artifacts and are not protection-manifest content. Their presence does not justify cleanup now, and deleting them later may still cost rebuild time. A normal staging cleanup does not affect ignored environment files; the environment warning applies specifically to manual deletion or cleanup that includes ignored paths.
+
+### Current cleanup decision
+
+No cleanup is currently required. Before this section was written, `git status --porcelain=v2 --branch` contained only branch metadata and no tracked, untracked, unmerged, staged, or unstaged records. The Story delta is already preserved in three commits, and the only new working-tree content is this Issue's authorized addition to the audit file.
+
+Future cleanup must be scoped to evidence produced at that future observation point. This manifest does not pre-authorize reset, restore, clean, deletion, staging, commit, branch rewrite, or removal of ignored artifacts.
+
+### Reproducible read-only commands
+
+Run from the repository root. These commands do not inspect remotes or file contents:
+
+```sh
+git branch --show-current
+git rev-parse HEAD
+git rev-parse develop
+git merge-base develop HEAD
+git status --porcelain=v2 --branch
+git diff --name-status develop...HEAD
+git diff --stat develop...HEAD
+git log --oneline develop..HEAD
+git ls-files AGENTS.md .gitignore .codex/config.toml .codex/agents docs/audits docs/reviews docs/BACKLOG.md docs/DEVELOPMENT_WORKFLOW.md docs/QUALITY_BASELINE.md README.md
+git ls-files package.json package-lock.json yarn.lock tsconfig.json next.config.ts eslint.config.mjs vitest.config.ts middleware.ts
+git check-ignore -v .env.local .env.production.example .next node_modules
+git ls-files --others --exclude-standard
+git diff --check develop...HEAD
+```
+
+Observed interpretation:
+
+- `develop...HEAD` contains exactly `M docs/BACKLOG.md`, `A docs/audits/ST-01-WORKTREE-INVENTORY.md`, and `A docs/reviews/ST-01.md`.
+- The project instructions, agent definitions, workflow documentation, dependency manifests/locks, and listed framework/tooling configs are tracked.
+- `.env.local` and `.env.production.example` are ignored; `.next/` and `node_modules/` are also ignored.
+- No non-ignored untracked file existed at the observation point.
+
+### Limitations
+
+- The manifest is time-bound to the stated branch, HEAD, merge base, and local filesystem observation. Rerun the commands before any future cleanup.
+- Git evidence cannot recover ignored local environment files, unrecorded edits, deleted external files, or secrets held outside the repository.
+- File presence and tracking do not prove runtime correctness, freshness, or that both package-manager lockfiles should remain permanently.
+- No file contents under `.env*`, remote state, remote URLs, reflogs, credential stores, or author email fields were inspected.
+- This Issue records protection requirements only; it does not perform cleanup or decide long-term retention beyond preventing accidental loss.
+
+### Independent QA readiness
+
+`IS-01.1.4` is ready for independent QA when the focused working-tree diff contains only this appended section in `docs/audits/ST-01-WORKTREE-INVENTORY.md`. QA should reproduce the Story delta, tracking checks, ignored-path classification, clean pre-write state, and verify that the manifest neither recommends committing secrets nor authorizes cleanup.

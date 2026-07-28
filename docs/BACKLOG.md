@@ -77,7 +77,7 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 - [x] `IS-01.1.1` Xuất danh sách staged, unstaged và untracked theo từng domain.
 - [x] `IS-01.1.2` Xác định các file có trạng thái xung đột kiểu add/delete hoặc staged-delete/recreated.
 - [x] `IS-01.1.3` Gắn người sở hữu hoặc nguồn gốc cho từng nhóm thay đổi.
-- [ ] `IS-01.1.4` Ghi lại các file không được phép mất trước khi dọn staging.
+- [x] `IS-01.1.4` Ghi lại các file không được phép mất trước khi dọn staging.
 
 ### TK-01.2 — Chốt phạm vi module
 
