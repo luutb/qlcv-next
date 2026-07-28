@@ -92,3 +92,79 @@ Interpretation:
 - This Issue only inventories status categories. Detecting ambiguous staged-delete/recreated or add/delete states belongs to `IS-01.1.2`; none are implied by the current zero staged/unstaged counts.
 - Local branch equality does not prove remote synchronization. Remote URLs and network state were intentionally outside this Issue's scope.
 - Any worktree change made after the observation invalidates the counts and requires rerunning the commands above.
+
+---
+
+## IS-01.1.2 — Ambiguous Git-state analysis
+
+### Scope and observation point
+
+- Issue: `IS-01.1.2` — identify add/delete, staged-delete/recreated, index/worktree type-change, rename/copy ambiguity, overlapping staged/unstaged content, and unresolved index entries.
+- Observation time: 2026-07-28 (Asia/Ho_Chi_Minh).
+- Branch: `story/st-01-git-baseline`.
+- Observed HEAD: `9926e3958017debed44b018b5e15d3ec33363383` (`IS-01.1.1: inventory worktree changes`).
+- Inspection was read-only. No remote URL or credential-bearing Git configuration was inspected.
+
+### Commands and evidence
+
+The following read-only commands were run from the repository root:
+
+```sh
+git status --short
+git status --porcelain=v2 --branch
+git diff --cached --raw
+git diff --raw
+git diff-files --raw
+git diff-index --cached --raw HEAD --
+git ls-files --unmerged
+git ls-files --stage docs/audits/ST-01-WORKTREE-INVENTORY.md docs/reviews/ST-01.md docs/BACKLOG.md
+git show --format=fuller --summary --find-renames --find-copies 9926e39
+git show --format='' --name-status --find-renames --find-copies 9926e39
+```
+
+Evidence at the observation point:
+
+- `git status --short` returned no entries.
+- Porcelain v2 returned only the branch OID and branch name; it returned no `1`, `2`, `u`, or `?` records.
+- Cached, worktree, `diff-files`, and cached `diff-index` raw diffs all returned no entries.
+- `git ls-files --unmerged` returned no entries.
+- The three inspected tracked files were all ordinary blobs with mode `100644`, at index stage `0`.
+
+### Findings by ambiguity class
+
+| Ambiguity class | Current evidence | Finding |
+|---|---|---|
+| Add/delete or delete/add | No status or raw-diff entries | None detected |
+| Staged-delete/recreated in worktree | Cached and worktree diffs are empty | None detected |
+| Overlapping staged and unstaged content | Both cached and worktree diffs are empty | None detected |
+| Index/worktree file-type or mode change | No raw-diff entries; inspected index entries are mode `100644`, stage `0` | None detected |
+| Unmerged multi-stage index entries | `git ls-files --unmerged` is empty | None detected |
+| Rename/copy ambiguity | No current changes exist to classify | None detected |
+
+No file is identified as having an ambiguous Git state at this observation point. This is a positive clean-state finding based on the commands above, not an inference from the earlier inventory.
+
+### Committed-history context
+
+The latest committed parent-to-HEAD snapshot reports:
+
+| Path | Committed change |
+|---|---|
+| `docs/BACKLOG.md` | Modified (`M`) |
+| `docs/audits/ST-01-WORKTREE-INVENTORY.md` | Added (`A`) |
+| `docs/reviews/ST-01.md` | Added (`A`) |
+
+Rename/copy detection on commit `9926e39` did not classify any of those paths as a rename or copy. These are normal committed tree changes and are not present-day worktree ambiguities.
+
+Git commits preserve tree snapshots, not the transient division between index and worktree that existed before a commit. Therefore, the committed `M/A/A` evidence cannot establish that a staged-delete/recreated, overlapping staged/unstaged, or similar ambiguous state existed historically. The pre-write snapshot documented by `IS-01.1.1` likewise recorded zero staged and zero unstaged tracked files; it identified only an untracked review file. There is no recorded evidence in this audit supporting a historical ambiguity claim.
+
+### Conclusion and limitations
+
+- **Conclusion:** no ambiguous Git-state files were detected on `story/st-01-git-baseline` at HEAD `9926e39`.
+- This conclusion is time-bound. Concurrent or later worktree/index changes require rerunning the commands.
+- The analysis does not reconstruct uncommitted states that were never captured by Git or by the prior audit.
+- Remote synchronization, remote refs, reflogs, hooks, ignored files, and semantic duplication between differently named files are outside this Issue.
+- No keep/remove/restore decision is required by `IS-01.1.2`, because no evidenced ambiguous path was found.
+
+### Independent QA readiness
+
+`IS-01.1.2` is ready for independent QA. QA can reproduce the clean-state checks with the commands above and should verify that this section is the only Issue-owned file change before accepting the Issue.
