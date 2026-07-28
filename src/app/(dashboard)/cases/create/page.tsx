@@ -95,8 +95,9 @@ export default function CreateCasePage() {
         client_name: formData.client_name.trim(),
       };
 
-      if (formData.case_code.trim()) {
-        submitData.case_code = formData.case_code.trim();
+      const caseCode = formData.case_code?.trim();
+      if (caseCode) {
+        submitData.case_code = caseCode;
       }
 
       const newCase = await caseService.createCase(submitData);

@@ -197,7 +197,7 @@ const DashboardPage: React.FC = () => {
                         {task.title}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {task.taskCode} • Updated {formatDate(task.updatedAt, 'relative')}
+                        {task.taskCode} • Updated {formatDate(task.updatedAt)}
                       </p>
                     </div>
                     <div className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -251,7 +251,7 @@ const DashboardPage: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-gray-900">
-                        {formatDate(task.dueDate!, 'short')}
+                        {formatDate(task.dueDate!)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {Math.ceil((new Date(task.dueDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
