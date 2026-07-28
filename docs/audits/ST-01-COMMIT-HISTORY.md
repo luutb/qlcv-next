@@ -405,3 +405,153 @@ The claims in this section are intentionally limited:
 - **Deliverable:** exact taxonomy, evidence-backed history audit and safe forward commit plan only.
 
 `IS-01.3.2` is ready for independent QA when the focused working-tree change is only this appended section in `docs/audits/ST-01-COMMIT-HISTORY.md`. QA should reproduce the clean pre-write inventory, five documentation-only Story paths, zero current migration paths, exact disjoint `1daaac7` totals, `a714abe` first-parent equivalence, current duplicate-client/repository/import evidence, ST-02/ST-03/module-decision reconciliation, forward allowlists/removal gates, no-regression rules, and the explicit N/A/no-rewrite/no-historical-split conclusion.
+
+---
+
+# IS-01.3.3 — Case, Task, and Board feature commit boundary audit
+
+## Purpose and non-mutation rule
+
+This section audits whether current or historical Case, Task, and Board work is separable by feature and defines a safe forward-only sequence for ST-08, ST-09, and ST-10. It does not rewrite, split, revert, cherry-pick, stage, commit, merge, or otherwise reinterpret shared history. Historical path groups below are evidence scopes, not permission to restore old UI or proof that a feature migration succeeded.
+
+## Pre-write inventory and current split decision
+
+The following is the recorded read-only snapshot at committed HEAD `7fc236e`, captured before this Issue changed the audit. It is historical provenance for this section, not a claim about a later mutable coordinator worktree:
+
+| Check | Observed result |
+|---|---|
+| Branch / HEAD | `story/st-01-git-baseline` / `7fc236e` |
+| `develop` / merge base | `8d454af` / `8d454af` |
+| Commits in `develop..HEAD` | 12 documentation/governance commits |
+| Staged paths | 0 |
+| Unstaged tracked paths | 0 |
+| Non-ignored untracked paths | 0 |
+| Unmerged paths | 0 |
+| `develop...HEAD` path delta | Exactly five documentation-only paths: `docs/BACKLOG.md`, this audit, `docs/audits/ST-01-MODULE-SCOPE.md`, `docs/audits/ST-01-WORKTREE-INVENTORY.md`, and `docs/reviews/ST-01.md`; 0 source, Case, Task, or Board paths |
+
+There is therefore no current Case, Task, or Board source delta to split. The actionable result for `IS-01.3.3` is **N/A / no destructive history rewrite**. The deliverable is this audit and a forward commit contract; it does not claim that an old bundled commit, ST-08, ST-09, or ST-10 is complete.
+
+## Exact, disjoint ownership boundaries
+
+Ownership follows behavior and the backlog Story, not the directory name. In particular, Task consumers under `src/components/cases/` belong to Task, while Board renders Task data without owning the Task transition contract.
+
+### Case/customer feature group — ST-08 owner
+
+Current historical inventory paths assigned only to the Case group:
+
+- Case routes: `src/app/(dashboard)/cases/[id]/edit/page.tsx`, `src/app/(dashboard)/cases/[id]/page.tsx`, `src/app/(dashboard)/cases/create/page.tsx`, and `src/app/(dashboard)/cases/page.tsx`.
+- Case-only UI: `src/components/cases/CaseCard.tsx`, `src/components/cases/CaseMembers.tsx`, `src/components/cases/CaseStatusBadge.tsx`, and `src/components/features/cases/index.ts`.
+- Historical customer surface: `src/app/(dashboard)/shared/customers/page.tsx`. This path is evidence of customer/Case lineage only. A future ST-08 commit may touch it solely when an accepted Case Issue requires customer lookup/selection or customer context in the Case lifecycle; standalone customer administration needs its own explicit product owner and acceptance criteria.
+
+The Case group owns Case list/create/read/update/delete, Case status, members/roles, labels, customer reference, search/filter/pagination, and Case-specific loading/error/empty behavior. It does not own Task creation/status transitions merely because those controls render on a Case detail page.
+
+### Task/workflow-transition consumer group — ST-09 owner
+
+Current historical inventory paths assigned only to the Task group:
+
+- Task routes: `src/app/(dashboard)/manager/review/page.tsx`, `src/app/(dashboard)/manager/tasks/create/page.tsx`, `src/app/(dashboard)/manager/tasks/gantt/page.tsx`, `src/app/(dashboard)/manager/tasks/page.tsx`, `src/app/(dashboard)/shared/tasks/[id]/page.tsx`, and `src/app/(dashboard)/staff/my-tasks/page.tsx`.
+- Task controls embedded in Case: `src/components/cases/CaseTaskList.tsx`, `src/components/cases/CreateTaskForm.tsx`, `src/components/cases/TaskDetail.tsx`, and `src/components/cases/TaskStatusToggle.tsx`.
+- Task UI/hooks: current files under `src/components/tasks/**`, `src/components/features/tasks/index.ts`, `src/hooks/api/useTasks.ts`, and `src/hooks/useTaskRepository.ts`.
+
+The group owns Task CRUD, assignees, history, and consumers of the one canonical server-authoritative Workflow transition contract: next, approve, reject, complete, file-required, and payment-required actions. The broad historical `src/components/tasks/**` inventory is not a forward allowlist: each future Issue must enumerate only retained files. Generic Files UI stays removed from MVP; Task-owned attachment UI is allowed only under `IS-09.3.3` and the canonical Task/Expense attachment decision. Payment truth remains ST-13-owned.
+
+### Board/view/DnD group — ST-10 owner
+
+Current paths assigned only to the Board group are `src/app/(dashboard)/board/page.tsx`, `src/components/board/BoardFilter.tsx`, `src/components/board/Swimlane.tsx`, `src/components/board/TaskCard.tsx`, and `src/components/board/TaskSidebar.tsx`.
+
+The Board group owns Task projection into columns/swimlanes, filters, loading/error/empty presentation, drag-and-drop interaction, optimistic view state, rollback, and Board sidebar presentation. It does not own Task/Workflow DTOs, transition legality, authorization, or a second status-update endpoint. A drop must call the canonical ST-09 transition operation and accept the server result as truth.
+
+### Shared dependency and single-owner rule
+
+Shared files are deliberately outside all three feature groups and are counted once:
+
+| Shared concern | Current examples | Owning prerequisite | Rule |
+|---|---|---|---|
+| Case/Task/Board/Workflow/Label types | `src/types/case.types.ts`, `src/types/board-task.types.ts`, `src/types/board.ts`, `src/types/board.types.ts`, `src/types/label.types.ts` | ST-02 | Select one verified canonical shape before feature consumers move. Duplicate Board/Task files are migration inputs, never parallel approved contracts. |
+| Domain services and transport | `src/services/case.service.ts`, `src/services/customer.service.ts`, `src/services/task.service.ts`, `src/services/workflow.service.ts`, `src/services/label.service.ts` and the canonical API client | ST-03 | Service/adapter commit precedes consumers. A feature commit consumes it but does not duplicate endpoints, unwrapping, auth, or retry behavior. |
+| Legacy repositories | `src/repositories/CustomerRepo.ts`, `src/repositories/TaskRepo.ts`, `src/repositories/TaskRepository.ts`, `src/repositories/WorkflowRepo.ts` | ST-03 migration/removal | Do not delete until zero consumers, contract tests, feature smoke tests, and rollback evidence exist. `src/hooks/useTaskRepository.ts` remains classified once as a Task consumer until it migrates. A historical deletion is not proof of safe migration. |
+| Permissions | route/action permission definitions and tests | ST-07 | Server authorization is authoritative; hidden controls alone do not satisfy denial requirements. |
+| Reusable User/Label UI | `src/components/users/UserSelect.tsx`, `src/components/labels/**` | ST-11/ST-12 or their accepted shared-component Issue | One owner changes the shared component; Case, Task, and Board commits separately wire and test their consumer behavior. |
+
+If a shared contract must change, commit that prerequisite under its owning ST-02/ST-03/ST-07/ST-11/ST-12 Issue first. Never copy the same shared diff into Case, Task, and Board commits, and never count a shared path in more than one historical group. An unavoidable cross-feature atomic change needs a documented invariant showing why intermediate commits would fail, the smallest combined allowlist, focused tests for every affected owner, and independent QA approval; convenience or directory proximity is not sufficient.
+
+## Historical evidence from disjoint path groups
+
+The following totals use the exact groups above. The shared group is separate, so no file contributes to two totals.
+
+| Commit | Case/customer | Task consumer | Board | Shared prerequisite | Supported conclusion |
+|---|---:|---:|---:|---:|---|
+| `85d59da` — `update FE` | 1 file, +292/-0 | 15 files, +2,268/-0 | 0 | 1 file, +79/-0 | Initial customer and Task UI arrived in one much broader commit; this is not an independently reviewable feature split. |
+| `8f58896` — `update code` | 0 | 1 file, +60/-168 | 0 | 0 | A Task-create change was bundled with platform/dependency and Workflow changes documented earlier. |
+| `d14e508` — `update code` | 1 file, +1/-1 | 1 file, +0/-1 | 0 | 0 | Small customer/Task edits coexisted in one commit; semantics are not proven by line counts. |
+| `0e912b5` — `update fe` | 1 file, +1/-1 | 21 files, +5,698/-31 | 0 | 4 files, +193/-79 | Large Task expansion was mixed with admin, finance, Files, Workflow, repositories, and other UI. It is lineage evidence, not a safe migration template. |
+| `1daaac7` — `update code` | 8 files, +1,763/-0 | 18 files, +2,663/-3,035 | 5 files, +2,333/-0 | 15 files, +1,421/-0 | Case and Board were introduced while Task UI was added, modified, and deleted alongside types/services and unrelated product removals. The commit remains bundled. |
+
+For `1daaac7`, Case name-status is eight additions; Board is five additions. Task's 18 paths are exactly seven additions, three modifications, and eight deletions. The additions are four Case-embedded Task components, `TaskDetailPanel`, its feature barrel, and `useTasks`; the modifications are `src/app/(dashboard)/manager/tasks/gantt/page.tsx`, `src/app/(dashboard)/shared/tasks/[id]/page.tsx`, and `src/components/tasks/TaskGanttView.tsx`. The eight deletions include advanced or legacy surfaces, but Git path/line evidence alone cannot establish that they were migrated, replaced losslessly, or intentionally removed from MVP.
+
+First-parent diff `a714abe^1..a714abe` reproduces the same Case, Task, and Board name-status/numstat as `1daaac7^..1daaac7`. This establishes that the merge carried the bundled snapshot; it does not turn the merge into three feature commits. No Board path appears in the audited feature history before `1daaac7`.
+
+## Safe forward commit sequence
+
+Create no empty commit for this audit. When implementation work exists, use focused Issue commits on the owning Story branch in dependency order:
+
+| Order | Example subject | Exact allowlist rule | Required gate before commit |
+|---:|---|---|---|
+| 1 | `IS-02.x.x: consolidate Case Task Board workflow types` | Only the named canonical type files and required type-barrel export lines | Verified backend shapes/statuses, duplicate-consumer inventory, contract/type tests; no feature JSX. |
+| 2 | `IS-03.x.x: migrate Case Task workflow services` | Only named canonical service/client adapter files and service tests | One response/auth/error convention, no duplicate endpoint logic, known consumers and removal plan. |
+| 3 | `IS-07.x.x: enforce Case Task transition permissions` | Named permission policy/middleware/UI-gating files and negative tests | Server-side tenant/action denial proven; UI visibility is supplemental only. |
+| 4 | `IS-08.x.x: complete <Case capability>` | Only the explicit Case route/UI paths from the Case group needed by that Issue | Case CRUD/member/label/customer contract, validation/error mapping, focused tests, no Task transition implementation. |
+| 5 | `IS-09.x.x: complete <Task or workflow action>` | Only the enumerated Task route/component/hook consumers required by that Issue | Canonical transition service, idempotency/conflict behavior, permissions, history and applicable file/payment gates tested. |
+| 6 | `IS-10.x.x: complete <Board capability>` | Only the five Board paths above, narrowed further to files actually changed by the Issue | Canonical ST-09 transition consumer, DnD status mapping/invalid-drop/rollback tests and permission/no-regression evidence. |
+
+Task attachments must remain record-owned and backend-mediated; do not restore the deleted generic Files workspace. File-required transitions need ownership, MIME/size/malware, authorization, retention/audit, and atomicity evidence. Payment-required transitions may verify an ST-13-owned condition but may not calculate, confirm, or reconcile payment independently. Core Workflow definitions and in-use edit/version semantics remain ST-12-owned; ST-09 and ST-10 consume the same published instance/step contract and must not import a separate legacy workflow-board.
+
+## Feature-specific review gates
+
+1. **Case:** test list pagination/search/filter, create/edit validation, delete refresh/conflict, detail loading/error/empty, member role/add/remove, labels, customer lookup, and direct API denial. No mock fallback may satisfy ST-08 acceptance.
+2. **Task:** test create/update/delete, assignee contract, every allowed and denied server transition, duplicate/idempotent submission, stale-state conflict, error rollback, history, approval/rejection authority, completion, and applicable attachment/payment preconditions. Remove console-only actions.
+3. **Board:** test API-status-to-column mapping, filters, loading/empty/error, keyboard/pointer DnD where supported, valid and invalid drops, optimistic update, network/server-conflict rollback to the exact prior column/order, repeated drop, refresh reconciliation, and sidebar action errors. Remove diagnostic logs.
+4. **Permissions:** test unauthorized direct routes and API actions for Case and Task transitions. Client role helpers and hidden buttons are not authorization evidence.
+5. **Regression:** until ST-05 Story QA `PASS`, compare scoped diagnostics with `docs/QUALITY_BASELINE.md` and prove no new regression. After ST-05 passes, require lint, typecheck, tests, and build all green.
+6. **Commit proof:** run focused checks first, then inspect staged paths and final `git show --name-status --stat`. A plan or working-tree partition is not evidence that a commit was actually separated.
+
+## Reproducible read-only commands
+
+These commands avoid remote URLs, environment values, credentials, tokens, and author email fields:
+
+```sh
+git branch --show-current
+git rev-parse HEAD
+git rev-parse develop
+git merge-base develop HEAD
+git status --porcelain=v2 --branch
+git diff --cached --name-status
+git diff --name-status
+git ls-files --others --exclude-standard
+git ls-files --unmerged
+git rev-list --count develop..HEAD
+git diff --name-status develop...HEAD
+git diff --name-status develop...HEAD -- . ':(exclude)docs/**'
+git diff --name-status 1daaac7^ 1daaac7 -- 'src/app/(dashboard)/cases/**' 'src/app/(dashboard)/shared/customers/page.tsx' src/components/cases/CaseCard.tsx src/components/cases/CaseMembers.tsx src/components/cases/CaseStatusBadge.tsx src/components/features/cases/index.ts
+git diff --numstat 1daaac7^ 1daaac7 -- 'src/app/(dashboard)/cases/**' 'src/app/(dashboard)/shared/customers/page.tsx' src/components/cases/CaseCard.tsx src/components/cases/CaseMembers.tsx src/components/cases/CaseStatusBadge.tsx src/components/features/cases/index.ts
+git diff --name-status 1daaac7^ 1daaac7 -- 'src/app/(dashboard)/manager/review/page.tsx' 'src/app/(dashboard)/manager/tasks/**' 'src/app/(dashboard)/shared/tasks/**' 'src/app/(dashboard)/staff/my-tasks/page.tsx' src/components/cases/CaseTaskList.tsx src/components/cases/CreateTaskForm.tsx src/components/cases/TaskDetail.tsx src/components/cases/TaskStatusToggle.tsx 'src/components/tasks/**' src/components/features/tasks/index.ts src/hooks/api/useTasks.ts src/hooks/useTaskRepository.ts
+git diff --numstat 1daaac7^ 1daaac7 -- 'src/app/(dashboard)/manager/review/page.tsx' 'src/app/(dashboard)/manager/tasks/**' 'src/app/(dashboard)/shared/tasks/**' 'src/app/(dashboard)/staff/my-tasks/page.tsx' src/components/cases/CaseTaskList.tsx src/components/cases/CreateTaskForm.tsx src/components/cases/TaskDetail.tsx src/components/cases/TaskStatusToggle.tsx 'src/components/tasks/**' src/components/features/tasks/index.ts src/hooks/api/useTasks.ts src/hooks/useTaskRepository.ts
+git diff --name-status 1daaac7^ 1daaac7 -- 'src/app/(dashboard)/board/**' 'src/components/board/**'
+git diff --numstat 1daaac7^ 1daaac7 -- 'src/app/(dashboard)/board/**' 'src/components/board/**'
+git diff --name-status 1daaac7^ 1daaac7 -- src/types/case.types.ts src/types/board-task.types.ts src/types/board.ts src/types/board.types.ts src/services/case.service.ts src/services/customer.service.ts src/services/task.service.ts src/services/workflow.service.ts src/repositories/CustomerRepo.ts src/repositories/TaskRepo.ts src/repositories/TaskRepository.ts src/repositories/WorkflowRepo.ts src/components/users/UserSelect.tsx 'src/components/labels/**' src/services/label.service.ts src/types/label.types.ts
+git diff --numstat 1daaac7^ 1daaac7 -- src/types/case.types.ts src/types/board-task.types.ts src/types/board.ts src/types/board.types.ts src/services/case.service.ts src/services/customer.service.ts src/services/task.service.ts src/services/workflow.service.ts src/repositories/CustomerRepo.ts src/repositories/TaskRepo.ts src/repositories/TaskRepository.ts src/repositories/WorkflowRepo.ts src/components/users/UserSelect.tsx 'src/components/labels/**' src/services/label.service.ts src/types/label.types.ts
+git diff --name-status a714abe^1 a714abe -- 'src/app/(dashboard)/cases/**' 'src/components/cases/**' 'src/app/(dashboard)/manager/tasks/**' 'src/app/(dashboard)/shared/tasks/**' 'src/components/tasks/**' 'src/app/(dashboard)/board/**' 'src/components/board/**'
+git log --format='%h%x09%ad%x09%s' --date=short --name-status -- 'src/app/(dashboard)/cases/**' 'src/app/(dashboard)/shared/customers/page.tsx' 'src/components/cases/**' 'src/app/(dashboard)/manager/review/page.tsx' 'src/app/(dashboard)/manager/tasks/**' 'src/app/(dashboard)/shared/tasks/**' 'src/app/(dashboard)/staff/my-tasks/page.tsx' 'src/components/tasks/**' 'src/app/(dashboard)/board/**' 'src/components/board/**'
+git diff --check -- docs/audits/ST-01-COMMIT-HISTORY.md
+```
+
+## Limitations, consistency, and independent QA readiness
+
+- Git name-status/numstat proves path snapshots and line totals, not business intent, runtime correctness, lossless migration, backend compatibility, or authorization.
+- No backend/OpenAPI repository, database, production traffic, persisted Workflow/Task inventory, stakeholder confirmation, or runtime environment was available. Forward implementation must verify those contracts.
+- The historical group for `src/components/tasks/**` includes retained, deferred, and removed surfaces. It is intentionally history-query-only and must not be copied as a forward allowlist.
+- `1daaac7` and `a714abe` remain bundled shared history. No split, rewrite, or feature-completion claim is made.
+- This documentation-only Issue does not run application build/typecheck and does not waive focused/no-regression gates for implementation.
+- No application, config, backlog, review, Git index/ref/history, remote, environment, credential, or private record was mutated or inspected by this Issue.
+
+`IS-01.3.3` is ready for independent QA when the only Issue-owned change is this appended section. QA should reproduce the pre-write inventory and N/A current split, verify that Case/Task/Board/shared groups are exact and non-overlapping, reproduce the historical totals and `a714abe` first-parent evidence, confirm broad Task deletions are not called a proven migration, validate the ST-02/ST-03/ST-07 then ST-08/ST-09/ST-10 forward sequence, and verify canonical Workflow/attachment/payment/DnD/permission/no-regression/test gates plus the explicit no-rewrite and no-completion claims.
