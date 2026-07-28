@@ -252,7 +252,7 @@ export default function TaskSidebar({ open, task, onClose, onEdit }: TaskSidebar
           >
             <Tab
               label="Chi tiết"
-              icon={<AssignmentIcon fontSize="small" />}
+              icon={<ActivityIcon fontSize="small" />}
               iconPosition="start"
             />
             <Tab

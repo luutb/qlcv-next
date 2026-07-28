@@ -27,6 +27,7 @@ import {
   CalendarToday as CalendarIcon,
   Description as DescriptionIcon,
   Update as UpdateIcon,
+  CalendarToday,
 } from '@mui/icons-material';
 import { CaseTaskResponse, TaskStatus } from '@/types/case.types';
 import TaskStatusToggle from './TaskStatusToggle';
