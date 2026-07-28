@@ -555,3 +555,132 @@ git diff --check -- docs/audits/ST-01-COMMIT-HISTORY.md
 - No application, config, backlog, review, Git index/ref/history, remote, environment, credential, or private record was mutated or inspected by this Issue.
 
 `IS-01.3.3` is ready for independent QA when the only Issue-owned change is this appended section. QA should reproduce the pre-write inventory and N/A current split, verify that Case/Task/Board/shared groups are exact and non-overlapping, reproduce the historical totals and `a714abe` first-parent evidence, confirm broad Task deletions are not called a proven migration, validate the ST-02/ST-03/ST-07 then ST-08/ST-09/ST-10 forward sequence, and verify canonical Workflow/attachment/payment/DnD/permission/no-regression/test gates plus the explicit no-rewrite and no-completion claims.
+
+---
+
+## IS-01.3.4 — Final lossless Story diff verification
+
+### Verdict at the pre-write snapshot
+
+**PASS — no Git-recorded file loss or out-of-scope change detected at base HEAD `82eb384ffcef40f189b6ee58aaccca5b632476f9`.** The worktree/index were clean, the Story was a linear 13-commit documentation-only chain from local `develop`, and `develop...HEAD` contained exactly the five expected backlog/audit/review paths. No delete, rename, copy, type/mode change, unmerged entry, source, configuration, or dependency delta was present.
+
+This is a repository-snapshot verdict for independent Issue QA. It is not a PR, push, merge, Task QA, Story QA, PO acceptance, runtime-quality, remote-synchronization, or external-data verdict.
+
+### PASS/FAIL evidence matrix
+
+| Check | Reproduced evidence | Verdict |
+|---|---|---|
+| Branch and base | `story/st-01-git-baseline`; HEAD `82eb384`; local `develop` and merge base both `8d454af` | **PASS** |
+| Worktree/index ambiguity | Porcelain v2 returned branch metadata only; cached diff, worktree diff, non-ignored untracked list and unmerged index were empty | **PASS** |
+| Linear Story history | `develop` is an ancestor; `develop..HEAD` has 13 first-parent commits and zero merge commits | **PASS** |
+| Exact Story path set | `M docs/BACKLOG.md`; added the three `docs/audits/ST-01-*.md` files and `docs/reviews/ST-01.md`; no sixth path | **PASS** |
+| Exact Story stat | 5 files, 1,912 insertions, 11 deletions at the snapshot | **PASS** |
+| Delete/rename/copy/type/mode/unmerged | `--name-status -M -C`, summary, raw diff and unmerged index show only one `M` and four `A`; all result modes are regular-file `100644` | **PASS** |
+| Source/config/dependency preservation | Excluding `docs/**` from `develop...HEAD` returns no path; protected source/config/dependency files have no Story or worktree diff | **PASS** |
+| Protection manifest — tracked paths | AGENTS/agent config, workflow/quality docs, manifests/locks, Next/TS/ESLint/Vitest/middleware files are present at HEAD, mode `100644`, and blob-identical to `develop` | **PASS** |
+| Protection manifest — ignored local environment paths | `.env.local` and `.env.production.example` are present and still ignored by `.env*`; contents were not inspected and Git cannot prove content identity | **PASS with stated Git limit** |
+| Changed-file blob identity | Pre-write worktree hashes for all five changed paths exactly matched their HEAD blob IDs below | **PASS** |
+| Commit ownership/purpose trace | Every Issue/Task evidence commit touches only its assigned backlog/audit/review group; role custody is reconciled below | **PASS** |
+| File outside scope disappeared | No `D` record anywhere in the Story diff and no non-documentation path delta | **PASS** |
+
+No `FAIL` finding was observed. The limitations section states what this matrix cannot prove.
+
+### Exact changed-tree identity
+
+| Path | `develop` state | Base-HEAD mode/blob | Pre-write worktree identity | Custody and purpose |
+|---|---|---|---|---|
+| `docs/BACKLOG.md` | Blob `a4b24b34efa4caae7ad09849cfd3fc521877ec30` | `100644` / `8daff6434b766a0fdba84b72d1c20c104df8c4f7` | Matched HEAD | Coordinator-owned Issue checkbox state and Story contract |
+| `docs/audits/ST-01-WORKTREE-INVENTORY.md` | Absent | `100644` / `70914835a3a8c2c50844ac8e69e8dbb1ef85f308` | Matched HEAD | `repo_stabilizer` evidence for IS-01.1.1–IS-01.1.4 |
+| `docs/audits/ST-01-MODULE-SCOPE.md` | Absent | `100644` / `bb4ccb8b97e8ab52e7d50f90c4d82e99fa94277a` | Matched HEAD | `repo_stabilizer` decisions for IS-01.2.1–IS-01.2.4 |
+| `docs/audits/ST-01-COMMIT-HISTORY.md` | Absent | `100644` / `6ab9d98ae6117d0abbaa30468f6073262b3a3896` | Matched HEAD before this section | `repo_stabilizer` evidence for IS-01.3.1–IS-01.3.4; this Issue now intentionally changes only this worktree file |
+| `docs/reviews/ST-01.md` | Absent | `100644` / `d5285b4ef4c1e1794220a5b4057d61a14fd9aef8` | Matched HEAD | Coordinator custody with independent `qa_reviewer` verdict evidence |
+
+Git blob identity proves the committed/worktree bytes at the observation point. It does not authenticate the human or agent that created them. After appending this section, only the commit-history audit is expected to differ from base HEAD until normal Issue handling occurs.
+
+### Commit chain, owner and purpose reconciliation
+
+| Linear commit(s) | Issue/purpose | Exact path boundary | Role custody |
+|---|---|---|---|
+| `9926e39`, `b69db8f`, `5f61491`, `f824d97` | IS-01.1.1–IS-01.1.4: inventory, ambiguity, provenance and protection | Backlog + worktree audit + review record | `repo_stabilizer` audit; coordinator checkbox/review custody; independent QA verdict custody |
+| `dca7df3` | Record TK-01.1 QA gate | Review record only | Coordinator/QA evidence |
+| `da5bc56`, `223c2b8`, `0d6ccae`, `f73caa8` | IS-01.2.1–IS-01.2.4: module decisions and canonical register | Backlog + module-scope audit + review record | `repo_stabilizer` decision evidence; coordinator/QA custody |
+| `4932d25` | Record TK-01.2 QA gate | Review record only | Coordinator/QA evidence |
+| `593c884`, `7fc236e`, `82eb384` | IS-01.3.1–IS-01.3.3: platform, API/types and feature commit boundaries | Backlog + commit-history audit + review record | `repo_stabilizer` audit; coordinator/QA custody |
+
+All 13 commits have one parent in this Story range; no merge interrupts the chain. Bundling implementation evidence with coordinator/QA records limits identity attribution, but not the exact path/purpose trace above. The future IS-01.3.4 Issue commit is not listed or claimed before it exists.
+
+### Protected-path reconciliation
+
+The protection manifest in `ST-01-WORKTREE-INVENTORY.md` remains satisfied at the Git-observable level:
+
+- the five changed Story evidence/tracking paths are present and recoverable from the linear Story commits;
+- `AGENTS.md`, `.codex/config.toml`, all 11 `.codex/agents/*.toml`, `.gitignore`, `README.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/QUALITY_BASELINE.md`, and `docs/reviews/README.md` are tracked and unchanged from `develop`;
+- `package.json`, `package-lock.json`, `yarn.lock`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.ts`, and `middleware.ts` are tracked and unchanged from `develop`;
+- the two ignored environment paths are present and remain outside Git. Their content/recovery backup is user-controlled and was not inspected;
+- no cleanup, restore, reset or deletion is needed or authorized by this verification.
+
+This proves no protected tracked path changed or disappeared in the Story. It does not decide the unresolved canonical package-manager choice or validate application correctness.
+
+### Pre-merge checklist
+
+Run this checklist again against the reviewed commit immediately before any separately authorized merge:
+
+1. Confirm the branch and intended reviewed HEAD; confirm `git merge-base develop HEAD` is the expected integration base and `develop` is an ancestor.
+2. Require empty staged, unstaged, non-ignored untracked and unmerged results. Do not clean/reset/restore to achieve them; investigate any difference.
+3. Re-run `git diff --name-status -M -C develop...HEAD`, raw diff and summary. Permit only the five documented paths unless a later independently reviewed commit explicitly expands scope.
+4. Reject any `D`, `R`, `C`, type/mode change, unmerged record, or source/config/dependency path until it has an owner, purpose, recovery evidence and matching Issue QA.
+5. Recompute blob IDs for all changed paths and compare them with the exact reviewed QA evidence; update stale HEAD/hash references through coordinator-owned records, not this pre-QA section.
+6. Verify every Issue in TK-01.3 has independent QA `PASS`, then run the TK-01.3 QA gate. Do not infer Task `PASS` from this Issue matrix.
+7. Run Story QA and only then Story PO review according to `AGENTS.md`. Do not claim merge readiness or Story acceptance before both required verdicts are recorded.
+8. Retain the ignored-environment secure-backup warning; never commit secrets to make Git evidence complete.
+9. If merge is later authorized, inspect the resulting diff/commit separately. This audit does not authorize or predict the merge result.
+
+### Expected post-Issue state
+
+Immediately after this implementation and before independent QA, the only expected working-tree entry is modified `docs/audits/ST-01-COMMIT-HISTORY.md`. The index, unmerged set and non-ignored untracked set should remain empty. After QA/coordinator handling, backlog/review evidence and commit count/blob IDs may legitimately change; those later states must be verified rather than assumed.
+
+No PR, push, merge, Task QA, Story QA, Story PO acceptance or production-readiness claim is made.
+
+### Reproducible read-only commands
+
+These commands avoid remote URLs, environment values, credentials and author email fields:
+
+```sh
+git branch --show-current
+git rev-parse HEAD
+git rev-parse develop
+git merge-base develop HEAD
+git merge-base --is-ancestor develop HEAD
+git status --porcelain=v2 --branch
+git diff --cached --raw
+git diff-files --raw
+git ls-files --others --exclude-standard
+git ls-files --unmerged
+git rev-list --count develop..HEAD
+git rev-list --merges develop..HEAD
+git rev-list --first-parent --reverse --format='%h %s' develop..HEAD
+git log --reverse --format='COMMIT %h %s' --name-status develop..HEAD
+git diff --name-status -M -C develop...HEAD
+git diff --stat develop...HEAD
+git diff --summary develop...HEAD
+git diff --raw develop...HEAD
+git diff --name-status develop...HEAD -- . ':(exclude)docs/**'
+git ls-tree HEAD -- docs/BACKLOG.md docs/audits/ST-01-COMMIT-HISTORY.md docs/audits/ST-01-MODULE-SCOPE.md docs/audits/ST-01-WORKTREE-INVENTORY.md docs/reviews/ST-01.md
+git ls-tree develop -- docs/BACKLOG.md docs/audits/ST-01-COMMIT-HISTORY.md docs/audits/ST-01-MODULE-SCOPE.md docs/audits/ST-01-WORKTREE-INVENTORY.md docs/reviews/ST-01.md
+git hash-object docs/BACKLOG.md docs/audits/ST-01-COMMIT-HISTORY.md docs/audits/ST-01-MODULE-SCOPE.md docs/audits/ST-01-WORKTREE-INVENTORY.md docs/reviews/ST-01.md
+git diff --name-status develop...HEAD -- AGENTS.md .codex/config.toml .codex/agents .gitignore README.md docs/DEVELOPMENT_WORKFLOW.md docs/QUALITY_BASELINE.md docs/reviews/README.md package.json package-lock.json yarn.lock tsconfig.json next.config.ts eslint.config.mjs vitest.config.ts middleware.ts
+git check-ignore -v .env.local .env.production.example
+git diff --check -- docs/audits/ST-01-COMMIT-HISTORY.md
+```
+
+### Limitations
+
+- Git proves tracked snapshots and recorded ancestry, not runtime correctness, completeness of product behavior, deploy state, stakeholder intent or authorship identity.
+- Ignored files, their contents and their backups are outside Git proof. Presence/ignore classification does not prove content integrity. Reflogs, hooks, submodule/external storage, backend/database records and deleted external data were not inspected.
+- Local and remote-tracking refs may be stale because no fetch or remote inspection occurred. This audit proves local `develop` ancestry only.
+- A clean diff cannot prove that files lost before the merge base should have existed; this verification proves only that the Story introduced no recorded outside-scope loss relative to `develop`.
+- The global quality baseline remains red and was not rerun because this Issue changes documentation only. Lossless Git scope is not equivalent to application quality or release readiness.
+
+### Independent QA readiness
+
+`IS-01.3.4` is ready for independent QA when this appended section is the only Issue-owned working-tree change. QA should reproduce every matrix row, exact five-path set/stat/modes/blob IDs, 13-commit linear chain, protected-path equality, ignored-path limitation, role/purpose trace and immediate expected state. QA must not promote this Issue-level `PASS` matrix into Task/Story/PO acceptance without the separate required gates.
