@@ -1,17 +1,7 @@
 import apiClient from '@/api/client';
+import type { Budget } from '@/types/budget';
 
-export interface Budget {
-  id: number;
-  name: string;
-  task_id?: number;
-  task_name?: string;
-  total_budget: number;
-  spent: number;
-  remaining: number;
-  percentage_used: number;
-  status: 'active' | 'over_budget' | 'completed';
-  currency?: string;
-}
+export type { Budget } from '@/types/budget';
 
 export interface BudgetRequest {
   name: string;

@@ -1,62 +1,17 @@
 import apiClient from '@/services/api/client';
+import type {
+  UserCapacity,
+  WorkloadDistribution,
+  WorkloadMetrics,
+  WorkloadUser,
+} from '@/types/workload.types';
 
-export interface WorkloadUser {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  department?: string;
-  capacity: number; // hours per week
-  current_workload: number; // current hours assigned
-  utilization_rate: number; // percentage
-  available_hours: number;
-  tasks_count: number;
-  avatar?: string;
-}
-
-export interface WorkloadMetrics {
-  total_users: number;
-  average_utilization: number;
-  overloaded_users: number;
-  underutilized_users: number;
-  total_capacity: number;
-  total_workload: number;
-  efficiency_score: number;
-}
-
-export interface UserCapacity {
-  user_id: number;
-  weekly_capacity: number; // hours per week
-  daily_capacity: number; // hours per day
-  overtime_limit: number; // max overtime hours per week
-  availability: {
-    monday: boolean;
-    tuesday: boolean;
-    wednesday: boolean;
-    thursday: boolean;
-    friday: boolean;
-    saturday: boolean;
-    sunday: boolean;
-  };
-  time_off_dates: string[]; // ISO date strings
-  skills: string[];
-  hourly_rate?: number;
-}
-
-export interface WorkloadDistribution {
-  user_id: number;
-  user_name: string;
-  tasks: {
-    id: string;
-    title: string;
-    estimated_hours: number;
-    priority: string;
-    due_date: string;
-    status: string;
-  }[];
-  total_hours: number;
-  capacity_percentage: number;
-}
+export type {
+  UserCapacity,
+  WorkloadDistribution,
+  WorkloadMetrics,
+  WorkloadUser,
+} from '@/types/workload.types';
 
 export class WorkloadRepository {
   private static instance: WorkloadRepository;

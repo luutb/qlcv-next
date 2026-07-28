@@ -116,6 +116,8 @@ export interface BudgetAlert {
   acknowledged_by?: number;
   acknowledged_at?: string;
   created_at: string;
+  /** Display relation used by the current active-alert consumer. */
+  budget_name?: string;
   budget?: Budget;
   acknowledger?: UserResponse;
 }

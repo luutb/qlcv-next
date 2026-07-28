@@ -33,16 +33,42 @@ export { LabelCategory } from './label.types';
 export type {
   Label,
 } from './label.types';
+export type {
+  Budget,
+  BudgetAlert,
+  BudgetCategory,
+  BudgetListResponse,
+  BudgetQueryParams,
+  BudgetSummaryData,
+  CostCenter,
+  CreateBudgetCategoryRequest,
+  CreateBudgetRequest,
+  CreateExpenseRequest,
+  Expense,
+  ExpenseAttachment,
+  ExpenseListResponse,
+  ExpenseQueryParams,
+} from './budget';
+export type {
+  Payment,
+  PaymentMethod,
+  PaymentStatus,
+} from './payment.types';
+export type {
+  CreateWorkflowRequest,
+  CreateWorkflowStep,
+  UpdateWorkflowRequest,
+  Workflow,
+  WorkflowDetail,
+} from './workflow.types';
+export type {
+  UserCapacity,
+  WorkloadDistribution,
+  WorkloadMetrics,
+  WorkloadUser,
+} from './workload.types';
 
 // Core Domain Types
-export enum PaymentStatus {
-  UNPAID = 'unpaid',
-  PARTIAL = 'partial',
-  PAID = 'paid',
-  OVERDUE = 'overdue',
-  REFUNDED = 'refunded'
-}
-
 export enum Priority {
   LOW = 'low',
   MEDIUM = 'medium',
@@ -69,22 +95,6 @@ export interface Client {
   phone?: string;
   address?: string;
   company?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Payment {
-  id: string;
-  caseId: string;
-  invoiceId?: string;
-  amount: number;
-  paidAmount: number;
-  currency: string;
-  status: PaymentStatus;
-  dueDate: string;
-  paidDate?: string;
-  paymentMethod?: PaymentMethod;
-  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -319,6 +329,5 @@ export interface CustomerQueryParams {
 }
 
 // Export all enums and types
-export type PaymentMethod = 'bank_transfer' | 'cash' | 'check' | 'card' | 'crypto';
 export type FileType = 'pdf' | 'docx' | 'xlsx' | 'image' | 'video' | 'other';
 export type ViewMode = 'board' | 'list' | 'calendar' | 'gantt';
