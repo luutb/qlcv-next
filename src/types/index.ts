@@ -1,3 +1,19 @@
+import type { User } from './user.types';
+
+export type {
+  CreateCertificateRequest,
+  CreateEducationRequest,
+  CreateUserRequest,
+  Role,
+  UpdateProfileRequest,
+  UpdateUserRequest,
+  User,
+  UserCertificate,
+  UserDetail,
+  UserEducation,
+  UserQueryParams,
+} from './user.types';
+
 // Core Domain Types
 export enum TaskStatus {
   TODO = 'todo',
@@ -15,13 +31,6 @@ export enum PaymentStatus {
   REFUNDED = 'refunded'
 }
 
-export enum UserRole {
-  STAFF = 'staff',
-  ACCOUNTANT = 'accountant',
-  MANAGER = 'manager',
-  ADMIN = 'admin'
-}
-
 export enum Priority {
   LOW = 'low',
   MEDIUM = 'medium',
@@ -37,19 +46,6 @@ export enum CaseStatus {
 }
 
 // Core Interfaces
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  role: UserRole;
-  permissions: Permission[];
-  department?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Permission {
   id: string;
   resource: string;
