@@ -12,6 +12,7 @@ import {
   CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import apiClient from '@/api/client';
+import { authService } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import BudgetSummaryWidget from '@/components/budget/BudgetSummaryWidget';
 import BudgetAlertsWidget from '@/components/budget/BudgetAlertsWidget';
@@ -173,7 +174,7 @@ export default function AdminDashboard() {
       </Paper>
 
       {/* Budget Widgets */}
-      <Grid container spacing={3} mt={2}>
+      <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <BudgetSummaryWidget refreshTrigger={refreshTrigger} />
         </Grid>

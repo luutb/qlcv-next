@@ -19,6 +19,8 @@ interface UserCapacitySettingsProps {
   onUpdate?: (capacity: UserCapacity) => void;
 }
 
+// TODO: Replace with API call to get available skills from backend
+// For now using static list, should be moved to backend configuration
 const SKILL_OPTIONS = [
   'JavaScript', 'TypeScript', 'React', 'Vue.js', 'Angular',
   'Node.js', 'Python', 'Java', 'C#', '.NET',
@@ -28,6 +30,8 @@ const SKILL_OPTIONS = [
   'Git', 'CI/CD', 'Testing', 'Agile'
 ];
 
+// TODO: Replace with API call to get task types from backend
+// These should match the task types defined in backend
 const TASK_TYPE_OPTIONS = [
   'development', 'bug_fix', 'code_review', 'testing',
   'documentation', 'deployment', 'maintenance', 'research'

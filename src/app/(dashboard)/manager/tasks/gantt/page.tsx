@@ -3,7 +3,7 @@
 import { Box, Typography, Paper, CircularProgress, Alert } from '@mui/material';
 import { useEffect, useState } from 'react';
 import TaskGanttView from '@/components/tasks/TaskGanttView';
-import apiClient from '@/api/client';
+import apiClient from '@/services/api/client';
 
 interface GanttTask {
   id: number;

@@ -20,6 +20,8 @@ const ROLE_HOME: Record<string, string> = {
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  console.log('Middleware - pathname:', pathname);
+
   // Public routes
   if (
     pathname === '/login' ||
@@ -32,14 +34,18 @@ export default function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const role = request.cookies.get('role')?.value as Role | undefined;
 
+  console.log('Middleware - cookies:', { token: !!token, role });
+
   // Not authenticated -> redirect to login
   if (!token) {
+    console.log('Middleware - no token, redirecting to login');
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // Root redirect to role-based home
   if (pathname === '/') {
     const home = role ? ROLE_HOME[role] || '/staff' : '/staff';
+    console.log('Middleware - root redirect to:', home);
     return NextResponse.redirect(new URL(home, request.url));
   }
 
@@ -48,12 +54,14 @@ export default function middleware(request: NextRequest) {
     if (pathname.startsWith(routePrefix)) {
       if (!role || !allowedRoles.includes(role)) {
         const home = role ? ROLE_HOME[role] || '/staff' : '/login';
+        console.log('Middleware - role access denied, redirecting to:', home);
         return NextResponse.redirect(new URL(home, request.url));
       }
       break;
     }
   }
 
+  console.log('Middleware - allowing access to:', pathname);
   return NextResponse.next();
 }
 

@@ -1,0 +1,14 @@
+name = "admin_features"
+description = "Owns ST-11 through ST-14: users, capacity, workflows, labels, finance, audit logs, reports, dashboards, and settings."
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Work only on assigned Tasks or Issues from ST-11, ST-12, ST-13, or ST-14 in docs/BACKLOG.md. Accept only one domain slice per turn and stay within the parent agent's file boundaries.
+
+Replace mocks and direct page-level requests with canonical services and types. Confirm product scope before restoring or deleting budget, expense, file, notification, contract, or workflow modules. Preserve monetary precision and make destructive admin actions explicit and confirmable.
+
+Do not combine unrelated admin domains in one change. Do not invent export files, metrics, permissions, or backend data. Hide unsupported UI only when the assigned Issue or product decision explicitly requires it.
+
+Test role permissions, loading/error/empty states, validation, pagination, and exports in the affected slice. Report product-scope decisions, changed files, tests run, blockers, and completed Issue IDs.
+"""

@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import Cookies from 'js-cookie';
 import apiClient from '@/api/client';
-import { requestFCMToken } from '@/lib/firebase';
 import { User, LoginRequest, LoginResponse } from '@/types';
 
 interface AuthContextType {
@@ -18,35 +17,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Try cookies first (SSR-compatible), fall back to localStorage
-    const storedUser = Cookies.get('user') || localStorage.getItem('user');
+    setIsMounted(true);
+    // Only access localStorage after component is mounted on client
+    const storedUser = Cookies.get('user') || (typeof window !== 'undefined' ? localStorage.getItem('user') : null);
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
         Cookies.remove('user');
-        localStorage.removeItem('user');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+        }
       }
     }
     setIsLoading(false);
-  }, []);
-
-  const registerDevice = useCallback(async () => {
-    try {
-      const fcmToken = await requestFCMToken();
-      if (fcmToken) {
-        await apiClient.post('/devices', {
-          device_id: `web_${Date.now()}`,
-          device_name: navigator.userAgent.slice(0, 50),
-          platform: 'web',
-          push_token: fcmToken,
-        });
-      }
-    } catch (error) {
-      console.warn('Failed to register device for push notifications:', error);
-    }
   }, []);
 
   const login = useCallback(async (credentials: LoginRequest) => {
@@ -61,16 +48,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     Cookies.set('role', data.user.role, { sameSite: 'Lax' });
 
     // LocalStorage (cho client-side persistence)
-    localStorage.setItem('token', data.token);
-    if (data.refresh_token) {
-      localStorage.setItem('refresh_token', data.refresh_token);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', data.token);
+      if (data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token);
+      }
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('role', data.user.role);
     }
-    localStorage.setItem('user', JSON.stringify(data.user));
-    localStorage.setItem('role', data.user.role);
 
     setUser(data.user);
-    registerDevice();
-  }, [registerDevice]);
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -82,10 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     Cookies.remove('refresh_token');
     Cookies.remove('user');
     Cookies.remove('role');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('role');
+    }
     setUser(null);
     window.location.href = '/login';
   }, []);
