@@ -89,7 +89,7 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 ### TK-01.3 — Tạo lịch sử commit có thể review
 
 - [x] `IS-01.3.1` Tách thay đổi nền tảng và dependency thành commit riêng.
-- [ ] `IS-01.3.2` Tách migration API/types thành commit riêng.
+- [x] `IS-01.3.2` Tách migration API/types thành commit riêng.
 - [ ] `IS-01.3.3` Tách Case/Task/Board thành các commit theo feature.
 - [ ] `IS-01.3.4` Kiểm tra lại diff và xác nhận không mất file ngoài phạm vi.
 
