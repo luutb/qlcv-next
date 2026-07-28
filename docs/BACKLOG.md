@@ -123,7 +123,7 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 ### TK-02.3 — Migration type consumers
 
 - [ ] `IS-02.3.1` Sửa type errors trong `src/app` theo từng route group.
-- [ ] `IS-02.3.2` Sửa type errors trong Case và Board components.
+- [x] `IS-02.3.2` Sửa type errors trong Case và Board components.
 - [ ] `IS-02.3.3` Sửa type errors trong Task, User và Budget components.
 - [ ] `IS-02.3.4` Sửa type errors trong hooks, repositories và services còn giữ.
 
