@@ -150,7 +150,7 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 ### TK-03.1 — Chốt API client chuẩn
 
 - [x] `IS-03.1.1` So sánh `src/api/client.ts` với `src/services/api/client.ts`.
-- [ ] `IS-03.1.2` Hợp nhất base URL, timeout, headers và multipart handling.
+- [x] `IS-03.1.2` Hợp nhất base URL, timeout, headers và multipart handling.
 - [ ] `IS-03.1.3` Hợp nhất access-token/refresh-token behavior.
 - [ ] `IS-03.1.4` Chuẩn hoá API error thành một kiểu lỗi dùng chung.
 - [ ] `IS-03.1.5` Tắt log payload/token trong production.
