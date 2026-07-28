@@ -131,7 +131,7 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 
 - [x] `IS-02.4.1` Đọc hướng dẫn MUI đang cài và lập danh sách API cũ.
 - [x] `IS-02.4.2` Thay cách dùng `Grid item/xs` không còn hợp lệ.
-- [ ] `IS-02.4.3` Sửa prop/type thay đổi ở DataGrid, Select và Tree View.
+- [x] `IS-02.4.3` Sửa prop/type thay đổi ở DataGrid, Select và Tree View.
 - [ ] `IS-02.4.4` Chạy typecheck và xử lý regression theo từng nhóm component.
 
 **Acceptance criteria:** `npx tsc --noEmit` đạt 0 lỗi và không dùng `any` để che lỗi contract.

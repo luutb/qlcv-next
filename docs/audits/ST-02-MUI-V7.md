@@ -166,3 +166,24 @@ Limitations/evidence:
 - One direct `./node_modules/.bin/tsc --noEmit --pretty false` baseline was run. It fails on many pre-existing, non-MUI Story areas; it confirmed the Grid, Chip, ListItem, and ResponsiveContainer diagnostics above and produced no Data Grid, Select, or Tree View diagnostic. No full build was run.
 - This is a static source/declaration audit, not visual regression coverage. Grid migration still needs responsive viewport verification.
 - QA readiness: the inventory is deterministic, locally evidenced, and split by owning Issue. QA should require no new diagnostics relative to `docs/QUALITY_BASELINE.md` until ST-05 establishes the green suite.
+
+## IS-02.4.3 execution verification — N/A/no-code
+
+Verification date/base: 2026-07-28 at committed base `df56d95`. The installed contracts remain Material 7.3.10, Data Grid 8.28.2, and Tree View 9.0.4. A fresh scan confirms that this Issue requires no application-code migration.
+
+- **Data Grid:** 8 instances in 8 files: `accountant/payments/page.tsx:155`, `admin/audit-logs/page.tsx:264`, `admin/reports/page.tsx:282`, `admin/users/page.tsx:262`, `admin/workflows/page.tsx:126`, `manager/tasks/page.tsx:246`, `shared/customers/page.tsx:214`, and `staff/my-tasks/page.tsx:208`. They use installed-supported `paginationModel`, `onPaginationModelChange`, `paginationMode`, `pageSizeOptions`, `initialState.pagination.paginationModel`, and `disableRowSelectionOnClick` where applicable (`DataGridProps.d.ts:169-174,281-289,634-648,780-786`). No controlled row selection is present; future selection must use `rowSelectionModel`/`onRowSelectionModelChange` with `{ type, ids: Set<GridRowId> }` (`DataGridProps.d.ts:719-727`; `gridRowSelectionModel.d.ts:6-9`).
+- **Select:** 6 instances in 4 files: `board/page.tsx:459`, `cost-centers/page.tsx:483,502`, `CaseTaskList.tsx:218,232`, and `CustomFields.tsx:181`. All handlers use inferred installed-compatible events and `event.target.value`; extracted handlers must use `SelectChangeEvent<T>`, not `React.ChangeEvent<HTMLSelectElement>` (`Select.d.ts:94-101`; `SelectInput.d.ts:12-22,41`).
+- **Tree View:** one `SimpleTreeView` at `cost-centers/page.tsx:422`, one recursive `TreeItem` at `:223`, package imports at `:42-43`, and supported `itemId` at `:225`. Future controlled state must use `expandedItems`/`onExpandedItemsChange` and `selectedItems`/`onSelectedItemsChange` (`MinimalTreeViewStore.types.d.ts:160-175,194-203,232-237`).
+- **Zero legacy usage:** the source contains none of `selectionModel`, `onSelectionModelChange`, `componentsProps`, `components=`, `rowsPerPageOptions`, `disableSelectionOnClick`, `@mui/lab`, `<TreeView>`, `nodeId`, `onNodeToggle`, `onNodeSelect`, `ContentComponent`, `ContentProps`, or `useTreeViewApiRef`. Filtered current TypeScript diagnostics contain no DataGrid, Select, or Tree View API/type error.
+
+Commands used:
+
+```sh
+rg -n '<DataGrid' src --glob '*.tsx'
+rg -n '<Select' src --glob '*.tsx'
+rg -n 'SimpleTreeView|<TreeItem|itemId=' src --glob '*.tsx'
+rg -n '\b(selectionModel|onSelectionModelChange|componentsProps|rowsPerPageOptions|disableSelectionOnClick|nodeId|onNodeToggle|onNodeSelect|ContentComponent|ContentProps|useTreeViewApiRef)\b|components\s*=|@mui/lab|<TreeView\b' src --glob '*.{ts,tsx}'
+./node_modules/.bin/tsc --noEmit --pretty false 2>&1 | rg -i '(@mui/x-data-grid|DataGrid|GridColDef|GridPaginationModel|GridRowSelection|SelectChangeEvent|SelectProps|SimpleTreeView|TreeItem|TreeView)'
+```
+
+Limitations and scope separation: the diagnostic command checks the project but reports only this Issue's three API families; it is not a build or proof that unrelated baseline errors are green. Pre-existing concurrent diffs in `src/app/(dashboard)/cases/[id]/edit/page.tsx`, `src/components/cases/TaskDetail.tsx`, and `src/components/tasks/TaskGanttView.tsx` are outside IS-02.4.3, were preserved untouched, and are not attributed to this result. Deprecated TextField props and other MUI debt listed under IS-02.4.4 remain explicitly out of scope.
