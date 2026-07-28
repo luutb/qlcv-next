@@ -108,8 +108,8 @@ Các Story nối bằng `||` có thể chạy song song sau khi dependency phía
 
 ### TK-02.1 — Chuẩn hoá domain types
 
-- [ ] `IS-02.1.1` Hợp nhất `Role`, `User` và `UserDetail`.
-- [ ] `IS-02.1.2` Hợp nhất `Task`, trạng thái Task và workflow step.
+- [x] `IS-02.1.1` Hợp nhất `Role`, `User` và `UserDetail`.
+- [x] `IS-02.1.2` Hợp nhất `Task`, trạng thái Task và workflow step.
 - [ ] `IS-02.1.3` Hợp nhất `Case`, trạng thái Case, member và label.
 - [ ] `IS-02.1.4` Hợp nhất Workflow, Workload, Budget và Payment types.
 
