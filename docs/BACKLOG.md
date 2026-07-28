@@ -11,6 +11,50 @@ Cập nhật: 28/07/2026. Backlog này triển khai chi tiết từ [ROADMAP.md]
 - Trạng thái mặc định của tất cả mục bên dưới là `Todo`.
 - Mỗi Issue chỉ có một owner chính; reviewer được gán riêng khi đưa lên công cụ quản lý.
 
+## Acceptance contract theo cấp
+
+Các checklist dưới đây là acceptance criteria bắt buộc và áp dụng cho **mọi** item tương ứng trong backlog. Nội dung sau mã Issue hoặc tiêu đề Task xác định đầu ra cụ thể cần chứng minh; checklist chung xác định điều kiện để reviewer cho `PASS`.
+
+### Issue acceptance checklist
+
+- Đầu ra mô tả ngay sau mã `IS-xx.y.z` đã tồn tại và có thể quan sát hoặc kiểm tra được.
+- Thay đổi chỉ nằm trong phạm vi Issue và không làm sai mục tiêu của Task/Story cha.
+- Có bằng chứng focused check phù hợp: test, typecheck, lint, command output hoặc inspection cho tài liệu/cấu hình.
+- Không tạo regression mới so với baseline hiện hành.
+- Loading, empty, error, permission và rollback được xử lý nếu Issue tác động tới các trạng thái đó.
+- Diff không chứa mock, placeholder, debug log, secret hoặc thay đổi không liên quan mới.
+
+### Task acceptance checklist
+
+- Tất cả Issue con đã được `qa_reviewer` cho `PASS` và được đánh dấu hoàn thành.
+- Kết quả mô tả bởi tiêu đề Task hoạt động như một đơn vị tích hợp, không chỉ là tổng các diff rời rạc.
+- Dependency và contract giữa các Issue con đã được kiểm tra.
+- Targeted regression checks của Task đã chạy và không tạo lỗi mới so với baseline.
+- Commit/diff, commands, pre-review evidence và residual risks đã được chuẩn bị trong `docs/reviews/ST-xx.md`; QA verdict có thể vẫn là `TODO` trước review.
+
+### Story acceptance checklist
+
+- Tất cả Task con đã đạt QA `PASS` trong review record.
+- Acceptance criteria ở cuối Story được chứng minh từng mục.
+- Luồng end-to-end, role, failure state và phạm vi business liên quan đã được kiểm tra.
+- Commit/diff, commands, acceptance evidence và residual risks đã được chuẩn bị trong `docs/reviews/ST-xx.md`; Story QA và PO verdict có thể vẫn là `TODO` trước các lượt review tương ứng.
+
+## Trạng thái và bằng chứng review
+
+- Checkbox trong file này lưu trạng thái Issue: chỉ đổi sang `[x]` sau Issue QA `PASS`.
+- Task và Story không thêm checkbox vào tiêu đề; trạng thái chính thức được lưu trong `docs/reviews/ST-xx.md` theo mẫu tại `docs/reviews/README.md`.
+- Trạng thái Task: `TODO`, `IN_PROGRESS`, `PASS`, `FAIL` hoặc `BLOCKED`.
+- Trạng thái Story QA: `TODO`, `PASS`, `FAIL` hoặc `BLOCKED`.
+- Trạng thái Story PO: `TODO`, `ACCEPT`, `REJECT` hoặc `BLOCKED`.
+- Không được ghi Task `PASS` hoặc Story `ACCEPT` nếu thiếu commit/diff reference và verification evidence.
+
+### Completion gates sau review
+
+- Issue hoàn thành khi Issue QA trả `PASS`, verdict/evidence đã được ghi và checkbox Issue chuyển sang `[x]`.
+- Task hoàn thành khi Task QA trả `PASS` và verdict/evidence đã được ghi trong review record.
+- Story đủ điều kiện gọi PO khi Story QA trả `PASS` và verdict/evidence đã được ghi.
+- Story hoàn thành khi PO trả `ACCEPT` và verdict/evidence cuối đã được ghi.
+
 ## Thứ tự thực hiện
 
 `ST-01 → (ST-02 || ST-03) → ST-04/ST-05 → (ST-06..ST-14) → ST-15/ST-16 → ST-17 → ST-18`
@@ -655,3 +699,4 @@ Một Issue chỉ được đóng khi:
 - [ ] Test liên quan đã được thêm/cập nhật và chạy thành công.
 - [ ] Loading, empty, error và permission state đã được xét nếu có UI/API.
 - [ ] Bằng chứng kiểm thử được đính kèm vào Issue hoặc pull request.
+- [ ] `qa_reviewer` đã trả `PASS` và review record đã được cập nhật.
