@@ -16,8 +16,8 @@ import {
   BudgetListResponse,
   ExpenseListResponse,
   CreateBudgetCategoryRequest,
-  ApiResponse
 } from '@/types/budget';
+import type { ApiResponse } from '@/types';
 
 export const budgetService = {
   // Budget Management
