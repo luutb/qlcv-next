@@ -1,4 +1,4 @@
-// Label Types
+// Canonical Label admin/domain types. Board labels remain a feature projection.
 
 export enum LabelCategory {
   WORKFLOW = 'workflow',

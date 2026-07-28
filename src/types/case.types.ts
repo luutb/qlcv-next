@@ -1,11 +1,14 @@
 // Case Management Types
 
 export type CaseStatus = 'open' | 'in_progress' | 'closed';
-export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'blocked';
+/** Case-detail task projection; this is not the core workflow Task status. */
+export type CaseTaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'blocked';
+/** Compatibility name for existing Case consumers pending IS-02.3.2. */
+export type TaskStatus = CaseTaskStatus;
 export type MemberRole = 'lawyer' | 'support';
 
-// Case Response
-export interface CaseResponse {
+// Canonical Case entity returned by the retained Case endpoints.
+export interface Case {
   id: string;                // UUID
   case_code: string;         // Auto-generated: CASE-2026-0001
   title: string;
@@ -15,6 +18,9 @@ export interface CaseResponse {
   created_at: string;        // ISO date
   updated_at: string;        // ISO date
 }
+
+/** Compatibility name used by existing Case feature consumers. */
+export type CaseResponse = Case;
 
 // Case Request Types
 export interface CreateCaseRequest {
@@ -53,7 +59,7 @@ export interface CaseTaskResponse {
   case_id: string;           // UUID
   title: string;
   description: string;
-  status: TaskStatus;
+  status: CaseTaskStatus;
   assignee_id?: number;
   due_date?: string;         // ISO date
   created_at: string;
@@ -70,7 +76,7 @@ export interface CreateCaseTaskRequest {
 }
 
 export interface UpdateTaskStatusRequest {
-  status: TaskStatus;
+  status: CaseTaskStatus;
 }
 
 // Case Member

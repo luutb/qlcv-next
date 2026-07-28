@@ -23,6 +23,16 @@ export type {
   TaskStepStatus,
   WorkflowStepConfig,
 } from './task.types';
+export type {
+  Case,
+  CaseMember,
+  CaseStatus,
+  MemberRole,
+} from './case.types';
+export { LabelCategory } from './label.types';
+export type {
+  Label,
+} from './label.types';
 
 // Core Domain Types
 export enum PaymentStatus {
@@ -38,13 +48,6 @@ export enum Priority {
   MEDIUM = 'medium',
   HIGH = 'high',
   URGENT = 'urgent'
-}
-
-export enum CaseStatus {
-  OPEN = 'open',
-  IN_PROGRESS = 'in_progress',
-  CLOSED = 'closed',
-  ARCHIVED = 'archived'
 }
 
 // Core Interfaces
@@ -68,24 +71,6 @@ export interface Client {
   company?: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface Case {
-  id: string;
-  caseCode: string;
-  title: string;
-  description: string;
-  status: CaseStatus;
-  priority: Priority;
-  client: Client;
-  assignedTo: User;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  dueDate?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  members: User[];
 }
 
 export interface Payment {
@@ -154,15 +139,6 @@ export interface WorkLog {
   description: string;
   timeSpent: number; // in minutes
   date: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Label {
-  id: string;
-  name: string;
-  color: string;
-  description?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -237,18 +213,6 @@ export interface TaskQueryParams {
   search?: string;
   tags?: string[];
   dueDate?: string;
-}
-
-export interface CaseQueryParams {
-  page?: number;
-  limit?: number;
-  status?: CaseStatus;
-  priority?: Priority;
-  assignedToId?: string;
-  clientId?: string;
-  search?: string;
-  tags?: string[];
-  createdAt?: string;
 }
 
 // UI State Types
