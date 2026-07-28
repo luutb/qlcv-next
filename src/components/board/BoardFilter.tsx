@@ -244,7 +244,7 @@ export default function BoardFilter({
                       label={label.name}
                       size="small"
                       onClick={() => handleLabelToggle(label.id)}
-                      delete={isSelected}
+                      onDelete={isSelected ? () => handleLabelToggle(label.id) : undefined}
                       deleteIcon={<CloseIcon style={{ fontSize: 14 }} />}
                       sx={{
                         height: 24,
@@ -286,7 +286,7 @@ export default function BoardFilter({
                       label={user.name}
                       size="small"
                       onClick={() => handleAssigneeToggle(user.id)}
-                      delete={isSelected}
+                      onDelete={isSelected ? () => handleAssigneeToggle(user.id) : undefined}
                       deleteIcon={<CloseIcon style={{ fontSize: 14 }} />}
                       avatar={
                         <Avatar
@@ -336,7 +336,7 @@ export default function BoardFilter({
                       label={milestone.title}
                       size="small"
                       onClick={() => handleMilestoneToggle(milestone.id)}
-                      delete={isSelected}
+                      onDelete={isSelected ? () => handleMilestoneToggle(milestone.id) : undefined}
                       deleteIcon={<CloseIcon style={{ fontSize: 14 }} />}
                       sx={{
                         height: 24,

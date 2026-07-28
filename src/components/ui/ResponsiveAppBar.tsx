@@ -10,6 +10,7 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   ListItemIcon,
   useMediaQuery,
@@ -105,20 +106,20 @@ export function Navigation({ mobileOpen, onClose }: NavigationProps) {
       </Box>
       <List>
         {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.label}
-            component="a"
-            href={item.path}
-            onClick={isMobile ? onClose : undefined}
-            sx={{
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
+          <ListItem key={item.label} disablePadding>
+            <ListItemButton
+              component="a"
+              href={item.path}
+              onClick={isMobile ? onClose : undefined}
+              sx={{
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>

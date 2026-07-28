@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { Box, BoxProps, useTheme, useMediaQuery } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
-interface ResponsiveContainerProps extends BoxProps {
+interface ResponsiveContainerProps extends Omit<BoxProps, 'maxWidth' | 'sx'> {
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
   disableGutters?: boolean;
-  sx?: BoxProps['sx'];
+  sx?: SxProps<Theme>;
 }
 
 const MAX_WIDTHS = {
@@ -21,39 +22,35 @@ export function ResponsiveContainer({
   maxWidth = 'lg',
   disableGutters = false,
   children,
-  sx = {},
+  sx = [],
   ...props
 }: ResponsiveContainerProps) {
   const theme = useTheme();
 
-  const containerStyles: BoxProps['sx'] = {
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    ...sx,
-  };
-
-  if (!disableGutters) {
-    containerStyles.paddingLeft = theme.spacing(2);
-    containerStyles.paddingRight = theme.spacing(2);
-  }
-
-  if (maxWidth !== false) {
-    const width = MAX_WIDTHS[maxWidth];
-    containerStyles.maxWidth = width;
-
-    // Add responsive padding for larger screens
-    containerStyles[theme.breakpoints.up('sm')] = {
-      ...containerStyles[theme.breakpoints.up('sm')],
-      paddingLeft: disableGutters ? 0 : theme.spacing(3),
-      paddingRight: disableGutters ? 0 : theme.spacing(3),
-    };
-
-    containerStyles[theme.breakpoints.up('md')] = {
-      ...containerStyles[theme.breakpoints.up('md')],
-      paddingLeft: disableGutters ? 0 : theme.spacing(3),
-      paddingRight: disableGutters ? 0 : theme.spacing(3),
-    };
-  }
+  const containerStyles: SxProps<Theme> = [
+    {
+      marginLeft: 'auto',
+      marginRight: 'auto',
+    },
+    ...(Array.isArray(sx) ? sx : [sx]),
+    {
+      ...(!disableGutters && {
+        paddingLeft: theme.spacing(2),
+        paddingRight: theme.spacing(2),
+      }),
+      ...(maxWidth !== false && {
+        maxWidth: MAX_WIDTHS[maxWidth],
+        [theme.breakpoints.up('sm')]: {
+          paddingLeft: disableGutters ? 0 : theme.spacing(3),
+          paddingRight: disableGutters ? 0 : theme.spacing(3),
+        },
+        [theme.breakpoints.up('md')]: {
+          paddingLeft: disableGutters ? 0 : theme.spacing(3),
+          paddingRight: disableGutters ? 0 : theme.spacing(3),
+        },
+      }),
+    },
+  ];
 
   return (
     <Box sx={containerStyles} {...props}>
