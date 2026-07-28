@@ -73,6 +73,8 @@ class ApiClient {
           return Promise.reject(this.handleApiError(error));
         }
 
+        originalRequest._retry = true;
+
         if (this.isRefreshing) {
           return new Promise<string>((resolve, reject) => {
             this.failedQueue.push({ resolve, reject });
@@ -82,7 +84,6 @@ class ApiClient {
           });
         }
 
-        originalRequest._retry = true;
         this.isRefreshing = true;
 
         try {
