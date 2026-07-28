@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
-import { ApiResponse, ApiError } from '@/types';
+import type { ApiResponse } from '@/types';
+import { normalizeApiError } from '../../lib/errors';
 
 // Enable request/response logging in development
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -40,11 +41,11 @@ class ApiClient {
         
         return config;
       },
-      (error) => {
+      (error: unknown) => {
         if (isDevelopment) {
           console.error('❌ Request Error:', error);
         }
-        return Promise.reject(error);
+        return Promise.reject(normalizeApiError(error));
       }
     );
 
@@ -56,21 +57,21 @@ class ApiClient {
         }
         return response;
       },
-      async (error: AxiosError) => {
+      async (error: AxiosError<unknown>) => {
         if (isDevelopment) {
           console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data);
         }
         
-        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
-        if (error.response?.status !== 401 || originalRequest._retry) {
-          return Promise.reject(this.handleApiError(error));
+        if (error.response?.status !== 401 || !originalRequest || !originalRequest.headers || originalRequest._retry) {
+          return Promise.reject(normalizeApiError(error));
         }
 
         const refreshToken = this.getRefreshToken();
         if (!refreshToken) {
           this.clearAuthAndRedirect();
-          return Promise.reject(this.handleApiError(error));
+          return Promise.reject(normalizeApiError(error));
         }
 
         originalRequest._retry = true;
@@ -99,9 +100,10 @@ class ApiClient {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return this.client(originalRequest);
         } catch (refreshError) {
-          this.processQueue(refreshError, null);
+          const apiError = normalizeApiError(refreshError);
+          this.processQueue(apiError, null);
           this.clearAuthAndRedirect();
-          return Promise.reject(this.handleApiError(refreshError));
+          return Promise.reject(apiError);
         } finally {
           this.isRefreshing = false;
         }
@@ -154,18 +156,6 @@ class ApiClient {
       localStorage.removeItem('role');
       window.location.href = '/login';
     }
-  }
-
-  private handleApiError(error: any): ApiError {
-    const message = error.response?.data?.message || error.message || 'An unexpected error occurred';
-    const code = error.response?.data?.code || error.code || 'UNKNOWN_ERROR';
-    const details = error.response?.data?.details || null;
-
-    return {
-      message,
-      code,
-      details,
-    };
   }
 
   // Generic CRUD methods

@@ -15,12 +15,83 @@ export const ERROR_MESSAGES: Record<string, string> = {
   CONTRACT_NOT_FOUND: 'Không tìm thấy hợp đồng',
 };
 
-export function extractErrorMessage(err: unknown): string | undefined {
-  if (err && typeof err === 'object' && 'response' in err) {
-    const resp = (err as { response?: { data?: { code?: string; message?: string } } }).response;
-    const code = resp?.data?.code;
-    if (code && ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
-    return resp?.data?.message;
+const DEFAULT_ERROR_MESSAGE = 'An unexpected error occurred';
+const DEFAULT_ERROR_CODE = 'UNKNOWN_ERROR';
+
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null;
+}
+
+function readString(record: UnknownRecord | undefined, key: string): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function getResponseData(error: unknown): UnknownRecord | undefined {
+  if (!isRecord(error) || !isRecord(error.response)) return undefined;
+  return isRecord(error.response.data) ? error.response.data : undefined;
+}
+
+export class ApiClientError extends Error {
+  readonly code: string;
+  readonly details: unknown;
+  readonly status?: number;
+
+  constructor(
+    message: string,
+    options: {
+      code?: string;
+      cause?: unknown;
+      details?: unknown;
+      status?: number;
+    } = {}
+  ) {
+    super(message);
+    this.name = 'ApiClientError';
+    this.code = options.code ?? DEFAULT_ERROR_CODE;
+    this.details = options.details ?? null;
+    this.status = options.status;
+    Object.defineProperty(this, 'cause', {
+      configurable: true,
+      enumerable: false,
+      value: options.cause,
+      writable: false,
+    });
   }
-  return undefined;
+}
+
+export function normalizeApiError(error: unknown): ApiClientError {
+  if (error instanceof ApiClientError) return error;
+
+  const errorRecord = isRecord(error) ? error : undefined;
+  const responseRecord = errorRecord && isRecord(errorRecord.response)
+    ? errorRecord.response
+    : undefined;
+  const responseData = getResponseData(error);
+  const statusValue = responseRecord?.status;
+
+  return new ApiClientError(
+    readString(responseData, 'message')
+      ?? readString(errorRecord, 'message')
+      ?? (error instanceof Error && error.message ? error.message : DEFAULT_ERROR_MESSAGE),
+    {
+      code: readString(responseData, 'code') ?? readString(errorRecord, 'code'),
+      details: responseData && 'details' in responseData ? responseData.details : null,
+      status: typeof statusValue === 'number' ? statusValue : undefined,
+      cause: error,
+    }
+  );
+}
+
+export function extractErrorMessage(err: unknown): string | undefined {
+  const responseData = getResponseData(err);
+  const code = err instanceof ApiClientError
+    ? err.code
+    : readString(responseData, 'code');
+  if (code && ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
+
+  return readString(responseData, 'message')
+    ?? (err instanceof Error && err.message ? err.message : undefined);
 }

@@ -169,18 +169,45 @@ describe('canonical API client transport', () => {
   });
 
   it('does not call refresh when no refresh token is available', async () => {
-    const { default: apiClient } = await import('../client');
+    const [{ default: apiClient }, { ApiClientError }] = await Promise.all([
+      import('../client'),
+      import('../../../lib/errors'),
+    ]);
     const refresh = vi.spyOn(axios, 'post');
     vi.stubGlobal('window', undefined);
     apiClient.axios.defaults.adapter = unauthorized;
 
-    await expect(apiClient.get('/protected')).rejects.toBeDefined();
+    await expect(apiClient.get('/protected')).rejects.toBeInstanceOf(ApiClientError);
 
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it('normalizes a 401 without a retryable request config', async () => {
+    const [{ default: apiClient }, { ApiClientError }] = await Promise.all([
+      import('../client'),
+      import('../../../lib/errors'),
+    ]);
+    const refresh = vi.spyOn(axios, 'post');
+
+    apiClient.axios.defaults.adapter = (config) => Promise.reject(
+      new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', undefined, undefined, {
+        config,
+        data: { message: 'Unauthorized' },
+        headers: {},
+        status: 401,
+        statusText: 'Unauthorized',
+      })
+    );
+
+    await expect(apiClient.get('/protected')).rejects.toBeInstanceOf(ApiClientError);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
   it('rejects every queued request when refresh fails', async () => {
-    const { default: apiClient } = await import('../client');
+    const [{ default: apiClient }, { ApiClientError }] = await Promise.all([
+      import('../client'),
+      import('../../../lib/errors'),
+    ]);
     Cookies.set('refresh_token', 'current-refresh-token');
     vi.stubGlobal('window', undefined);
     let adapterCalls = 0;
@@ -199,8 +226,11 @@ describe('canonical API client transport', () => {
     await vi.waitFor(() => expect(adapterCalls).toBe(2));
     rejectRefresh(new Error('Refresh failed'));
     const results = await settled;
+    const rejected = results.filter((result) => result.status === 'rejected');
 
-    expect(results.every(({ status }) => status === 'rejected')).toBe(true);
+    expect(rejected).toHaveLength(2);
+    expect(rejected.every(({ reason }) => reason instanceof ApiClientError)).toBe(true);
+    expect(rejected[0].reason).toBe(rejected[1].reason);
     expect(refresh).toHaveBeenCalledOnce();
   });
 });
