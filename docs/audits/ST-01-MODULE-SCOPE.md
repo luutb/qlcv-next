@@ -275,3 +275,270 @@ The TypeScript command is diagnostic and currently exits non-zero under the docu
 5. Canonical-service migration and repository deletion prerequisites are explicit.
 6. Files, Payment, permissions, testing, and backend-contract dependencies are surfaced.
 7. No application file, backlog checkbox, review record, index entry, ref, or commit was changed by this Issue.
+
+---
+
+## IS-01.2.2 — Files and Notifications
+
+### Decision summary
+
+| Capability | Decision | MVP effect |
+|---|---|---|
+| Task and Expense attachments | **KEEP** | Retain a backend-mediated attachment capability scoped to its owning business record; do not create an independent file product first. |
+| Standalone Files workspace, quota dashboard, version-history UI, public/team sharing, and generic file administration | **REMOVE from MVP** | Keep the deleted legacy route/components deleted. Reintroduce only a capability justified by a later accepted Story and verified backend contract. |
+| Direct browser-to-Firebase Storage | **DEFER** | Do not activate or remove the shared Firebase utility until storage ownership is selected. The MVP defaults to the canonical backend API/client abstraction. |
+| Authenticated in-app Notifications | **KEEP** | Deliver a minimal list/read/unread-count flow because the root provider and Header already expose this user contract. |
+| Push/FCM, notification preferences, email/digest, and PWA notification settings | **DEFER** | Keep disabled until product need, token lifecycle, service-worker configuration, consent, backend delivery, and security prerequisites are accepted. |
+| Deleted mock Notification page/components | **REMOVE from MVP** | Do not restore the mock data and callback-only implementation. Build a minimal route against a canonical service if the in-app MVP is scheduled. |
+
+These are separate capability decisions. `KEEP` does not approve wholesale restoration, `REMOVE from MVP` does not authorize a deletion in this Issue, and `DEFER` does not represent production readiness.
+
+This Issue changes no application code and does not restore or delete files.
+
+### Ownership and downstream custody
+
+- Decision authority: **ST-01 owner / Tech Lead**.
+- Decision-record custodian: **`repo_stabilizer`**.
+- Canonical contracts/data layer: **`core_types`** in ST-02 and **`api_services`** in ST-03.
+- Task attachment integration: **`core_features`** in ST-09.
+- Expense attachment integration: **`admin_features`** in ST-13.
+- Authentication/authorization controls: **`auth_security`** in ST-06/ST-07.
+- Navigation/accessibility and release validation: ST-15/ST-16 and ST-17/ST-18 owners.
+- Independent Issue acceptance: **`qa_reviewer`**.
+
+The backlog does not currently assign a dedicated implementation Task for an in-app Notifications center. `KEEP` therefore requires backlog refinement before feature implementation; this scope decision is not authority to expand another Story silently.
+
+## Evidence audit
+
+### Current routes and navigation
+
+- There is no current Files route and no current `/staff/notifications` route.
+- `src/components/layout/Header.tsx` still renders a notification badge and links every authenticated user to `/staff/notifications`. The target is therefore a dead route today.
+- `src/app/layout.tsx` mounts `NotificationProvider` around the application, so unread-count behavior is part of the current global runtime surface rather than isolated dead code.
+- The current Sidebar exposes neither Files nor Notifications.
+- Commit `1daaac7` deleted both historical routes:
+  - `src/app/(dashboard)/shared/files/page.tsx`
+  - `src/app/(dashboard)/staff/notifications/page.tsx`
+
+The missing routes make both complete journeys unavailable. The live Header/provider coupling is evidence to retain or deliberately hide the in-app notification contract; it is not evidence that push delivery works.
+
+### Current Files and attachment artifacts
+
+| Artifact | Consumer/evidence | Finding |
+|---|---|---|
+| `src/services/api/client.ts` and duplicate `src/api/client.ts` | Both define generic multipart `upload` and browser `download` helpers. | Upload is cross-domain infrastructure but duplicated. Preserve the capability and migrate consumers to the canonical ST-03 client. |
+| `src/services/budget.service.ts` | Defines upload to an Expense attachment endpoint. | Direct dependency from the retained Expense domain; endpoint and response shape remain unverified. |
+| `src/repositories/BudgetRepo.ts` | Implements the same Expense upload through the legacy client. | Migration debt; not a second approved attachment architecture. |
+| `src/types/budget.ts` | Defines `ExpenseAttachment`, attachment fields, and form `File[]`. | Confirms retained Expense contract intent, not backend correctness. |
+| `src/app/(dashboard)/shared/tasks/[id]/page.tsx` | Declares a local Document shape and renders/downloads documents returned inside a Task payload. | Active read/display surface; no upload/delete/authorization contract is connected. |
+| `src/components/tasks/steps/StepUpload.tsx` and `StepRenderer.tsx` | Model a workflow step requiring a file, but no consumer of `StepRenderer` was found. Focused typecheck reports missing workflow exports/properties. | Dormant and currently broken evidence of a Task requirement; do not present it as working upload. |
+| `src/components/tasks/DocumentManagement.tsx` | Re-exported from a barrel, but no render/import consumer was found. Its download action only logs, and its `onUpload` prop is not wired to an upload control. | Placeholder/general document UI outside the retained MVP unless rebuilt against Task attachments. |
+| `src/lib/firebase.ts` | Defines direct Firebase Storage upload; no current consumer was found. | Unselected storage implementation. Defer rather than make it the default or delete it before Firebase scope is split. |
+
+The generic `Attachment` in `src/types/index.ts`, the local Task `Document`, the `DocumentManagement` shape, and `ExpenseAttachment` disagree on IDs, names, timestamps, owners, permissions, and URLs. ST-02 must not merge them by assumption.
+
+### Current Notification, Firebase, and service-worker artifacts
+
+| Artifact | Consumer/evidence | Finding |
+|---|---|---|
+| `src/contexts/NotificationContext.tsx` | Root-mounted and consumed by Header; calls unread-count through the legacy `src/api/client.ts`. | Partial live in-app feature. It has no list/read service and belongs in ST-03 migration. |
+| `src/components/layout/Header.tsx` | Shows unread badge and invokes `useFcmNotification`. | Visible product promise, but links to a deleted route. |
+| `src/hooks/useFcmNotification.ts` | Only reads/requests browser permission; its token state is never populated and it does not subscribe to messages. | Name overstates behavior; not working FCM integration. |
+| `src/lib/firebase.ts` | Defines messaging/token helpers; no current consumer was found. | Dormant. Required configuration names are documented only partially; runtime delivery was not proved. |
+| `public/firebase-messaging-sw.js` | Present and exempted from auth middleware matching. It contains placeholder project configuration. No service-worker registration consumer was found. | Must not be treated as deployable push configuration. Keep push disabled; replace/generated-configure or remove this placeholder only in a dedicated push implementation decision. |
+| `src/types/index.ts` | Defines a camelCase generic Notification model. | Does not match the historical page/repository snake_case models, so no canonical DTO exists. |
+| `NEXT_PUBLIC_DISABLE_NOTIFICATIONS` | Documented and checked by the provider. | Provides a temporary kill switch for unread-count requests, not proof that Notifications are complete. |
+
+No source-code occurrence registering a service worker, registering a notification token with a backend, revoking it on logout, or consuming foreground FCM messages was found. No token value or environment-file content was inspected.
+
+### Tests
+
+- No File, attachment, Notification, Firebase, service-worker, upload, permission, or download test/spec was found.
+- The only discovered unit test targets `SkeletonLoader`, and the repository quality baseline already records test-collection problems.
+- Focused TypeScript diagnostics show `StepRenderer.tsx` does not compile against the current Task/workflow types. No scoped diagnostics identified the current notification files in the filtered output; that is not runtime proof.
+
+Neither historical UI nor current partial wiring has automated acceptance evidence.
+
+### Backlog and roadmap intent
+
+- `docs/ROADMAP.md` explicitly requires a keep/remove decision for Files and Notifications before cleanup.
+- ST-03 requires canonical upload behavior in the API layer.
+- `IS-09.3.3` explicitly requires Task attachment/document integration with the backend or hiding the UI.
+- ST-13 retains Expense attachment signatures only pending this Files decision and a verified backend/storage contract.
+- No later Story explicitly commits to FCM/push, notification preferences, a generic Files workspace, version history, quota management, or public sharing.
+
+This supports a narrow attachment and in-app Notifications MVP, with advanced cross-cutting capabilities removed from MVP or deferred.
+
+### Relevant Git history
+
+| Commit | Evidence | Interpretation |
+|---|---|---|
+| `85d59da` (2026-04-20) | Added Firebase library, messaging service worker, notification route/context/hook, and a notification repository. | Establishes prior intent, not production acceptance. |
+| `0e912b5` (2026-04-29) | Added Files route/components, document repository, contract upload, Notification center/preferences, and Task document management; removed the notification repository. | Expanded UI while removing its data layer. The Files page used mock quota/empty versions and a callback that only logged an upload. |
+| `1daaac7` (2026-07-28) | Deleted both routes, generic Files/Notification components, contract upload, and document repository; replaced the FCM hook with a reduced permission-only hook; retained context, Firebase library, service worker, Task display, and Expense attachment service/type artifacts. | Evidence of an incomplete reduction/migration, not a coherent removal. The retained/deleted split requires the explicit capability decisions above. |
+
+Generic commit subjects and absence of a decision record mean history cannot prove stakeholder acceptance. Deleted legacy code is requirements evidence only.
+
+## Files decision details
+
+### KEEP — attachment MVP
+
+The exact retained MVP is:
+
+1. Task attachment metadata displayed inside the owning Task.
+2. Upload for a Task/workflow step only when the confirmed workflow contract requires a file.
+3. Expense attachment metadata and upload inside the owning Expense flow.
+4. Authenticated download through a backend-authorized response or short-lived signed URL.
+5. Delete only where the backend business rule, record state, audit rule, and user permission allow it.
+6. Consistent loading, progress, retry/error, empty, validation, and inaccessible-file states.
+7. Focused contract/component/E2E tests for Task and Expense attachment flows.
+
+The attachment is owned by its Task or Expense. A generic `/files` workspace is not required to deliver this MVP.
+
+Paths/capabilities that must be preserved until replacement or migration is proved include the Task document display, Task upload-step intent, Expense attachment types/service signature, and the canonical client's upload/download capability. Individual placeholder files may later be replaced or removed after their retained behavior has a tested successor.
+
+### REMOVE from MVP
+
+- Standalone Files route and general document library.
+- Storage-quota dashboard, version browser, public/team sharing matrix, locking, generic shared-with management, and generic file administration.
+- Wholesale restoration of `FileUpload`, `FileVersionHistory`, `PDFPreview`, `StorageQuota`, `DocumentRepository`, `ContractFileUpload`, or the deleted Files page.
+- Contract attachment behavior until the Contract scope and backend contract are separately accepted.
+- Browser logging as download/upload behavior.
+- Public permanent object URLs as an authorization mechanism.
+
+Historical implementations remain deleted. “REMOVE from MVP” does not prevent a later accepted Story from adding one capability with current contracts and tests.
+
+### DEFER — storage provider selection
+
+Direct Firebase Storage is deferred. The default MVP integration is backend-mediated via the canonical API client because Task and Expense authorization/audit belong to backend records. A later architecture decision may select backend streaming, backend-issued signed upload/download URLs, or Firebase-backed storage, but it must preserve server-side ownership and authorization.
+
+Do not upload directly from the browser to Firebase merely because `src/lib/firebase.ts` exists. Do not delete or activate that helper until storage and messaging responsibilities are split and all consumers are proven.
+
+## Notifications decision details
+
+### KEEP — in-app Notifications MVP
+
+The exact retained MVP is:
+
+1. Authenticated, user-scoped notification list with pagination.
+2. Unread count using one canonical response contract.
+3. Mark one and mark all as read, with consistent count refresh.
+4. Safe deep links only to authorized application records/routes.
+5. Loading, empty, error, stale-count, and disabled-feature states.
+6. Backend-generated events for a small accepted set of business cases; candidate events must be refined with the owning Stories rather than copied from mock data.
+7. Focused service, provider/Header, route, authorization, and E2E tests.
+
+The current dead Header link must either point to the verified MVP route after implementation or be hidden until that route exists. A badge that links to a 404 is not accepted as completion.
+
+### REMOVE from MVP
+
+- Restoration of the historical mock Notification page and local-only mutations.
+- Restoration of `NotificationCenter` or `NotificationPreferences` wholesale.
+- Delete-all, rich preference management, email/digest scheduling, and arbitrary notification types without accepted product/backend contracts.
+- Treating browser permission state as proof of push registration.
+
+### DEFER — push/FCM and PWA Notifications
+
+Push delivery, foreground/background FCM handlers, token registration, preference synchronization, and PWA notification settings are deferred. Until a dedicated accepted backlog item satisfies the prerequisites, production behavior should remain disabled and must not request notification permission opportunistically on page load.
+
+The existing placeholder service worker is not a recovery template for production configuration. Push implementation must explicitly replace or remove it; it must never embed private credentials or user notification tokens.
+
+## Backend, storage, security, and permission prerequisites
+
+### Attachments
+
+Before activation or legacy deletion/migration:
+
+1. Confirm Task and Expense endpoint paths, multipart/signed-upload protocol, response wrapper, metadata DTO, pagination/list semantics, and delete behavior from backend evidence.
+2. Define tenant/record ownership checks and action permissions for list, upload, download, replace, and delete. “Public/team/private” historical labels are not an approved RBAC policy.
+3. Enforce size limits, extension/MIME checks plus server-side content detection, filename normalization, storage key isolation, malware scanning/quarantine, encryption, retention, and audit logging on the trusted side.
+4. Use authorized downloads or short-lived signed URLs; define expiry, cache, revocation, and content-disposition behavior. Do not trust a client-provided URL or filename.
+5. Define record-state rules: required attachment before workflow transition, whether deletion is allowed after approval/payment, and whether replacement creates an auditable version.
+6. Confirm cleanup of orphaned uploads and transactional behavior when record creation/update fails.
+7. Consolidate attachment types and migrate consumers before deleting a repository, helper, type, or UI placeholder.
+
+### Notifications
+
+Before in-app activation:
+
+1. Confirm list/count/read endpoints, pagination, DTO naming, event types, idempotency, ordering, unread consistency, retention, and cross-device behavior.
+2. Scope every query/mutation to the authenticated user on the backend; protect referenced records independently when following a deep link.
+3. Define which backend events create Notifications and prevent sensitive case/task/payment content from leaking into unauthorized titles, bodies, logs, browser previews, or push payloads.
+4. Define retry/rate-limit and polling/realtime behavior; avoid one request per uncontrolled render/session event.
+5. For future push only: explicit consent UX, secure device-token registration/revocation/rotation, logout cleanup, multi-device semantics, service-worker lifecycle/versioning, delivery credentials held server-side, CSP/third-party script review, and preference enforcement.
+6. Replace the legacy API client dependency with the canonical ST-03 service before treating the provider as stable.
+
+## Task and Expense dependency effects
+
+| Owner | Required effect of this decision |
+|---|---|
+| Task / ST-09 | `IS-09.3.3` should KEEP Task attachments, confirm the Task/Workflow DTO, connect a minimal upload/display/download flow, and hide dormant/broken upload UI until it works. It must not depend on a generic Files workspace. |
+| Expense / ST-13 | KEEP Expense attachments as part of the owning Expense flow, but do not activate `uploadExpenseAttachment` until endpoint, permission, storage, and Budget/Expense state contracts pass. Use the canonical client; migrate away from `BudgetRepo`. |
+| Contract / later scope | Historical contract upload remains out of this MVP. A Contract Story must make its own record-ownership, permission, retention, and backend decision. |
+| Shared type/service migration | ST-02/ST-03 must preserve Task and Expense attachment use cases while removing duplicate shapes and clients. A single DTO need not erase domain-specific required fields. |
+
+## Legacy restoration and deletion policy
+
+1. Do not revert or cherry-pick the deleted Files/Notification surface wholesale.
+2. Historical code may be consulted only for interaction requirements. Any reused logic must be ported to current Next.js/MUI/API conventions, security rules, accessibility requirements, and tests.
+3. Before deleting a current artifact, prove its import/consumer graph, map its retained capability to a tested successor or accepted removal, and run scoped type/lint/test/build checks under the current quality policy.
+4. Remove duplicate clients/repositories only after every retained consumer migrates. Do not retain a generic repository solely to imitate a deleted page.
+5. Split Firebase Storage and Messaging concerns before deciding the fate of `src/lib/firebase.ts`; decide the service worker with the push scope, not with attachment cleanup.
+6. Remove or hide any dead navigation/placeholder UI in the implementing Story if its backend capability is not ready.
+7. Record data migration for existing stored attachments and Notifications before changing storage keys, ownership models, retention, or endpoint DTOs. No data store was available to prove that no production data exists.
+
+## Effect on later Stories
+
+| Story | Effect of this decision |
+|---|---|
+| ST-02 | Consolidate Notification and attachment DTOs without assuming the historical shapes are equivalent; retain Task/Expense requirements. |
+| ST-03 | Add canonical Notification service and upload/download contracts; migrate the provider and Expense attachment consumer away from legacy clients/repositories. |
+| ST-04/ST-05 | Add focused attachment/Notification tests and resolve the broken dormant upload-step types before activation; enforce baseline/no-regression rules. |
+| ST-06 | Future push token lifecycle must follow login/logout/session changes. In-app requests must stop cleanly when unauthenticated. |
+| ST-07 | Define record/action permissions for attachment and notification APIs and protect notification deep-link targets. |
+| ST-09 | Implement or hide Task attachment/document UI under `IS-09.3.3`; do not expose the dormant `StepRenderer` as working. |
+| ST-13 | Expense attachments remain KEEP but gated by verified backend/storage/security and canonical service migration. |
+| ST-14 | Notification preferences/push settings remain deferred; do not present placeholders as completed system settings. |
+| ST-15/ST-16 | Resolve the Header's dead Notification link and provide accessible upload/progress/error/permission UX only when routes work. |
+| ST-17/ST-18 | Add authorization, invalid-file, failed-upload, download, unread/read, deep-link, and disabled-feature scenarios before release/UAT acceptance. Push needs separate UAT if later selected. |
+
+## Reproducible read-only commands
+
+Run from the repository root. These commands intentionally avoid environment contents, remotes, credentials, notification tokens, author emails, and private uploaded-file content:
+
+```sh
+git status --porcelain=v2 --branch
+rg --files src public | rg -i 'file|notification|document|attachment|firebase|messaging|service.?worker'
+rg -n -i --glob '!**/*.map' 'FileContext|NotificationContext|useFiles|useNotifications|fileService|notificationService|attachment|upload|firebase|messaging|serviceWorker|firebase-messaging-sw|notifications?' src public
+rg -n 'DocumentManagement|StepRenderer|StepUpload|PWA|useFcmNotification|useNotification|uploadFileToFirebase|requestFCMToken' src
+rg -n 'serviceWorker|firebase-messaging-sw|NEXT_PUBLIC_DISABLE_NOTIFICATIONS|NEXT_PUBLIC_FIREBASE' src public README.md middleware.ts next.config.ts
+rg --files | rg -i '(test|spec)\.(ts|tsx|js|jsx)$'
+rg -n -i --glob '*.{test,spec}.{ts,tsx,js,jsx}' 'file|attachment|upload|notification|firebase|messaging' .
+git diff-tree --no-commit-id --name-status -r 1daaac7 | rg -i 'file|notification|document|firebase|messaging'
+git ls-tree -r --name-only 1daaac7^ | rg -i 'file|notification|document|attachment|firebase|messaging|service.?worker'
+git log --format='%h%x09%ad%x09%s' --date=short --name-status -- 'src/components/files/**' 'src/components/notifications/**' 'src/repositories/DocumentRepository.ts' 'src/contexts/NotificationContext.tsx' 'src/hooks/useFcmNotification.tsx' 'src/hooks/useFcmNotification.ts' 'src/lib/firebase.ts' 'public/firebase-messaging-sw.js' 'src/app/**/notifications/**'
+npx tsc --noEmit --pretty false --incremental false 2>&1 | rg -i 'NotificationContext|useFcmNotification|firebase|DocumentManagement|StepUpload|StepRenderer|shared/tasks|budget.service|BudgetRepo|types/index'
+```
+
+The TypeScript diagnostic is expected to find errors under the documented pre-ST-05 baseline. Its filtered output identified the dormant upload-step type failures; it did not mutate the worktree.
+
+## Limitations
+
+- No backend repository, API schema, database/storage inventory, Firebase console, deployed service worker, browser permission state, object store, malware scanner, product analytics, or stakeholder interview was available.
+- Frontend endpoint strings and types do not prove backend existence, authorization, storage durability, or data ownership.
+- Import searches establish current source consumers, not runtime traffic or dynamically loaded external code.
+- Historical code establishes implementation intent only. Generic commit subjects do not establish why deletion occurred or who approved it.
+- Environment names were inspected only in tracked source/documentation. No environment value, credential, remote URL, notification token, author email, or uploaded/private file content was inspected or recorded.
+- `KEEP`, `REMOVE from MVP`, and `DEFER` can be revised only by a later explicit decision record with product/backend/security evidence; they do not authorize application edits in this Issue.
+
+## Independent QA readiness
+
+`IS-01.2.2` is ready for independent QA when the focused diff contains only this appended section in `docs/audits/ST-01-MODULE-SCOPE.md`. QA should verify:
+
+1. Attachment, standalone Files, in-app Notifications, and push/FCM each have a distinct `KEEP`, `REMOVE from MVP`, or `DEFER` decision.
+2. MVP in/out scope is exact and does not claim legacy restoration.
+3. Task and Expense attachment dependencies are retained but backend/storage/security/permission-gated.
+4. The dead Notification route, partial provider/hook, placeholder service worker, missing consumers, type conflicts, tests, backlog, and Git history are represented accurately.
+5. Migration/deletion prerequisites protect consumers and potential stored data.
+6. Later Story impacts and the missing dedicated Notification implementation backlog item are explicit.
+7. No secret, token, environment value, remote URL, private file content, application file, backlog checkbox, review record, Git index/ref, or commit was changed by this Issue.
