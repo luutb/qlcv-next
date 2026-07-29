@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Box, LinearProgress } from "@mui/material";
 import { logout, type AuthUser } from "@/api/auth.api";
-import { SessionExpiredError } from "@/api/client";
+import { ApiError, SessionExpiredError } from "@/api/client";
 import { authStore } from "@/features/auth";
 import { ErrorState } from "@/shared/ui";
 import { AppShellSidebar } from "./components/AppShellSidebar";
@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
       const cachedUser = authStore.getUser();
       if (cachedUser) {
-        if (!cachedUser.is_active) {
+        if (cachedUser.is_active === false) {
           authStore.clearToken();
           if (!cancelled) setSessionStatus("anonymous");
           router.replace("/login");
@@ -59,7 +59,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           setSessionError(null);
         }
       } catch (error) {
-        const sessionInvalid = error instanceof SessionExpiredError || !authStore.isAuthenticated();
+        const userMissing = error instanceof ApiError && error.status === 404;
+        const sessionInvalid =
+          error instanceof SessionExpiredError || userMissing || !authStore.isAuthenticated();
+        if (userMissing) authStore.clearToken();
         if (!cancelled) {
           if (sessionInvalid) {
             setUser(null);

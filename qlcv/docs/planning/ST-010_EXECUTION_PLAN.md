@@ -1,6 +1,6 @@
 # ST-010 Execution Plan — Auth, Profile, MFA and RBAC
 
-Status: Ready for implementation
+Status: Non-MFA scope implemented; runtime QA pending
 
 Date: 2026-07-29
 
@@ -38,6 +38,7 @@ respect role access and QA passes before Reviewer.
 | `TODO` | Ready but not started |
 | `IN_PROGRESS` | Owner is actively working |
 | `BLOCKED` | A named dependency or contract decision is missing |
+| `DEFERRED` | Explicitly removed from the current delivery scope |
 | `QA` | Implementation is merged into the Story and awaiting QA |
 | `DONE` | QA passed and Reviewer accepted the work |
 
@@ -49,12 +50,12 @@ branch, latest commit and any blocker.
 | Issue | Owner | Depends on | Owned paths | Initial status |
 | --- | --- | --- | --- | --- |
 | `I-0100` Execution plan | PM | — | `docs/planning/ST-010_EXECUTION_PLAN.md` | `DONE` |
-| `I-0101` Current-user/session cache | FE DEV1 | BA identity check | `src/api/client.ts`, `src/features/auth/auth.store.ts`, `src/layouts/app-shell/AppShell.tsx` | `TODO` |
-| `I-0102` Login MFA challenge/return URL | FE DEV1 | `I-0101`, MFA challenge shape | `src/features/auth/LoginForm.tsx`, `src/api/auth.api.ts` | `BLOCKED` |
-| `I-0103` Profile/update/version | FE DEV2 | BA `/users/me` check | `app/settings/profile/page.tsx`, `src/features/profile/**`, profile portion of `src/api/users.api.ts` | `TODO` |
-| `I-0104` Enable/disable MFA | FE DEV2 | `I-0103`, MFA enrollment response | `src/features/profile/mfa/**`; consume public methods from `src/api/auth.api.ts` | `BLOCKED` |
-| `I-0105` Route/action guards | FE DEV1 | `I-0101`, `I-0102` | `src/layouts/app-shell/model/access.ts`, guard UI and action-policy helpers | `BLOCKED` |
-| `I-0106` Manual QA/Reviewer fixes | QA, then responsible DEV | `I-0101`–`I-0105` | `docs/qa/ST-010-manual-auth-rbac.md`; regression fixes stay with original owner | `BLOCKED` |
+| `I-0101` Current-user/session cache | FE DEV1 | BA identity check | `src/api/client.ts`, `src/features/auth/auth.store.ts`, `src/layouts/app-shell/AppShell.tsx` | `QA` |
+| `I-0102` Login MFA challenge/return URL | FE DEV1 | `I-0101`, MFA challenge shape | `src/features/auth/LoginForm.tsx`, `src/api/auth.api.ts` | `DEFERRED` |
+| `I-0103` Profile/update/version | FE DEV2 | BA `/users/me` check | `app/settings/profile/page.tsx`, `src/features/profile/**`, profile portion of `src/api/users.api.ts` | `QA` |
+| `I-0104` Enable/disable MFA | FE DEV2 | `I-0103`, MFA enrollment response | `src/features/profile/mfa/**`; consume public methods from `src/api/auth.api.ts` | `DEFERRED` |
+| `I-0105` Route/action guards | FE DEV1 | `I-0101`; MFA dependency waived for current scope | `src/layouts/app-shell/model/access.ts`, guard UI and action-policy helpers | `QA` |
+| `I-0106` Manual QA/Reviewer fixes | QA, then responsible DEV | Current non-MFA scope | `docs/qa/ST-010-manual-auth-rbac.md`; regression fixes stay with original owner | `IN_PROGRESS` |
 | Backend identity support | BE DEV | BA contract checklist | Backend auth/user/MFA handlers and DTOs in `qlcv-work-board` | `TODO` |
 
 ## Branches
@@ -141,8 +142,9 @@ full re-QA and re-review.
 - `GET /users/me` is the canonical current-user source.
 - `PUT /users/me` updates profile with `version > 0`.
 - `POST /auth/mfa/enable` starts enrollment.
-- `POST /auth/mfa/disable` submits `{ totp_code }` unless BA records a verified
-  backend deviation.
+- MFA UI is deferred. Source inspection found that `POST /auth/mfa/disable`
+  currently ignores proof/TOTP; do not expose this unsafe self-service flow
+  until the backend enforces re-authentication.
 - `401` clears token and cached user and redirects to a safe internal return URL.
 - `403` never clears a valid session.
 - `428` refetches current profile before retry; it never silently overwrites.
@@ -274,7 +276,12 @@ QA evidence:
 - Identity source decision: accepted; `/users/me` is canonical.
 - Hydration-safe session bootstrap: implemented on `develop`.
 - Backend local environment: available at `http://localhost:8080/api/v1`.
-- MFA runtime response shape: must be verified before `I-0102`/`I-0104` leave
-  `BLOCKED`.
+- MFA scope: explicitly deferred by the PO/user on 2026-07-29. Backend source
+  returns `qr_code_uri` for enrollment and currently disables MFA without TOTP;
+  remediation is required before `I-0102`/`I-0104` resume.
+- Static quality gates: lint, strict typecheck and production build PASS on
+  2026-07-29.
+- Local runtime QA: frontend port 3000 and backend port 8080 were not running;
+  browser/API scenarios remain `NOT VERIFIED`.
 - Correct frontend remote repository: unresolved; destructive merge into the
   unrelated `origin/develop` is forbidden.

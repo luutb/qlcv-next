@@ -2,7 +2,7 @@
 
 Decision ID: QLCV-I-0013
 
-Status: Accepted for frontend architecture; MFA response runtime unverified
+Status: Accepted; backend source verified, live runtime QA pending
 
 Date: 2026-07-29
 
@@ -39,8 +39,8 @@ type LoginRequest = {
 
 | Operation | Endpoint | Contract decision |
 | --- | --- | --- |
-| Start enrollment | `POST /auth/mfa/enable` | Response may contain provisioning secret/URI/QR data; repository preserves unknown verified fields |
-| Disable MFA | `POST /auth/mfa/disable` | Requires `{ totp_code }` unless staging documents another proof mechanism |
+| Start enrollment | `POST /auth/mfa/enable` | Backend source returns `{ qr_code_uri, secret }`; current handler intentionally returns an empty raw secret |
+| Disable MFA | `POST /auth/mfa/disable` | Backend source currently accepts no request proof and disables immediately; this is a security gap and the frontend flow remains deferred |
 | Admin reset | `POST /users/{id}/mfa/reset` | Privileged User 360 action; no user TOTP assumed |
 
 Enrollment UX, TOTP challenge UI and recovery copy belong to ST-010. Secret or
@@ -117,5 +117,6 @@ I-0015. Full login/session UX is implemented in ST-010.
 5. Profile update with current version and stale version.
 6. Enable/disable MFA request and response shape with all secret values redacted.
 
-Until staging evidence is attached, MFA response details remain runtime
-unverified and the capability matrix retains a blocked follow-up.
+Backend handler source was inspected on 2026-07-29. Live runtime behavior and
+staging evidence remain unverified. MFA UI was explicitly deferred and must not
+be enabled until disable requires verified TOTP or another approved proof.
