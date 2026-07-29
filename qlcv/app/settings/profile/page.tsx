@@ -1,10 +1,5 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { ProfilePage } from "@/features/profile";
 
 export default function ProfileRoute() {
-  return (
-    <PlaceholderPage
-      title="Profile"
-      description="Trang hồ sơ cá nhân cho username, MFA và thông tin tenant."
-    />
-  );
+  return <ProfilePage />;
 }
