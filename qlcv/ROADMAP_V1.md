@@ -1,7 +1,9 @@
 # Roadmap hoàn thiện QLCV Frontend V1
 
-Ngày lập: 2026-07-29  
-Chủ trì: PO, BA, PM  
+Ngày lập: 2026-07-29
+
+Chủ trì: PO, BA, PM
+
 Nguồn yêu cầu: `SRS_FE_UI_NEXT_MUI.md`, `SRS_FE_API.md` và hiện trạng source code
 
 Quyết định triển khai ngày 2026-07-29: theo chỉ đạo của project owner, không cài automated-test tooling. Các mục Vitest/RTL/Playwright và automated-test gate trong roadmap được thay bằng manual QA evidence cho đến khi có quyết định mới. Quality gate hiện tại là lint, strict typecheck và production build.

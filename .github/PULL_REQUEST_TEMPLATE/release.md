@@ -29,4 +29,3 @@ Record the tagged SHA, deployment target, owner, and post-deployment smoke resul
 ## Rollback
 
 Record the exact rollback trigger and procedure.
-

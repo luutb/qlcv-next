@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Popover, Stack } from "@mui/material";
 import { FilterAltOutlined } from "@mui/icons-material";
 
@@ -207,7 +207,10 @@ const TODAY = new Date("2026-06-16T00:00:00");
 
 export function WorkBoardPage() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const role = searchParams.get("role") === "accountant" ? "ACCOUNTANT" : "PARTNER";
+  const createRequested = searchParams.get("new") === "1";
 
   const [issues, setIssues] = useState<WorkIssue[]>(INITIAL_ISSUES);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
@@ -222,7 +225,7 @@ export function WorkBoardPage() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerDraft, setDrawerDraft] = useState<WorkDraft | null>(null);
-  const [createOpen, setCreateOpen] = useState(() => searchParams.get("new") === "1");
+  const [createOpen, setCreateOpen] = useState(false);
   const [createDraft, setCreateDraft] = useState<CreateDraft>(() => defaultCreateDraft());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>(() => readSettings());
@@ -274,6 +277,18 @@ export function WorkBoardPage() {
       window.clearTimeout(toastTimer.current);
     }
     toastTimer.current = window.setTimeout(() => setToast(""), 2400);
+  }
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (!createRequested) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete("new");
+    const query = nextSearchParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
   function refreshBoard() {
@@ -392,7 +407,7 @@ export function WorkBoardPage() {
     };
 
     setIssues((current) => [nextIssue, ...current]);
-    setCreateOpen(false);
+    closeCreate();
     setActiveStep(createDraft.step);
     setCreateDraft(defaultCreateDraft(createDraft.step));
     notify(`Đã tạo ${nextId}.`);
@@ -922,11 +937,11 @@ export function WorkBoardPage() {
         </div>
       </aside>
 
-      {createOpen ? <div className="od-workboard__backdrop" onClick={() => setCreateOpen(false)} aria-hidden="true" /> : null}
-      <section className={`od-workboard__modal ${createOpen ? "is-open" : ""}`} aria-hidden={!createOpen}>
+      {createOpen || createRequested ? <div className="od-workboard__backdrop" onClick={closeCreate} aria-hidden="true" /> : null}
+      <section className={`od-workboard__modal ${createOpen || createRequested ? "is-open" : ""}`} aria-hidden={!createOpen && !createRequested}>
         <div className="od-workboard__modal-head">
           <h2>New issue</h2>
-          <button className="od-workboard__icon-button" type="button" onClick={() => setCreateOpen(false)} aria-label="Đóng dialog">
+          <button className="od-workboard__icon-button" type="button" onClick={closeCreate} aria-label="Đóng dialog">
             <CloseIcon />
           </button>
         </div>
@@ -987,7 +1002,7 @@ export function WorkBoardPage() {
           </Field>
         </div>
         <div className="od-workboard__modal-foot">
-          <button className="od-workboard__button" type="button" onClick={() => setCreateOpen(false)}>
+          <button className="od-workboard__button" type="button" onClick={closeCreate}>
             Cancel
           </button>
           <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={createIssue}>
