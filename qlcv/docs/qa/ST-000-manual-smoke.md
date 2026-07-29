@@ -50,3 +50,19 @@ Status: **PENDING HUMAN QA**.
   `develop` and `master`.
 
 Status: **BLOCKED UNTIL REMOTE CREDENTIAL IS ROTATED**.
+
+## Project-owner risk acceptance
+
+On 2026-07-29, the project owner explicitly directed the team to continue
+despite the pending human-browser smoke and remote-governance findings.
+
+Accepted exceptions for the local Story merge:
+
+- Browser-only smoke remains pending because automated-test tooling is excluded.
+- GitHub branch protection and required-check enforcement have not been proven.
+- The credential embedded in the remote URL has not been rotated.
+- The inferred CODEOWNER account has not been verified through GitHub.
+
+The team will not print or use the exposed credential. This acceptance permits
+local progression through `story → develop → master`; it does not classify the
+external findings as remediated and does not authorize a remote push.

@@ -8,6 +8,8 @@ Nguồn yêu cầu: `SRS_FE_UI_NEXT_MUI.md`, `SRS_FE_API.md` và hiện trạng 
 
 Quyết định triển khai ngày 2026-07-29: theo chỉ đạo của project owner, không cài automated-test tooling. Các mục Vitest/RTL/Playwright và automated-test gate trong roadmap được thay bằng manual QA evidence cho đến khi có quyết định mới. Quality gate hiện tại là lint, strict typecheck và production build.
 
+Chấp thuận rủi ro ngày 2026-07-29: project owner cho phép tiếp tục merge local dù browser smoke, GitHub branch protection và việc rotate credential remote còn pending. Không được dùng hoặc hiển thị credential đó; chấp thuận này không cho phép remote push và không được xem là đã khắc phục finding bảo mật.
+
 ## 1. Kết luận điều hành
 
 Frontend hiện chưa đạt V1 Complete. Lớp API đã bao phủ phần lớn capability của SRS, nhưng UI thật mới tập trung ở login, dashboard, project list/create, project workflow board và workflow template. Work Board vẫn dùng dữ liệu hard-code/local state; 13 file route còn dùng `PlaceholderPage`; ba canonical route `/users`, `/reports`, `/admin/tenant-settings` chưa tồn tại.
