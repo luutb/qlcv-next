@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Popover, Stack } from "@mui/material";
 import { FilterAltOutlined } from "@mui/icons-material";
 
@@ -207,7 +207,10 @@ const TODAY = new Date("2026-06-16T00:00:00");
 
 export function WorkBoardPage() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const role = searchParams.get("role") === "accountant" ? "ACCOUNTANT" : "PARTNER";
+  const createRequested = searchParams.get("new") === "1";
 
   const [issues, setIssues] = useState<WorkIssue[]>(INITIAL_ISSUES);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
@@ -225,9 +228,8 @@ export function WorkBoardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createDraft, setCreateDraft] = useState<CreateDraft>(() => defaultCreateDraft());
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<Settings>(() => readSettings());
   const [toast, setToast] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
   const [dropTarget, setDropTarget] = useState<WorkStepId | null>(null);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
   const toastTimer = useRef<number | null>(null);
@@ -257,26 +259,20 @@ export function WorkBoardPage() {
   }, [assigneeFilter, dueFilter, issues, labelFilter, projectFilter, search, statusFilter, workflowFilter]);
 
   useEffect(() => {
-    const saved = readSettings();
-    setSettings(saved);
-    applyBodySettings(saved);
+    applyBodySettings(settings);
     return () => {
-      document.body.classList.remove("od-workboard--density-compact", "od-workboard--readonly");
+      document.body.classList.remove("od-workboard--density-compact");
       SETTINGS_FIELDS.forEach((field) => document.body.classList.remove(`od-workboard--hide-${field}`));
     };
-  }, []);
+  }, [settings]);
 
   useEffect(() => {
-    const saved = readSettings();
     document.body.classList.toggle("od-workboard--readonly", readonly);
-    applyFieldVisibility(saved.fields);
-  }, [readonly]);
-
-  useEffect(() => {
-    if (searchParams.get("new") === "1") {
-      setCreateOpen(true);
-    }
-  }, [searchParams]);
+    applyFieldVisibility(settings.fields);
+    return () => {
+      document.body.classList.remove("od-workboard--readonly");
+    };
+  }, [readonly, settings.fields]);
 
   function notify(message: string) {
     setToast(message);
@@ -286,10 +282,20 @@ export function WorkBoardPage() {
     toastTimer.current = window.setTimeout(() => setToast(""), 2400);
   }
 
+  function closeCreate() {
+    setCreateOpen(false);
+    if (!createRequested) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete("new");
+    const query = nextSearchParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
   function refreshBoard() {
-    setRefreshing(true);
     window.setTimeout(() => {
-      setRefreshing(false);
       notify("Work Board đã được tải lại.");
     }, 650);
   }
@@ -404,7 +410,7 @@ export function WorkBoardPage() {
     };
 
     setIssues((current) => [nextIssue, ...current]);
-    setCreateOpen(false);
+    closeCreate();
     setActiveStep(createDraft.step);
     setCreateDraft(defaultCreateDraft(createDraft.step));
     notify(`Đã tạo ${nextId}.`);
@@ -472,12 +478,9 @@ export function WorkBoardPage() {
   const visibleSteps = useMemo(() => {
     return STEPS.filter((step) => filteredIssues.some((issue) => issue.step === step.id));
   }, [filteredIssues]);
-
-  useEffect(() => {
-    if (!visibleSteps.some((step) => step.id === activeStep) && visibleSteps[0]) {
-      setActiveStep(visibleSteps[0].id);
-    }
-  }, [activeStep, visibleSteps]);
+  const displayedActiveStep = visibleSteps.some((step) => step.id === activeStep)
+    ? activeStep
+    : (visibleSteps[0]?.id ?? activeStep);
 
   return (
     <section className="od-workboard" aria-labelledby="workBoardTitle">
@@ -547,7 +550,7 @@ export function WorkBoardPage() {
 
         <div className="od-workboard__mobile-columns" aria-label="Workflow steps">
           {visibleSteps.map((step) => (
-            <button key={step.id} type="button" className={activeStep === step.id ? "is-active" : ""} onClick={() => setActiveStep(step.id)}>
+            <button key={step.id} type="button" className={displayedActiveStep === step.id ? "is-active" : ""} onClick={() => setActiveStep(step.id)}>
               {step.name} · {filteredIssues.filter((issue) => issue.step === step.id).length}
             </button>
           ))}
@@ -638,7 +641,7 @@ export function WorkBoardPage() {
             <div className="od-workboard__board">
               {STEPS.map((step) => {
                 const columnIssues = filteredIssues.filter((issue) => issue.step === step.id);
-                const isActiveMobile = step.id === activeStep;
+                const isActiveMobile = step.id === displayedActiveStep;
                 return (
                   <section
                     key={step.id}
@@ -674,7 +677,7 @@ export function WorkBoardPage() {
                           selected={selectedIssueId === issue.id}
                           readonly={readonly}
                           onOpen={() => openDrawer(issue.id)}
-                          onDragStart={(id) => {
+                          onDragStart={() => {
                             if (readonly) {
                               notify("Tài khoản read-only không thể kéo thả issue.");
                               return false;
@@ -937,11 +940,11 @@ export function WorkBoardPage() {
         </div>
       </aside>
 
-      {createOpen ? <div className="od-workboard__backdrop" onClick={() => setCreateOpen(false)} aria-hidden="true" /> : null}
-      <section className={`od-workboard__modal ${createOpen ? "is-open" : ""}`} aria-hidden={!createOpen}>
+      {createOpen || createRequested ? <div className="od-workboard__backdrop" onClick={closeCreate} aria-hidden="true" /> : null}
+      <section className={`od-workboard__modal ${createOpen || createRequested ? "is-open" : ""}`} aria-hidden={!createOpen && !createRequested}>
         <div className="od-workboard__modal-head">
           <h2>New issue</h2>
-          <button className="od-workboard__icon-button" type="button" onClick={() => setCreateOpen(false)} aria-label="Đóng dialog">
+          <button className="od-workboard__icon-button" type="button" onClick={closeCreate} aria-label="Đóng dialog">
             <CloseIcon />
           </button>
         </div>
@@ -1002,7 +1005,7 @@ export function WorkBoardPage() {
           </Field>
         </div>
         <div className="od-workboard__modal-foot">
-          <button className="od-workboard__button" type="button" onClick={() => setCreateOpen(false)}>
+          <button className="od-workboard__button" type="button" onClick={closeCreate}>
             Cancel
           </button>
           <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={createIssue}>
@@ -1246,10 +1249,6 @@ function projectFor(issue: WorkIssue) {
   return PROJECTS.find((project) => project.id === issue.projectId) ?? PROJECTS[0];
 }
 
-function projectForId(projectId: string) {
-  return PROJECTS.find((project) => project.id === projectId);
-}
-
 function stepFor(id: string) {
   return STEPS.find((step) => step.id === id) ?? STEPS[0];
 }
@@ -1361,15 +1360,4 @@ function applyFieldVisibility(fields: Record<SettingsField, boolean>) {
   SETTINGS_FIELDS.forEach((field) => {
     document.body.classList.toggle(`od-workboard--hide-${field}`, !fields[field]);
   });
-}
-
-function dueFilterLabel(filter: DueFilter) {
-  const labels: Record<DueFilter, string> = {
-    all: "All",
-    overdue: "Overdue",
-    today: "Due today",
-    week: "Due this week",
-  };
-
-  return labels[filter];
 }

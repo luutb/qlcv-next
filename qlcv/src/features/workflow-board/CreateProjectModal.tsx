@@ -12,7 +12,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { CreateProjectRequest, ProjectSummary } from "@/api/projects.api";
 import type { WorkflowTemplate } from "@/api/workflow.api";
 import { getUserFacingErrorMessage } from "@/api/errors";
@@ -26,7 +26,11 @@ type CreateProjectModalProps = {
   onCreated?: (project: ProjectSummary) => void;
 };
 
-export function CreateProjectModal({
+export function CreateProjectModal(props: CreateProjectModalProps) {
+  return props.open ? <CreateProjectDialog {...props} /> : null;
+}
+
+function CreateProjectDialog({
   open,
   workflowTemplates,
   defaultWorkflowTemplateId,
@@ -48,13 +52,6 @@ export function CreateProjectModal({
   );
   const [values, setValues] = useState<CreateProjectRequest>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof CreateProjectRequest, string>>>({});
-
-  useEffect(() => {
-    if (open) {
-      setValues(initialValues);
-      setFieldErrors({});
-    }
-  }, [initialValues, open]);
 
   function submit(values: CreateProjectRequest) {
     const nextErrors = validateProject(values);

@@ -4,7 +4,7 @@ import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } f
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Empty, Select, Skeleton, Space, Tabs, Typography } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   moveProjectWorkflowStep,
   type ProjectBoardCard,
@@ -32,7 +32,7 @@ type PendingMove = {
 export function WorkflowBoardPage() {
   const queryClient = useQueryClient();
   const templatesQuery = useWorkflowTemplates();
-  const templates = templatesQuery.data?.data ?? [];
+  const templates = useMemo(() => templatesQuery.data?.data ?? [], [templatesQuery.data?.data]);
   const [workflowTemplateId, setWorkflowTemplateId] = useState<string | null>(null);
   const [activeMacro, setActiveMacro] = useState<string>("INTAKE");
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
@@ -42,13 +42,9 @@ export function WorkflowBoardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!workflowTemplateId && templates.length > 0) {
-      setWorkflowTemplateId(templates.find((template) => template.is_default)?.id ?? templates[0].id);
-    }
-  }, [templates, workflowTemplateId]);
-
-  const boardQuery = useProjectBoard(workflowTemplateId);
+  const selectedWorkflowTemplateId =
+    workflowTemplateId ?? templates.find((template) => template.is_default)?.id ?? templates[0]?.id ?? null;
+  const boardQuery = useProjectBoard(selectedWorkflowTemplateId);
   const board = boardQuery.data;
 
   const stepsByKey = useMemo(() => {
@@ -76,9 +72,9 @@ export function WorkflowBoardPage() {
     onSuccess: () => {
       setPendingMove(null);
       setPaymentDetails(null);
-      if (workflowTemplateId) {
+      if (selectedWorkflowTemplateId) {
         queryClient.invalidateQueries({
-          queryKey: workflowBoardQueryKeys.board(workflowTemplateId),
+          queryKey: workflowBoardQueryKeys.board(selectedWorkflowTemplateId),
         });
       }
     },
@@ -94,7 +90,7 @@ export function WorkflowBoardPage() {
     },
   });
 
-  const overrideMutation = useOverrideProjectConflict(workflowTemplateId ?? "");
+  const overrideMutation = useOverrideProjectConflict(selectedWorkflowTemplateId ?? "");
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -149,7 +145,7 @@ export function WorkflowBoardPage() {
               className="workflow-template-select"
               placeholder="Chọn workflow template"
               loading={templatesQuery.isLoading}
-              value={workflowTemplateId ?? undefined}
+              value={selectedWorkflowTemplateId ?? undefined}
               onChange={setWorkflowTemplateId}
               options={templates.map((template) => ({
                 value: template.id,
@@ -159,7 +155,12 @@ export function WorkflowBoardPage() {
             <Button icon={<ReloadOutlined />} onClick={() => boardQuery.refetch()}>
               Tải lại
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={templatesQuery.isLoading || templates.length === 0}
+              onClick={() => setCreateOpen(true)}
+            >
               Tạo project
             </Button>
           </Space>
@@ -184,7 +185,7 @@ export function WorkflowBoardPage() {
           />
         ) : null}
 
-        {!workflowTemplateId && !templatesQuery.isLoading ? (
+        {!selectedWorkflowTemplateId && !templatesQuery.isLoading ? (
           <Empty description="Chưa có workflow template active" />
         ) : null}
 
@@ -283,7 +284,7 @@ export function WorkflowBoardPage() {
       <CreateProjectModal
         open={createOpen}
         workflowTemplates={templates}
-        defaultWorkflowTemplateId={workflowTemplateId}
+        defaultWorkflowTemplateId={selectedWorkflowTemplateId}
         onCancel={() => setCreateOpen(false)}
         onCreated={(project) => {
           if (project.conflict_status === "CONFLICT_DETECTED") {
