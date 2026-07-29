@@ -147,6 +147,47 @@ Acceptance criteria:
 - Legacy `/settings/users` redirect về `/users`; `/tasks` và `/issue-board` redirect `/work`.
 - `403`, `423`, `428` có typed error model và UX thống nhất.
 
+### EP-002 — Feature Architecture Refactor
+
+Epic này thực hiện trước ST-010 để ngăn các feature mới tiếp tục phụ thuộc chéo.
+Chỉ thay đổi ownership/source structure, không thay business behavior và không
+cài automated-test tooling.
+
+#### ST-002 — Chuẩn hóa feature ownership và module boundaries — 8 SP
+
+Issues:
+
+- `I-0021`: Chốt architecture contract, dependency rules và ownership map.
+- `I-0022`: Di chuyển AppShell, routing helper và UI states khỏi `features/shared`.
+- `I-0023`: Tách Projects, Project Workflow Board và Workflow Templates.
+- `I-0024`: Hợp nhất Work Board namespace và loại dormant Issue Board.
+- `I-0025`: Sửa dependency `api → feature`, chuẩn hóa public imports và lint boundary.
+- `I-0026`: Manual structural regression QA và Reviewer fixes.
+
+Acceptance criteria:
+
+- Không còn `features/shared`, `features/workflow-board` hoặc duplicate Issue Board.
+- `shared` và `api` không import `features`; feature không deep-import feature khác.
+- 27 routes, sáu legacy redirects, API/query/storage contracts và UI behavior giữ nguyên.
+- Lint, strict typecheck, production build và manual QA pass; Reviewer approve.
+
+#### ST-003 — Tách monolithic pages thành feature components — 8 SP
+
+Issues:
+
+- `I-0031`: Tách Work Board types, constants, storage và pure utilities.
+- `I-0032`: Tách Work Board toolbar, filters, board/list, drawer và dialogs.
+- `I-0033`: Tách Dashboard filters, KPI và các section.
+- `I-0034`: Tách AppShell navigation, permission model và presentation.
+- `I-0035`: Chuẩn hóa public entries, naming và loại helper trùng.
+- `I-0036`: Manual behavior-preservation QA và Reviewer fixes.
+
+Acceptance criteria:
+
+- WorkBoardPage, DashboardPage và AppShell chỉ còn orchestration/composition.
+- Không thay state ownership, request timing, CSS selectors hoặc UI behavior.
+- Chạy lại toàn bộ route/API/storage/manual gates của ST-002.
+
 ### Sprint 1 — Identity và reusable profile documents
 
 #### ST-010 — Auth, Profile, MFA và RBAC — 8 SP
