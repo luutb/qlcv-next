@@ -7,9 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listProjects, type ProjectSummary } from "@/api/projects.api";
 import { getDebugErrorInfo, getUserFacingErrorMessage } from "@/api/errors";
-import { CreateProjectModal } from "@/features/workflow-board/CreateProjectModal";
-import { useWorkflowTemplates } from "@/features/workflow-board/workflow-board.queries";
-import { formatCurrency, getConflictColor } from "@/features/workflow-board/workflow-board.utils";
+import { CreateProjectModal } from "./components/CreateProjectModal";
+import { useProjectWorkflowTemplates } from "./queries/project.queries";
+import { formatCurrency, getConflictColor } from "./projects.utils";
 
 export function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -17,7 +17,7 @@ export function ProjectsPage() {
     queryKey: ["projects"],
     queryFn: ({ signal }) => listProjects(signal),
   });
-  const templatesQuery = useWorkflowTemplates();
+  const templatesQuery = useProjectWorkflowTemplates();
   const templates = templatesQuery.data?.data ?? [];
 
   return (

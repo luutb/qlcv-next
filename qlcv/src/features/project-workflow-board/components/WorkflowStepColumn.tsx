@@ -10,7 +10,10 @@ type WorkflowStepColumnProps = {
   onOverrideConflict: (project: ProjectBoardCard) => void;
 };
 
-export function WorkflowStepColumn({ step, onOverrideConflict }: WorkflowStepColumnProps) {
+export function WorkflowStepColumn({
+  step,
+  onOverrideConflict,
+}: WorkflowStepColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: step.step_key,
     data: { step },

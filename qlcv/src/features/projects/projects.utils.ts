@@ -1,20 +1,5 @@
 import type { ConflictStatus } from "@/api/projects.api";
-import type { MacroColumnKey } from "@/api/workflow.api";
 import type { ChipProps } from "@mui/material";
-
-export const MACRO_COLUMN_TITLES: Record<MacroColumnKey, string> = {
-  INTAKE: "Intake",
-  IN_PROGRESS: "In Progress",
-  BILLING: "Billing",
-  ARCHIVED: "Archived",
-};
-
-export const CONFLICT_LABELS: Record<ConflictStatus, string> = {
-  CLEARED: "Cleared",
-  PENDING: "Pending",
-  CONFLICT_DETECTED: "Conflict detected",
-  OVERRIDDEN_CLEARED: "Override cleared",
-};
 
 export function formatCurrency(value?: number | null) {
   return new Intl.NumberFormat("vi-VN", {

@@ -17,12 +17,19 @@ import {
   getUserFacingErrorMessage,
   type WorkflowFinancialBlockedDetails,
 } from "@/api/errors";
-import { workflowBoardQueryKeys, useProjectBoard, useWorkflowTemplates } from "./workflow-board.queries";
-import { WorkflowMacroColumn } from "./WorkflowMacroColumn";
-import { PaymentRequiredModal, type PaymentRequiredFormValues } from "./PaymentRequiredModal";
-import { ConflictOverrideModal } from "./ConflictOverrideModal";
-import { CreateProjectModal } from "./CreateProjectModal";
-import { useOverrideProjectConflict } from "./workflow-board.queries";
+import { useWorkflowTemplates } from "@/features/workflow-templates";
+import { CreateProjectModal } from "@/features/projects";
+import { WorkflowMacroColumn } from "./components/WorkflowMacroColumn";
+import {
+  PaymentRequiredModal,
+  type PaymentRequiredFormValues,
+} from "./components/PaymentRequiredModal";
+import { ConflictOverrideModal } from "./components/ConflictOverrideModal";
+import {
+  workflowBoardQueryKeys,
+  useOverrideProjectConflict,
+  useProjectBoard,
+} from "./queries/project-workflow-board.queries";
 
 type PendingMove = {
   project: ProjectBoardCard;

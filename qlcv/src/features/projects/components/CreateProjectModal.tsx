@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import type { CreateProjectRequest, ProjectSummary } from "@/api/projects.api";
 import type { WorkflowTemplate } from "@/api/workflow.api";
 import { getUserFacingErrorMessage } from "@/api/errors";
-import { useCreateProject } from "./workflow-board.queries";
+import { useCreateProject } from "../queries/project.queries";
 
 type CreateProjectModalProps = {
   open: boolean;

@@ -13,7 +13,10 @@ export function WorkflowMacroColumn({
   macroColumn,
   onOverrideConflict,
 }: WorkflowMacroColumnProps) {
-  const projectCount = macroColumn.steps.reduce((count, step) => count + step.projects.length, 0);
+  const projectCount = macroColumn.steps.reduce(
+    (count, step) => count + step.projects.length,
+    0,
+  );
 
   return (
     <Box

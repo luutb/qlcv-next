@@ -16,7 +16,7 @@ import {
 import { useState } from "react";
 import type { ProjectBoardCard } from "@/api/projects.api";
 import type { WorkflowFinancialBlockedDetails } from "@/api/errors";
-import { formatCurrency } from "./workflow-board.utils";
+import { formatCurrency } from "../project-workflow-board.utils";
 
 export type PaymentRequiredFormValues = {
   incoming_payment_confirmation: number;

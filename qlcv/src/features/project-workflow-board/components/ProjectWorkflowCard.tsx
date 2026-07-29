@@ -4,7 +4,11 @@ import { DragIndicatorOutlined, LockOutlined, WarningOutlined } from "@mui/icons
 import { Box, Button, Chip, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import { useDraggable } from "@dnd-kit/core";
 import type { ProjectBoardCard } from "@/api/projects.api";
-import { CONFLICT_LABELS, formatCurrency, getConflictColor } from "./workflow-board.utils";
+import {
+  CONFLICT_LABELS,
+  formatCurrency,
+  getConflictColor,
+} from "../project-workflow-board.utils";
 
 type ProjectWorkflowCardProps = {
   project: ProjectBoardCard;

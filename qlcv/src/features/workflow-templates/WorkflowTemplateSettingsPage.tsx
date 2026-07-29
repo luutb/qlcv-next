@@ -20,8 +20,8 @@ import {
 } from "antd";
 import { MACRO_COLUMNS, type CreateWorkflowTemplateRequest } from "@/api/workflow.api";
 import { getUserFacingErrorMessage } from "@/api/errors";
-import { useCreateWorkflowTemplate, useWorkflowTemplates } from "./workflow-board.queries";
-import { MACRO_COLUMN_TITLES } from "./workflow-board.utils";
+import { useCreateWorkflowTemplate, useWorkflowTemplates } from "./queries/workflow-template.queries";
+import { MACRO_COLUMN_TITLES } from "./workflow-template.utils";
 
 export function WorkflowTemplateSettingsPage() {
   const templatesQuery = useWorkflowTemplates();
