@@ -1,7 +1,7 @@
 export type Actions = {
   view?: boolean;
-  edit: boolean;
-  delete: boolean;
+  edit?: boolean;
+  delete?: boolean;
   download?: boolean;
   lock?: boolean;
   restore?: boolean;

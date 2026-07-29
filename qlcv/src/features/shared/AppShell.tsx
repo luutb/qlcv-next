@@ -42,7 +42,7 @@ import {
   WorkHistory,
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
-import { getAuthMe, logout } from "@/api/auth.api";
+import { logout } from "@/api/auth.api";
 import { authStore } from "@/features/auth/auth.store";
 
 const drawerWidth = 264;
@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
 
       try {
-        const nextUser = await getAuthMe();
+        const nextUser = await authStore.refreshUser();
         authStore.setUser(nextUser);
         if (!cancelled) {
           setUser(nextUser);
