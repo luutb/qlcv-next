@@ -4,6 +4,8 @@ Ngày lập: 2026-07-29
 Chủ trì: PO, BA, PM  
 Nguồn yêu cầu: `SRS_FE_UI_NEXT_MUI.md`, `SRS_FE_API.md` và hiện trạng source code
 
+Quyết định triển khai ngày 2026-07-29: theo chỉ đạo của project owner, không cài automated-test tooling. Các mục Vitest/RTL/Playwright và automated-test gate trong roadmap được thay bằng manual QA evidence cho đến khi có quyết định mới. Quality gate hiện tại là lint, strict typecheck và production build.
+
 ## 1. Kết luận điều hành
 
 Frontend hiện chưa đạt V1 Complete. Lớp API đã bao phủ phần lớn capability của SRS, nhưng UI thật mới tập trung ở login, dashboard, project list/create, project workflow board và workflow template. Work Board vẫn dùng dữ liệu hard-code/local state; 13 file route còn dùng `PlaceholderPage`; ba canonical route `/users`, `/reports`, `/admin/tenant-settings` chưa tồn tại.
@@ -112,15 +114,15 @@ Issues:
 - `I-0001`: Tạo `develop` từ `master`; protect `develop` và `master`.
 - `I-0002`: Thay `next lint` bằng ESLint CLI/config tương thích Next 16.
 - `I-0003`: Thêm strict typecheck, lint, build vào CI.
-- `I-0004`: Thiết lập Vitest/RTL và Playwright smoke baseline.
+- `I-0004`: Không triển khai theo quyết định owner; dùng manual smoke checklist.
 - `I-0005`: Thêm PR templates, CODEOWNERS và checklist QA/Reviewer.
 - `I-0006`: Chốt một package manager/lockfile và khóa các dependency đang dùng `latest`.
 
 Acceptance criteria:
 
-- PR không thể merge khi lint/typecheck/test/build fail.
+- PR không thể merge khi lint/typecheck/build fail.
 - Không direct push/force push lên `develop` và `master`.
-- Có ít nhất smoke test login redirect và protected route.
+- Có manual smoke evidence cho login redirect và protected route.
 - Build có thể tái lập từ lockfile được chọn.
 
 #### ST-001 — Chốt API contract, canonical route và shared error model — 8 SP
@@ -151,7 +153,7 @@ Issues:
 - `I-0103`: Xây `/settings/profile`, update profile và optimistic version.
 - `I-0104`: Enable/disable MFA với confirm/recovery state.
 - `I-0105`: Route/action guard cho bốn role; handle 401/403.
-- `I-0106`: Component/E2E test session expiry, inactive user và role matrix.
+- `I-0106`: Manual QA session expiry, inactive user và role matrix.
 
 Acceptance criteria:
 
@@ -169,7 +171,7 @@ Issues:
 - `I-0114`: Reset password/reset MFA với confirm và permission.
 - `I-0115`: User detail tabs Overview/Security/Assigned Work.
 - `I-0116`: Xử lý `428`, self-deactivate và last-admin rules.
-- `I-0117`: Test role matrix và security actions.
+- `I-0117`: Manual QA role matrix và security actions.
 
 Acceptance criteria:
 
@@ -185,7 +187,7 @@ Issues:
 - `I-0122`: Multipart upload và progress/duplicate-submit guard.
 - `I-0123`: Download có filename và xử lý 401.
 - `I-0124`: Delete với permission/confirm.
-- `I-0125`: Malware/file-size/forbidden/error states và tests.
+- `I-0125`: Malware/file-size/forbidden/error states và manual QA.
 
 Acceptance criteria:
 
@@ -220,7 +222,7 @@ Issues:
 - `I-0212`: Create/edit/archive label.
 - `I-0213`: Reusable assignment manager theo entity.
 - `I-0214`: Permission/confirm/error handling.
-- `I-0215`: Component/integration tests cho scoped label và archive.
+- `I-0215`: Manual QA cho scoped label và archive.
 
 Acceptance criteria:
 
@@ -256,7 +258,7 @@ Issues:
 - `I-0304`: Search/filter URL sync và board/list toggle.
 - `I-0305`: Enrichment cache user/project/customer/label, tránh N+1.
 - `I-0306`: Loading/empty/no-template/403/partial error states.
-- `I-0307`: Component/contract tests; xóa fixtures khỏi production flow.
+- `I-0307`: Contract verification và manual QA; xóa fixtures khỏi production flow.
 
 Acceptance criteria:
 
@@ -274,7 +276,7 @@ Issues:
 - `I-0314`: Move workflow step và reorder trong column.
 - `I-0315`: Optimistic update/rollback và invalid-step recovery.
 - `I-0316`: Delete/open project và action permission.
-- `I-0317`: Playwright happy path, rollback, unassigned và read-only.
+- `I-0317`: Manual QA happy path, rollback, unassigned và read-only.
 
 Acceptance criteria:
 
@@ -292,7 +294,7 @@ Issues:
 - `I-0402`: Thay raw customer ID bằng selector/cache.
 - `I-0403`: Edit project và validation.
 - `I-0404`: Close project với confirm/action permission.
-- `I-0405`: Conflict/workflow/contract/paid fields và tests.
+- `I-0405`: Conflict/workflow/contract/paid fields và manual QA.
 
 Acceptance criteria:
 
@@ -324,7 +326,7 @@ Acceptance criteria:
 
 Issues:
 
-- `I-0421`: Project board optimistic update/rollback tests.
+- `I-0421`: Project board optimistic update/rollback manual QA.
 - `I-0422`: Sửa `FIXED` thành `FIXED_AMOUNT` và validate trigger.
 - `I-0423`: Template detail/update/archive.
 - `I-0424`: Step editor chỉ trong create; detail read-only đúng giới hạn BE.
@@ -346,7 +348,7 @@ Issues:
 - `I-0503`: Delete với confirm.
 - `I-0504`: Billing lock khi có `invoice_id`.
 - `I-0505`: Project Billing panel/quick create reuse.
-- `I-0506`: Permission, 423 và E2E tests.
+- `I-0506`: Permission, 423 và end-to-end manual QA.
 
 Acceptance criteria:
 
@@ -381,7 +383,7 @@ Issues:
 - `I-0603`: Key Result create/update.
 - `I-0604`: Progress và summary API.
 - `I-0605`: Permission/loading/empty/error states.
-- `I-0606`: Component/E2E tests.
+- `I-0606`: Component và end-to-end manual QA.
 
 Acceptance criteria:
 
@@ -398,7 +400,7 @@ Issues:
 - `I-0614`: Drilldown `/work`, `/users`, `/projects` và giữ filter.
 - `I-0615`: Dashboard dùng đúng report APIs; widget errors độc lập.
 - `I-0616`: Xóa metric `72%` và mọi fallback fake/suy diễn sai SRS.
-- `I-0617`: Contract/performance/E2E tests.
+- `I-0617`: Contract/performance verification và end-to-end manual QA.
 
 Acceptance criteria:
 
@@ -417,7 +419,7 @@ Issues:
 - `I-0704`: Tenant settings view/update plan/feature flags.
 - `I-0705`: Purge strong confirmation/result/error.
 - `I-0706`: Metadata schema admin/diagnostic integration.
-- `I-0707`: SUPER_ADMIN/role guard và E2E tests.
+- `I-0707`: SUPER_ADMIN/role guard và end-to-end manual QA.
 
 Acceptance criteria:
 
@@ -432,7 +434,7 @@ Issues:
 - `I-0712`: Regression bốn role và action permissions.
 - `I-0713`: Accessibility/keyboard/responsive sanity.
 - `I-0714`: Board/table pagination, N+1, bundle và performance baseline.
-- `I-0715`: Bốn critical journey Playwright trên staging.
+- `I-0715`: Bốn critical journey được QA thủ công trên staging.
 - `I-0716`: Dependency/security scan và xử lý finding.
 - `I-0717`: UAT, release notes, runbook, rollback và production smoke.
 
@@ -500,8 +502,8 @@ Hotfix: `master → hotfix → master`, tag patch, sau đó back-merge cùng fix
 
 | Cấp | Gate bắt buộc |
 | --- | --- |
-| Issue → Story | Lint, strict typecheck, unit/component test, changed-code coverage mục tiêu 80%, secret scan, 1 approval, resolved conversations |
-| Story → Develop | Production build, contract/integration test, relevant E2E, accessibility check, QA PASS theo AC, Reviewer APPROVE, owner approval |
+| Issue → Story | Lint, strict typecheck, manual verification evidence, secret scan, 1 approval, resolved conversations |
+| Story → Develop | Production build, API contract verification, manual end-to-end/accessibility check, QA PASS theo AC, Reviewer APPROVE, owner approval |
 | Develop → Master | Staging smoke/UAT cho Story vừa merge, full impacted regression, PO sign-off, dependency/security scan, release notes, rollback plan, 2 approvals |
 
 Nếu nhiều Story sẵn sàng cùng lúc, release PR phải liệt kê chính xác Story/SHA nằm trong `develop`. Không đưa Story chưa QA vào `develop`.
@@ -514,16 +516,16 @@ Story chỉ được checkout từ `develop` khi:
 - BA xác nhận current behavior, endpoint/payload/DTO, role/action, errors, version/idempotency và UI states.
 - API staging và account/test data sẵn sàng hoặc mock contract được PO/BA đánh dấu rõ.
 - Design/copy và responsive/loading/empty/error/forbidden states đã rõ.
-- Story không quá 13 SP; Issue từ 0.5-2 ngày, review/test độc lập.
+- Story không quá 13 SP; Issue từ 0.5-2 ngày, review/verify độc lập.
 - Dependency, owner và file boundary rõ; không còn open decision làm đổi solution.
-- QA test cases đã link với acceptance criteria.
+- QA scenarios đã link với acceptance criteria.
 
 ## 10. Definition of Done
 
 ### Issue Done
 
-- Code và tests hoàn tất; không còn mock/TODO ngoài scope.
-- Lint/typecheck/unit/component test pass.
+- Code và manual verification evidence hoàn tất; không còn mock/TODO ngoài scope.
+- Lint/typecheck pass.
 - DEV review resolved; PR merge vào đúng story branch.
 
 ### Story Done
@@ -544,9 +546,9 @@ Story chỉ được checkout từ `develop` khi:
 ## 11. PO/BA/PM governance
 
 - PO sở hữu priority, scope, acceptance criteria và UAT sign-off.
-- BA sở hữu contract matrix, business rules, edge cases và traceability SRS → Story → Issue → test.
+- BA sở hữu contract matrix, business rules, edge cases và traceability SRS → Story → Issue → QA scenario.
 - PM sở hữu dependency, capacity, sprint commitment, branch flow và release readiness.
-- DEV chỉ bắt đầu khi Story Ready; QA nghiệm thu theo AC, không chỉ dựa vào unit tests.
+- DEV chỉ bắt đầu khi Story Ready; QA nghiệm thu thủ công theo AC và lưu evidence.
 - Reviewer chạy sau QA; nếu Request Changes, quay lại DEV, sau đó chạy lại QA và Reviewer.
 - Refinement hàng tuần; re-estimate velocity sau Sprint 1 và review roadmap cuối mỗi sprint.
 
@@ -556,8 +558,8 @@ Story chỉ được checkout từ `develop` khi:
 - Không còn hard-code business data ở Dashboard/Work Board.
 - Bốn SRS journeys chạy end-to-end với BE thật.
 - Ma trận bốn role pass cho navigation, direct URL và mutation.
-- `401/403/423/428`, network, validation và optimistic rollback đã được test.
-- Build, lint, typecheck, automated tests và critical E2E đều pass.
+- `401/403/423/428`, network, validation và optimistic rollback đã được QA xác minh.
+- Build, lint, typecheck và critical journey manual QA đều pass.
 - Không còn P0/P1; P2 chỉ được giữ lại khi PO chấp nhận bằng văn bản.
 - QA PASS, Reviewer APPROVE, PO UAT sign-off.
 - Release notes, rollback plan, environment verification và production smoke hoàn tất.

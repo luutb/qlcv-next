@@ -11,7 +11,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit --incremental false",
+    "ci": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "@ant-design/icons": "6.2.5",

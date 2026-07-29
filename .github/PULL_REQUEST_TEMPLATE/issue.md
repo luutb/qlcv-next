@@ -22,7 +22,7 @@ Describe the user-visible or technical outcome.
 
 - [ ] Lint
 - [ ] Typecheck
-- [ ] Unit/component tests
+- [ ] Manual verification for the changed behavior
 - [ ] Relevant screenshots or recordings
 - [ ] No credential, production fixture, or unrelated change included
 
@@ -35,4 +35,3 @@ Describe failure modes and how this issue can be reverted safely.
 - [ ] PR targets the parent story branch, not `develop` or `master`
 - [ ] Conversations resolved
 - [ ] DEV reviewer approved
-

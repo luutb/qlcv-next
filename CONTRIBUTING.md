@@ -52,17 +52,16 @@ Before requesting review, run from `qlcv/`:
 ```sh
 npm run lint
 npm run typecheck
-npm test
 npm run build
 ```
 
-The pull request must also include acceptance-criteria mapping, test evidence,
-risk, and rollback notes. A checklist never replaces automated checks or human
+The pull request must also include acceptance-criteria mapping, verification evidence,
+risk, and rollback notes. A checklist never replaces quality checks or human
 approval.
 
 ## Review workflow
 
-1. DEV completes the issue and its automated tests.
+1. DEV completes the issue and provides manual verification evidence.
 2. QA validates the completed story against PO acceptance criteria.
 3. Reviewer reviews only after QA passes.
 4. If Reviewer requests changes, return the finding to DEV, then rerun QA and
@@ -71,8 +70,7 @@ approval.
 ## Security
 
 - Never commit credentials, tokens, `.env.local`, build output, coverage output,
-  or test artifacts.
+  or verification artifacts.
 - Git remotes must use SSH or a credential helper. Credentials must not be
   embedded in remote URLs.
 - A leaked credential must be revoked and rotated before any remote operation.
-

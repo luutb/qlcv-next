@@ -18,8 +18,8 @@ about: Merge an accepted story into develop
 - [ ] All issues merged into the story branch
 - [ ] Story synchronized with latest `develop`
 - [ ] Production build
-- [ ] Contract/integration tests
-- [ ] Relevant Playwright E2E
+- [ ] API contract verification where relevant
+- [ ] Manual end-to-end verification for the Story
 - [ ] Loading, empty, error, permission, and accessibility states
 - [ ] QA PASS
 - [ ] Reviewer APPROVE after QA
@@ -31,4 +31,3 @@ Document the environment, roles, fixtures, and API contract used by QA.
 ## Risk and rollback
 
 Describe operational risk and how to revert the story merge commit.
-
