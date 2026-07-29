@@ -51,6 +51,7 @@ returned its server redirect marker and preserved the complete query string.
 | Open-redirect guard | Login rejects protocol-relative, backslash and control-character return targets | PASS |
 | Shared UI states | Loading, empty, retry error, forbidden, locked, stale and mutation feedback components exist with Vietnamese defaults | PASS |
 | Production diagnostics | Debug payload metadata is rendered only outside production | PASS |
+| Reviewer regressions | 401 refresh cannot overwrite the safe redirect; 428 always exposes reload; mutation failures use an assertive alert | PASS |
 
 ## Human staging checks still required
 
@@ -70,6 +71,8 @@ Status: **BLOCKED — STAGING ACCESS AND FIXTURES NOT PROVIDED**.
 ## QA disposition and owner exception
 
 QA disposition for local integration: **PASS WITH ACCEPTED EXCEPTIONS**.
+
+Reviewer disposition after `I-0017`: **APPROVED**.
 
 On 2026-07-29, the project owner directed the team to continue without
 automated-test installation and despite previously reported external blockers.

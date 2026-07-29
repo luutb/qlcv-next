@@ -27,7 +27,11 @@ export function MutationFeedback({
   }
 
   return (
-    <Alert severity={status === "success" ? "success" : "error"} role="status" aria-live="polite">
+    <Alert
+      severity={status === "success" ? "success" : "error"}
+      role={status === "error" ? "alert" : "status"}
+      aria-live={status === "error" ? "assertive" : "polite"}
+    >
       {status === "success" ? successMessage : errorMessage}
     </Alert>
   );

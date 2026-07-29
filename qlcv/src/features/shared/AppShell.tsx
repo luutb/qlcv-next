@@ -43,6 +43,7 @@ import {
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { logout } from "@/api/auth.api";
+import { SessionExpiredError } from "@/api/client";
 import { authStore } from "@/features/auth/auth.store";
 
 const drawerWidth = 264;
@@ -193,9 +194,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setUser(nextUser);
         }
-      } catch {
+      } catch (error) {
         authStore.clearToken();
-        if (!cancelled) {
+        if (!cancelled && !(error instanceof SessionExpiredError)) {
           router.replace("/login");
         }
       } finally {

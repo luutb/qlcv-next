@@ -9,16 +9,16 @@ export function StaleDataState({
   message?: string;
   onReload?: () => void;
 }) {
+  const handleReload = onReload ?? (() => window.location.reload());
+
   return (
     <Alert severity="warning" role="alert">
       <AlertTitle>Dữ liệu không còn mới</AlertTitle>
       <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
         <span>{message}</span>
-        {onReload ? (
-          <Button size="small" color="inherit" onClick={onReload}>
-            Tải lại dữ liệu
-          </Button>
-        ) : null}
+        <Button size="small" color="inherit" onClick={handleReload}>
+          Tải lại dữ liệu
+        </Button>
       </Stack>
     </Alert>
   );
