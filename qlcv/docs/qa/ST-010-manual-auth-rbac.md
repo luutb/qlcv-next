@@ -5,7 +5,8 @@ Date: 2026-07-29
 Scope: `I-0101`, `I-0103`, `I-0105`. MFA issues `I-0102` and `I-0104` are
 explicitly deferred.
 
-Overall result: `NOT VERIFIED` for runtime acceptance; static gates PASS.
+Overall result: `PARTIAL PASS`; static gates and available local API/HTTP smoke
+PASS. Browser interaction and SUPER_ADMIN remain `NOT VERIFIED`.
 
 ## Static gates
 
@@ -29,18 +30,33 @@ Overall result: `NOT VERIFIED` for runtime acceptance; static gates PASS.
 
 ## Runtime matrix
 
-Frontend `http://127.0.0.1:3000` and backend `http://127.0.0.1:8080` were both
-unavailable during QA. No browser/API item below is claimed as PASS.
+Frontend `http://127.0.0.1:3000` and backend `http://127.0.0.1:8080` were running
+during the follow-up smoke. The database contains PARTNER, LAWYER and ACCOUNTANT
+demo users but no SUPER_ADMIN.
 
 | Scenario | SUPER_ADMIN | PARTNER | LAWYER | ACCOUNTANT |
 | --- | --- | --- | --- | --- |
-| Login/logout and refresh | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| Profile read/update | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| Profile stale 428 recovery | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| Login API and `/users/me` | NOT VERIFIED — no seed | PASS | PASS | PASS |
+| Profile read API | NOT VERIFIED — no seed | PASS | PASS | PASS |
+| Profile update API | NOT VERIFIED — no seed | PASS | NOT VERIFIED | NOT VERIFIED |
+| Profile stale 428 response | NOT VERIFIED — no seed | PASS | NOT VERIFIED | NOT VERIFIED |
 | Profile direct URL | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| Sidebar/direct-route policy | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| User-management API role policy | NOT VERIFIED — no seed | PASS — 200 | PASS — 403 | PASS — 403 |
+| Sidebar/direct-route browser policy | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | Project action visibility | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
 | Expired/inactive session | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+
+Additional runtime evidence:
+
+- Backend `/health`: HTTP 200.
+- Invalid password: HTTP 401.
+- Invalid bearer token on `/users/me`: HTTP 401.
+- PARTNER profile update increased optimistic version from 1 to 2.
+- Reusing version 1 returned HTTP 428.
+- Next development server returned HTTP 200 for `/login`, `/dashboard`,
+  `/settings/profile`, `/users`, `/admin/tenant-settings` and `/projects/board`.
+- HTTP 200 only proves route compilation/response. It does not prove client-side
+  RBAC, localStorage session behavior or absence of hydration console warnings.
 
 ## Code-level review notes
 
@@ -57,7 +73,8 @@ unavailable during QA. No browser/API item below is claimed as PASS.
 
 ## Remaining acceptance work
 
-1. Start frontend and backend with the documented Docker/local workflow.
-2. Execute this matrix using one real account for each role.
-3. Capture only non-secret evidence; never record JWTs, QR payloads or MFA data.
-4. Fix regressions, rerun all static gates, then obtain Reviewer approval.
+1. Add or provide a safe local SUPER_ADMIN fixture.
+2. Execute the UI matrix in a real browser for all four roles.
+3. Verify logout, refresh, inactive session and hydration console behavior.
+4. Capture only non-secret evidence; never record JWTs, QR payloads or MFA data.
+5. Fix regressions, rerun all static gates, then obtain Reviewer approval.

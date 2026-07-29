@@ -2,7 +2,7 @@
 
 Decision ID: QLCV-I-0013
 
-Status: Accepted; backend source verified, live runtime QA pending
+Status: Accepted; backend source and non-MFA live API verified
 
 Date: 2026-07-29
 
@@ -117,6 +117,8 @@ I-0015. Full login/session UX is implemented in ST-010.
 5. Profile update with current version and stale version.
 6. Enable/disable MFA request and response shape with all secret values redacted.
 
-Backend handler source was inspected on 2026-07-29. Live runtime behavior and
-staging evidence remain unverified. MFA UI was explicitly deferred and must not
-be enabled until disable requires verified TOTP or another approved proof.
+Backend handler source was inspected on 2026-07-29. Live login and `/users/me`
+were verified for the seeded PARTNER, LAWYER and ACCOUNTANT users. Profile
+update and stale HTTP 428 behavior were also verified. SUPER_ADMIN and browser
+behavior remain unverified. MFA UI was explicitly deferred and must not be
+enabled until disable requires verified TOTP or another approved proof.

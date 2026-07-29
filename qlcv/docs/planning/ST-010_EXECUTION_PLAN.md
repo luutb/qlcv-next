@@ -1,6 +1,6 @@
 # ST-010 Execution Plan — Auth, Profile, MFA and RBAC
 
-Status: Non-MFA scope implemented; runtime QA pending
+Status: Non-MFA scope implemented; runtime QA partially verified
 
 Date: 2026-07-29
 
@@ -56,6 +56,7 @@ branch, latest commit and any blocker.
 | `I-0104` Enable/disable MFA | FE DEV2 | `I-0103`, MFA enrollment response | `src/features/profile/mfa/**`; consume public methods from `src/api/auth.api.ts` | `DEFERRED` |
 | `I-0105` Route/action guards | FE DEV1 | `I-0101`; MFA dependency waived for current scope | `src/layouts/app-shell/model/access.ts`, guard UI and action-policy helpers | `QA` |
 | `I-0106` Manual QA/Reviewer fixes | QA, then responsible DEV | Current non-MFA scope | `docs/qa/ST-010-manual-auth-rbac.md`; regression fixes stay with original owner | `IN_PROGRESS` |
+| `I-0107` Local runtime smoke | QA | `I-0106`, running FE/BE | `README.md`, runtime section of `docs/qa/ST-010-manual-auth-rbac.md` | `QA` |
 | Backend identity support | BE DEV | BA contract checklist | Backend auth/user/MFA handlers and DTOs in `qlcv-work-board` | `TODO` |
 
 ## Branches
@@ -69,7 +70,8 @@ develop
         ├── issue/QLCV-I-0103-profile
         ├── issue/QLCV-I-0104-mfa-settings
         ├── issue/QLCV-I-0105-role-guards
-        └── issue/QLCV-I-0106-manual-qa
+        ├── issue/QLCV-I-0106-manual-qa
+        └── issue/QLCV-I-0107-runtime-smoke
 ```
 
 Each issue branches from the latest Story HEAD. An issue is squash-merged into
@@ -281,7 +283,9 @@ QA evidence:
   remediation is required before `I-0102`/`I-0104` resume.
 - Static quality gates: lint, strict typecheck and production build PASS on
   2026-07-29.
-- Local runtime QA: frontend port 3000 and backend port 8080 were not running;
-  browser/API scenarios remain `NOT VERIFIED`.
+- Local runtime QA: backend health, three seeded-role logins/current-user,
+  user-management API authorization, profile update/428 and frontend HTTP route
+  smoke PASS on 2026-07-29. Browser interaction/hydration and SUPER_ADMIN remain
+  `NOT VERIFIED` because no browser harness or SUPER_ADMIN seed is available.
 - Correct frontend remote repository: unresolved; destructive merge into the
   unrelated `origin/develop` is forbidden.
