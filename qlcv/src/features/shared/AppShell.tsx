@@ -115,6 +115,12 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: "OKR", href: "/okr", icon: <Home fontSize="small" />, roles: ["SUPER_ADMIN", "PARTNER", "LAWYER", "ACCOUNTANT"] },
   {
+    label: "Reports",
+    href: "/reports",
+    icon: <Assessment fontSize="small" />,
+    roles: ["SUPER_ADMIN", "PARTNER", "LAWYER", "ACCOUNTANT"],
+  },
+  {
     label: "Workflow Templates",
     href: "/settings/workflow-templates",
     icon: <Settings fontSize="small" />,
@@ -122,7 +128,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: "User Management",
-    href: "/settings/users",
+    href: "/users",
     icon: <People fontSize="small" />,
     roles: ["SUPER_ADMIN", "PARTNER"],
   },
@@ -131,6 +137,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/settings/profile",
     icon: <Person fontSize="small" />,
     always: true,
+  },
+  {
+    label: "Tenant Settings",
+    href: "/admin/tenant-settings",
+    icon: <Settings fontSize="small" />,
+    roles: ["SUPER_ADMIN"],
   },
   {
     label: "Admin Purge",
@@ -344,7 +356,7 @@ function canAccessPath(pathname: string, role: string): boolean {
     return false;
   }
 
-  if (pathname.startsWith("/settings/users") || pathname.startsWith("/settings/workflow-templates")) {
+  if (pathname.startsWith("/users") || pathname.startsWith("/settings/users") || pathname.startsWith("/settings/workflow-templates")) {
     return role === "PARTNER";
   }
 

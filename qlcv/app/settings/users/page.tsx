@@ -1,10 +1,10 @@
-import { PlaceholderPage } from "@/features/shared/PlaceholderPage";
+import { redirect } from "next/navigation";
+import { redirectUrl, type RouteSearchParams } from "@/features/shared/redirect-url";
 
-export default function UsersRoute() {
-  return (
-    <PlaceholderPage
-      title="User Management"
-      description="Trang quản lý user nội bộ theo role, version và actions."
-    />
-  );
+export default async function LegacyUsersRoute({
+  searchParams,
+}: {
+  searchParams: Promise<RouteSearchParams>;
+}) {
+  redirect(redirectUrl("/users", await searchParams));
 }
