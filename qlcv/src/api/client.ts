@@ -38,9 +38,38 @@ export class ApiError extends Error {
   }
 }
 
+export class SessionExpiredError extends ApiError {
+  constructor(message: string, payload: unknown) {
+    super(message, 401, payload);
+    this.name = "SessionExpiredError";
+  }
+}
+
+export class ForbiddenError extends ApiError {
+  constructor(message: string, payload: unknown) {
+    super(message, 403, payload);
+    this.name = "ForbiddenError";
+  }
+}
+
+export class LockedError extends ApiError {
+  constructor(message: string, payload: unknown) {
+    super(message, 423, payload);
+    this.name = "LockedError";
+  }
+}
+
+export class VersionConflictError extends ApiError {
+  constructor(message: string, payload: unknown) {
+    super(message, 428, payload);
+    this.name = "VersionConflictError";
+  }
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const API_VERSION_PREFIX = "/api/v1";
 const TOKEN_STORAGE_KEY = "access_token";
+const USER_STORAGE_KEY = "auth_user";
 
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") {
@@ -78,15 +107,12 @@ export async function apiRequest<TResponse, TBody = unknown>(
 
   const payload = await parseResponse(response, options.responseType);
 
-  if (response.status === 401 && !isAuthLoginPath(path)) {
-    clearAccessToken();
-    if (typeof window !== "undefined") {
-      window.location.assign("/login");
-    }
-  }
-
   if (!response.ok) {
-    throw new ApiError(getErrorMessage(payload, response.status), response.status, payload);
+    if (response.status === 401 && !isAuthLoginPath(path)) {
+      expireBrowserSession();
+    }
+
+    throw createApiError(response.status, payload);
   }
 
   return payload as TResponse;
@@ -100,7 +126,11 @@ export async function downloadRequest<TBody = unknown>(
 
   if (!response.ok) {
     const payload = await parseResponse(response, "json");
-    throw new ApiError(getErrorMessage(payload, response.status), response.status, payload);
+    if (response.status === 401 && !isAuthLoginPath(path)) {
+      expireBrowserSession();
+    }
+
+    throw createApiError(response.status, payload);
   }
 
   return {
@@ -230,8 +260,8 @@ async function parseResponse(
     return response.text();
   }
 
-  const contentType = response.headers.get("content-type");
-  if (!contentType?.includes("application/json")) {
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json") && !contentType.includes("+json")) {
     return response.text();
   }
 
@@ -270,6 +300,42 @@ function getErrorMessage(payload: unknown, status: number): string {
 function isAuthLoginPath(path: string): boolean {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return normalizedPath === "/auth/login" || normalizedPath === "/api/v1/auth/login";
+}
+
+function createApiError(status: number, payload: unknown): ApiError {
+  const message = getErrorMessage(payload, status);
+
+  switch (status) {
+    case 401:
+      return new SessionExpiredError(message, payload);
+    case 403:
+      return new ForbiddenError(message, payload);
+    case 423:
+      return new LockedError(message, payload);
+    case 428:
+      return new VersionConflictError(message, payload);
+    default:
+      return new ApiError(message, status, payload);
+  }
+}
+
+function expireBrowserSession(): void {
+  clearAccessToken();
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(USER_STORAGE_KEY);
+  if (window.location.pathname === "/login") {
+    return;
+  }
+
+  const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const loginUrl = new URL("/login", window.location.origin);
+  loginUrl.searchParams.set("expired", "1");
+  loginUrl.searchParams.set("returnUrl", returnUrl);
+  window.location.assign(`${loginUrl.pathname}${loginUrl.search}`);
 }
 
 function parseContentDispositionFilename(value: string | null): string | undefined {

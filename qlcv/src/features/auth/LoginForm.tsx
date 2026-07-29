@@ -10,7 +10,7 @@ import { authStore } from "./auth.store";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl") || "";
+  const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
   const displayReturnUrl = returnUrl || "/dashboard";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -205,4 +205,18 @@ export function LoginForm() {
       </section>
     </main>
   );
+}
+
+function getSafeReturnUrl(value: string | null): string {
+  if (
+    !value ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.includes("\\") ||
+    /[\u0000-\u001F\u007F]/.test(value)
+  ) {
+    return "";
+  }
+
+  return value;
 }
