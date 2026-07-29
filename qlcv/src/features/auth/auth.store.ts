@@ -1,5 +1,6 @@
 import { clearAccessToken, getAccessToken, setAccessToken } from "@/api/client";
-import { getAuthMe, type AuthUser } from "@/api/auth.api";
+import type { AuthUser } from "@/api/auth.api";
+import { getCurrentUser } from "@/api/users.api";
 
 const USER_STORAGE_KEY = "auth_user";
 
@@ -10,7 +11,7 @@ export const authStore = {
   setUser,
   clearUser,
   refreshUser: async (signal?: AbortSignal) => {
-    const user = await getAuthMe(signal);
+    const user = await getCurrentUser(signal);
     setUser(user);
     return user;
   },

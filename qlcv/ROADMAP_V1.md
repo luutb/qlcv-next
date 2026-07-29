@@ -139,6 +139,7 @@ Issues:
 - `I-0014`: Tạo canonical route `/users`, `/reports`, `/admin/tenant-settings` và legacy redirects.
 - `I-0015`: Chuẩn hóa shared states loading/empty/error/retry và mutation feedback.
 - `I-0016`: Bổ sung contract smoke với staging accounts/fixtures bốn role.
+- `I-0017`: Sửa regression Reviewer về redirect 401, stale reload và mutation accessibility.
 
 Acceptance criteria:
 

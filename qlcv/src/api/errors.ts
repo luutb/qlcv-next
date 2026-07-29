@@ -5,6 +5,8 @@ export type ApiErrorCode =
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
   | "FORBIDDEN"
+  | "LOCKED"
+  | "VERSION_CONFLICT"
   | "INVALID_CREDENTIALS"
   | "INVALID_MFA_TOKEN"
   | "ERR_WORKFLOW_TEMPLATE_NOT_FOUND"
@@ -41,6 +43,8 @@ const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   BAD_REQUEST: "Dữ liệu gửi lên không hợp lệ.",
   UNAUTHORIZED: "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
   FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
+  LOCKED: "Dữ liệu đang bị khóa và chưa thể thay đổi.",
+  VERSION_CONFLICT: "Dữ liệu đã thay đổi. Vui lòng tải lại trước khi tiếp tục.",
   INVALID_CREDENTIALS: "Sai tên đăng nhập hoặc mật khẩu.",
   INVALID_MFA_TOKEN: "Mã MFA không hợp lệ.",
   ERR_WORKFLOW_TEMPLATE_NOT_FOUND: "Workflow template không tồn tại.",
@@ -63,8 +67,15 @@ export function getApiErrorPayload(error: unknown): ApiErrorPayload | null {
 
 export function getApiErrorCode(error: unknown): ApiErrorCode | undefined {
   const payload = getApiErrorPayload(error);
-  const code = payload?.error_code ?? payload?.code ?? statusToCode(payload?.status);
-  return isKnownApiErrorCode(code) ? code : undefined;
+  const payloadCode = payload?.error_code ?? payload?.code;
+  if (isKnownApiErrorCode(payloadCode)) {
+    return payloadCode;
+  }
+
+  return (
+    statusToCode(payload?.status) ??
+    statusToCode(error instanceof ApiError ? error.status : undefined)
+  );
 }
 
 export function getApiErrorDetails<TDetails>(error: unknown): TDetails | undefined {
@@ -73,7 +84,7 @@ export function getApiErrorDetails<TDetails>(error: unknown): TDetails | undefin
 
 export function getUserFacingErrorMessage(error: unknown): string {
   const payload = getApiErrorPayload(error);
-  const code = payload?.error_code ?? payload?.code ?? statusToCode(payload?.status);
+  const code = getApiErrorCode(error);
 
   if (payload?.detail) {
     return payload.detail;
@@ -132,6 +143,10 @@ function statusToCode(status: unknown): ApiErrorCode | undefined {
       return "UNAUTHORIZED";
     case 403:
       return "FORBIDDEN";
+    case 423:
+      return "LOCKED";
+    case 428:
+      return "VERSION_CONFLICT";
     default:
       return undefined;
   }

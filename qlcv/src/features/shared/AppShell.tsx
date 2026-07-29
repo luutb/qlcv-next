@@ -42,7 +42,8 @@ import {
   WorkHistory,
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
-import { getAuthMe, logout } from "@/api/auth.api";
+import { logout } from "@/api/auth.api";
+import { SessionExpiredError } from "@/api/client";
 import { authStore } from "@/features/auth/auth.store";
 
 const drawerWidth = 264;
@@ -115,6 +116,12 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: "OKR", href: "/okr", icon: <Home fontSize="small" />, roles: ["SUPER_ADMIN", "PARTNER", "LAWYER", "ACCOUNTANT"] },
   {
+    label: "Reports",
+    href: "/reports",
+    icon: <Assessment fontSize="small" />,
+    roles: ["SUPER_ADMIN", "PARTNER", "LAWYER", "ACCOUNTANT"],
+  },
+  {
     label: "Workflow Templates",
     href: "/settings/workflow-templates",
     icon: <Settings fontSize="small" />,
@@ -122,7 +129,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: "User Management",
-    href: "/settings/users",
+    href: "/users",
     icon: <People fontSize="small" />,
     roles: ["SUPER_ADMIN", "PARTNER"],
   },
@@ -131,6 +138,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/settings/profile",
     icon: <Person fontSize="small" />,
     always: true,
+  },
+  {
+    label: "Tenant Settings",
+    href: "/admin/tenant-settings",
+    icon: <Settings fontSize="small" />,
+    roles: ["SUPER_ADMIN"],
   },
   {
     label: "Admin Purge",
@@ -176,14 +189,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
 
       try {
-        const nextUser = await getAuthMe();
+        const nextUser = await authStore.refreshUser();
         authStore.setUser(nextUser);
         if (!cancelled) {
           setUser(nextUser);
         }
-      } catch {
+      } catch (error) {
         authStore.clearToken();
-        if (!cancelled) {
+        if (!cancelled && !(error instanceof SessionExpiredError)) {
           router.replace("/login");
         }
       } finally {
@@ -344,7 +357,7 @@ function canAccessPath(pathname: string, role: string): boolean {
     return false;
   }
 
-  if (pathname.startsWith("/settings/users") || pathname.startsWith("/settings/workflow-templates")) {
+  if (pathname.startsWith("/users") || pathname.startsWith("/settings/users") || pathname.startsWith("/settings/workflow-templates")) {
     return role === "PARTNER";
   }
 
