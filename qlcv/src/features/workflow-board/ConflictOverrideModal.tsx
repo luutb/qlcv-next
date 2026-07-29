@@ -1,6 +1,7 @@
 "use client";
 
-import { Alert, Form, Input, Modal, Typography } from "antd";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
+import { useState } from "react";
 import type { ProjectBoardCard } from "@/api/projects.api";
 
 type ConflictOverrideModalProps = {
@@ -18,56 +19,41 @@ export function ConflictOverrideModal({
   onCancel,
   onSubmit,
 }: ConflictOverrideModalProps) {
-  const [form] = Form.useForm<{ override_justification: string }>();
+  const [overrideJustification, setOverrideJustification] = useState("");
 
   return (
-    <Modal
-      title="Ghi đè conflict"
-      open={open}
-      okText="Ghi đè conflict"
-      okButtonProps={{ danger: true }}
-      cancelText="Hủy"
-      confirmLoading={loading}
-      onCancel={onCancel}
-      onOk={() => form.submit()}
-      destroyOnHidden
-    >
-      <Alert
-        type="error"
-        showIcon
-        message="Thao tác nhạy cảm audit"
-        description="Chỉ ghi đè conflict khi đã có cơ sở nghiệp vụ rõ ràng. Lý do sẽ được gửi backend để lưu vết."
-        className="workflow-modal-alert"
-      />
-
-      <Typography.Paragraph type="secondary">
-        Project: <Typography.Text strong>{project?.name}</Typography.Text>
-      </Typography.Paragraph>
-
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={(values) => onSubmit(values.override_justification)}
-      >
-        <Form.Item
-          name="override_justification"
-          label="Lý do ghi đè"
-          rules={[
-            { required: true, message: "Vui lòng nhập lý do ghi đè." },
-            {
-              min: 50,
-              message: "Lý do ghi đè cần tối thiểu 50 ký tự.",
-            },
-          ]}
-        >
-          <Input.TextArea
-            rows={5}
-            showCount
-            minLength={50}
-            placeholder="Mô tả cơ sở kiểm tra conflict và lý do vẫn tiếp tục xử lý project..."
+    <Dialog open={open} onClose={onCancel} fullWidth maxWidth="sm">
+      <DialogTitle>Ghi đè conflict</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <Alert severity="error">
+            Thao tác nhạy cảm audit. Chỉ ghi đè conflict khi đã có cơ sở nghiệp vụ rõ ràng.
+          </Alert>
+          <Typography color="text.secondary">
+            Project: <strong>{project?.name}</strong>
+          </Typography>
+          <TextField
+            label="Lý do ghi đè"
+            multiline
+            minRows={5}
+            value={overrideJustification}
+            onChange={(event) => setOverrideJustification(event.target.value)}
+            helperText="Tối thiểu 50 ký tự."
+            fullWidth
           />
-        </Form.Item>
-      </Form>
-    </Modal>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Hủy</Button>
+        <Button
+          variant="contained"
+          color="error"
+          disabled={loading}
+          onClick={() => onSubmit(overrideJustification)}
+        >
+          Ghi đè conflict
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

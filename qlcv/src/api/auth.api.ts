@@ -5,7 +5,6 @@ const USER_STORAGE_KEY = "auth_user";
 export type LoginRequest = {
   username: string;
   password: string;
-  totp_code?: string;
 };
 
 export type LoginResponse = {
@@ -28,7 +27,7 @@ export type AuthUser = {
 };
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
-  const response = await apiRequest<LoginResponse, LoginRequest>("/api/v1/auth/login", {
+  const response = await apiRequest<LoginResponse, LoginRequest>("/auth/login", {
     method: "POST",
     body: payload,
   });
@@ -46,7 +45,7 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
 }
 
 export function getAuthMe(signal?: AbortSignal) {
-  return apiRequest<AuthUser>("/api/v1/auth/me", { signal });
+  return apiRequest<AuthUser>("/auth/me", { signal });
 }
 
 export function logout(): void {

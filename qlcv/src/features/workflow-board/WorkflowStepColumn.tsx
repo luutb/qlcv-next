@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { Badge, Empty, Typography } from "antd";
+import { Box, Chip, Stack, Typography } from "@mui/material";
 import type { ProjectBoardCard, ProjectBoardStep } from "@/api/projects.api";
 import { ProjectWorkflowCard } from "./ProjectWorkflowCard";
 
@@ -17,18 +17,27 @@ export function WorkflowStepColumn({ step, onOverrideConflict }: WorkflowStepCol
   });
 
   return (
-    <section
+    <Box
       ref={setNodeRef}
-      className={["workflow-step", isOver ? "workflow-step--over" : ""]
-        .filter(Boolean)
-        .join(" ")}
+      sx={{
+        bgcolor: isOver ? "action.hover" : "grey.50",
+        border: "1px solid",
+        borderColor: isOver ? "primary.main" : "divider",
+        borderRadius: 2,
+        p: 1,
+        minHeight: 160,
+      }}
     >
-      <header className="workflow-step__header">
-        <Typography.Text strong>{step.step_name}</Typography.Text>
-        <Badge count={step.projects.length} showZero color="#64748b" />
-      </header>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ alignItems: "center", justifyContent: "space-between", mb: 1 }}
+      >
+        <Typography sx={{ fontWeight: 700 }}>{step.step_name}</Typography>
+        <Chip size="small" label={step.projects.length} />
+      </Stack>
 
-      <div className="workflow-step__cards">
+      <Stack spacing={1}>
         {step.projects.length > 0 ? (
           step.projects.map((project) => (
             <ProjectWorkflowCard
@@ -38,13 +47,19 @@ export function WorkflowStepColumn({ step, onOverrideConflict }: WorkflowStepCol
             />
           ))
         ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chưa có project"
-            className="workflow-step__empty"
-          />
+          <Box
+            sx={{
+              minHeight: 90,
+              display: "grid",
+              placeItems: "center",
+              color: "text.secondary",
+              fontSize: 13,
+            }}
+          >
+            Chưa có project
+          </Box>
         )}
-      </div>
-    </section>
+      </Stack>
+    </Box>
   );
 }

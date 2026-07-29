@@ -1,39 +1,30 @@
-# SRS Frontend - API Contract
+# SRS FE API - Repository Layer
 
-Nguon xac thuc: `internal/server/router.go`, `internal/server/workflow_handlers.go`, `internal/server/dashboard_handlers.go`, `internal/models/models.go`, `internal/metadata/schema_engine.go`.
+Ngày cập nhật: 2026-06-15
 
-Tai lieu nay mo ta contract BE hien tai de FE Next.js xay dung tang repository. Khi co mau thuan voi `docs/openapi.yaml`, uu tien source code handler.
+Tài liệu này dành cho FE Next.js. Nội dung bám theo BE hiện tại trong `internal/server/router.go`, handlers và `docs/BE_CURRENT_SPEC.md`.
 
-## 1. Quy uoc chung
+## 1. Quy Ước Chung
 
-Base URL local: `http://localhost:8080`
+Base URL:
 
-Prefix API: `/api/v1`
+```text
+/api/v1
+```
 
-Content type mac dinh:
+Auth header:
 
-- Request JSON: `Content-Type: application/json`
-- Response JSON: `Content-Type: application/json`
-- Error: `Content-Type: application/problem+json`
-- Upload tai lieu: `multipart/form-data`
-- Download tai lieu: `application/octet-stream`
+```http
+Authorization: Bearer <token>
+```
 
-Authentication:
+Write request nên gửi:
 
-- Tat ca endpoint `/api/v1/*` deu can `Authorization: Bearer <token>`, tru `POST /api/v1/auth/login`.
-- Token lay tu `POST /api/v1/auth/login`.
-- JWT payload duoc BE dung de lay `user_id`, `organization_id`, `role`, `tenant_plan`, `feature_flags`.
-- FE co the dung `/api/v1/users/me` de build route guard, nhung BE van la source of truth cho phan quyen.
+```http
+Idempotency-Key: <uuid>
+```
 
-Idempotency:
-
-- Middleware ap dung cho `POST`, `PUT`, `PATCH`, `DELETE`.
-- FE nen gui `Idempotency-Key` cho moi mutation.
-- Do dai key: 16 den 255 ky tu.
-- Neu replay thanh cong, BE tra header `X-Idempotency-Replay: true`.
-- Key duoc hash theo `Idempotency-Key + request path`, retention 24 gio.
-
-Loi RFC 7807:
+Error format:
 
 ```json
 {
@@ -45,876 +36,312 @@ Loi RFC 7807:
 }
 ```
 
-Repository layer phai parse theo `status`, `detail`, `code`. Khong parse message tu plain text.
-
-Phan trang:
+Pagination response:
 
 ```json
 {
   "data": [],
   "pagination": {
-    "total": 0,
-    "limit": 20,
+    "limit": 50,
     "offset": 0,
-    "count": 0
+    "count": 0,
+    "total": 0
   }
 }
 ```
 
-Luu y: mot so endpoint dang tinh `total` theo ket qua da loc/da phan trang, chua phai total toan bo dataset. FE khong nen dung `total` lam so lieu bao cao nghiep vu.
+## 2. Repository Modules
 
-Ngay gio:
+FE nên chia repository:
 
-- Date-time response thuong la RFC3339/string, vi du `2026-06-15T10:30:00Z`.
-- Dashboard date dung `YYYY-MM-DD`.
-- `client_created_at` gui RFC3339.
-
-## 2. Enum va role
-
-Role:
-
-- `SUPER_ADMIN`
-- `PARTNER`
-- `LAWYER`
-- `ACCOUNTANT`
-- Cac role khac co the ton tai trong DB/JWT nhung handler chi check cac role tren cho quyen dac biet.
-
-Page/action permission source:
-
-- Page access FE nen dua tren role tu `/api/v1/users/me`.
-- Record action FE phai dua tren `actions` cua tung record.
-- Endpoint co role guard tren BE:
-  - `GET /api/v1/users`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/users`: `PARTNER`, `SUPER_ADMIN`.
-  - `PUT /api/v1/users/{id}`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/users/{id}/activate`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/users/{id}/deactivate`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/users/{id}/reset-password`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/users/{id}/mfa/reset`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/workflow-templates`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/projects/{id}/override-conflict`: `PARTNER`, `SUPER_ADMIN`.
-  - `POST /api/v1/documents/{id}/lock`: `PARTNER`.
-  - `POST /api/v1/invoices/generate`: `PARTNER`, `ACCOUNTANT`.
-  - `POST /api/v1/admin/purge`: `SUPER_ADMIN`.
-- Cac endpoint con lai can authenticated user; permission chi tiet neu co duoc the hien bang `actions`.
-
-Project status:
-
-- `ACTIVE`
-- `CLOSED`
-
-Conflict status:
-
-- `CLEARED`
-- `CONFLICT_DETECTED`
-- `OVERRIDDEN_CLEARED`
-
-Workflow macro column:
-
-- `INTAKE`
-- `IN_PROGRESS`
-- `BILLING`
-- `ARCHIVED`
-
-Invoice status:
-
-- `DRAFT`
-- `UNPAID`
-- `PAID`
-- `VOID`
-
-Workflow financial trigger payment type:
-
-- `NONE`
-- `FIXED_AMOUNT`
-- `PERCENTAGE`
-- `REMAINING`
-
-Payment ledger type FE co the gui khi move workflow:
-
-- BE chap nhan string bat ky neu `payment_type` co gia tri.
-- Neu khong gui, BE suy dien: `DEPOSIT` cho percentage, `FINAL` cho remaining, mac dinh `PARTIAL`.
-
-## 3. Shared DTO
-
-### Actions
-
-BE tra `actions` tren nhieu record. FE phai coi day la nguon truth cho button/action.
-
-```ts
-type Actions = {
-  edit: boolean;
-  delete: boolean;
-  download?: boolean;
-  lock?: boolean;
-  restore?: boolean;
-  move?: boolean;
-  assign?: boolean;
-  override_conflict?: boolean;
-};
+```text
+auth.repository.ts
+users.repository.ts
+customers.repository.ts
+profile-documents.repository.ts
+projects.repository.ts
+workflow.repository.ts
+tasks.repository.ts
+issues.repository.ts
+labels.repository.ts
+documents.repository.ts
+time-entries.repository.ts
+invoices.repository.ts
+payments.repository.ts
+dashboard.repository.ts
+reports.repository.ts
+okr.repository.ts
+audit.repository.ts
+admin.repository.ts
+metadata.repository.ts
 ```
 
-### Pagination
+`issues.repository.ts` là alias UX cho `project_tasks`, gọi `/api/v1/issues/*`.
 
-```ts
-type Pagination = {
-  total: number;
-  limit: number;
-  offset: number;
-  count: number;
-};
-```
+## 3. Auth
 
-## 4. Health
-
-### GET `/health`
-
-Auth: khong can.
-
-Response `200`:
-
-```json
-{ "status": "ok" }
-```
-
-### GET `/`
-
-Auth: khong can.
-
-Response `200`:
-
-```json
-{ "message": "Lean Enterprise Legal Engine API", "version": "1.0.0" }
-```
-
-## 5. Authentication va User
-
-### POST `/api/v1/auth/login`
-
-Auth: khong can.
+### POST `/auth/login`
 
 Request:
 
 ```json
 {
-  "username": "admin",
+  "username": "partner",
   "password": "password",
   "totp_code": "123456"
 }
 ```
 
-Rules:
+Response: JWT/session theo BE auth service.
 
-- `username` bat buoc.
-- `password` bat buoc.
-- `totp_code` chi can khi user da bat MFA.
+### Current User
 
-Response `200`:
-
-```json
-{ "token": "<jwt>" }
+```text
+GET /auth/me
+GET /users/me
+PUT /users/me
+POST /auth/mfa/enable
+POST /auth/mfa/disable
 ```
 
-Loi dang chu y:
+FE dùng `/users/me` làm nguồn role, tenant plan, feature flags nếu response có.
 
-- `401 INVALID_CREDENTIALS`
-- `403 FORBIDDEN` neu account inactive.
-- `400 BAD_REQUEST` voi detail `MFA code is required for this account`.
-- `400 INVALID_MFA_TOKEN`
+## 4. Users / Nhân Viên
 
-### GET `/api/v1/auth/me`
+Endpoints:
 
-Alias cua `/api/v1/users/me`.
+```text
+GET  /users?limit=&offset=&q=&role=&is_active=
+POST /users
+GET  /users/{id}
+PUT  /users/{id}
+POST /users/{id}/activate
+POST /users/{id}/deactivate
+POST /users/{id}/reset-password
+POST /users/{id}/mfa/reset
+```
 
-### GET `/api/v1/users/me`
-
-Response `200`:
+User DTO:
 
 ```json
 {
   "id": "uuid",
   "organization_id": "uuid",
-  "username": "admin",
-  "email": "admin@example.com",
-  "role": "PARTNER",
+  "username": "lawyer1",
+  "email": "lawyer1@example.com",
+  "role": "LAWYER",
   "is_active": true,
   "mfa_enabled": false,
   "version": 1,
-  "tenant_plan": "STARTER",
-  "enabled_feature_flags": []
+  "created_at": "2026-06-15T10:30:00Z",
+  "actions": {}
 }
 ```
 
-### PUT `/api/v1/users/me`
-
-Headers: nen gui `Idempotency-Key`.
-
-Request:
+Create:
 
 ```json
 {
-  "username": "new_name",
-  "email": "new@example.com",
-  "version": 1
-}
-```
-
-Rules:
-
-- `version` bat buoc va `> 0`.
-- Phai co it nhat mot trong `username`, `email`.
-- BE dung optimistic locking.
-
-Response `200`: User DTO moi.
-
-Loi dang chu y:
-
-- `428 OPTIMISTIC_LOCK_FAILED`
-
-### GET `/api/v1/users`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Query:
-
-- `limit`: default `20`.
-- `offset`: default `0`.
-- `role`: optional, mot trong `SUPER_ADMIN`, `PARTNER`, `LAWYER`, `ACCOUNTANT`.
-- `is_active`: optional boolean.
-- `q`: optional search theo `username` hoac `email`.
-
-Response `200`:
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "organization_id": "uuid",
-      "username": "lawyer01",
-      "email": "lawyer01@example.com",
-      "role": "LAWYER",
-      "is_active": true,
-      "mfa_enabled": false,
-      "version": 1,
-      "created_at": "2026-06-15T10:30:00Z",
-      "actions": {
-        "edit": true,
-        "delete": true,
-        "restore": false
-      }
-    }
-  ],
-  "pagination": { "total": 1, "limit": 20, "offset": 0, "count": 1 }
-}
-```
-
-### GET `/api/v1/users/{id}`
-
-Role:
-
-- User thuong duoc xem chinh minh.
-- `PARTNER`, `SUPER_ADMIN` duoc xem user khac trong tenant.
-- `PARTNER` khong duoc manage `SUPER_ADMIN`.
-
-Response `200`: Managed User DTO, khong bao gom `password_hash` va `totp_secret_encrypted`.
-
-### POST `/api/v1/users`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
-
-```json
-{
-  "username": "lawyer01",
-  "email": "lawyer01@example.com",
+  "username": "lawyer1",
+  "email": "lawyer1@example.com",
   "role": "LAWYER",
-  "password": "temporary-password",
+  "password": "TemporaryPassword123!",
   "send_invite": false
 }
 ```
 
-Rules:
-
-- `username`, `email`, `role`, `password` bat buoc.
-- `password` toi thieu 8 ky tu.
-- Role hop le: `SUPER_ADMIN`, `PARTNER`, `LAWYER`, `ACCOUNTANT`.
-- `PARTNER` khong duoc tao `SUPER_ADMIN`.
-- `send_invite` hien duoc nhan vao va audit, nhung BE hien tai chua co email invite service.
-
-Response `201`: Managed User DTO.
-
-Loi dang chu y:
-
-- `409 USER_ALREADY_EXISTS`
-
-### PUT `/api/v1/users/{id}`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
+Update:
 
 ```json
 {
-  "username": "lawyer01",
-  "email": "lawyer01@example.com",
+  "username": "lawyer1",
+  "email": "lawyer1@example.com",
   "role": "LAWYER",
   "is_active": true,
   "version": 1
 }
 ```
 
-Rules:
+Roles hợp lệ:
 
-- `version` bat buoc.
-- Co the gui subset field can update.
-- `PARTNER` khong duoc update `SUPER_ADMIN` va khong duoc gan role `SUPER_ADMIN`.
-- Khong duoc deactivate chinh minh.
-- Khong duoc lam mat active admin cuoi cung cua tenant.
-
-Response `200`: Managed User DTO.
-
-Loi dang chu y:
-
-- `428 OPTIMISTIC_LOCK_FAILED`
-- `409 USER_ALREADY_EXISTS`
-
-### POST `/api/v1/users/{id}/activate`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
-
-```json
-{ "version": 1 }
+```text
+SUPER_ADMIN
+PARTNER
+LAWYER
+ACCOUNTANT
 ```
 
-Response `200`: Managed User DTO.
+## 5. Customers / Hồ Sơ Khách Hàng
 
-### POST `/api/v1/users/{id}/deactivate`
+Endpoints:
 
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
-
-```json
-{ "version": 1 }
+```text
+GET    /customers?limit=&offset=&include_deleted=&q=
+POST   /customers
+GET    /customers/{id}
+PUT    /customers/{id}
+DELETE /customers/{id}
+POST   /customers/{id}/restore
+GET    /customers/{id}/conflicts
+POST   /customers/{id}/conflicts
 ```
 
-Rules:
-
-- Khong duoc deactivate chinh minh.
-- Khong duoc deactivate active admin cuoi cung cua tenant.
-
-Response `200`: Managed User DTO.
-
-### POST `/api/v1/users/{id}/reset-password`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
-
-```json
-{
-  "temporary_password": "new-temporary-password"
-}
-```
-
-Rules:
-
-- `temporary_password` toi thieu 8 ky tu.
-- `PARTNER` khong duoc reset password `SUPER_ADMIN`.
-- BE hien tai set truc tiep password tam thoi, chua co email reset-token flow.
-
-Response `200`:
-
-```json
-{ "message": "Password reset successfully" }
-```
-
-### POST `/api/v1/users/{id}/mfa/reset`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Rules:
-
-- Xoa `totp_secret_encrypted`, set `mfa_enabled=false`.
-- `PARTNER` khong duoc reset MFA `SUPER_ADMIN`.
-
-Response `200`:
-
-```json
-{ "message": "MFA reset successfully" }
-```
-
-### Profile documents cho user
-
-User profile co the upload/list/download/delete ho so qua generic profile document endpoints:
-
-- `GET /api/v1/profile-documents?entity_type=user&entity_id={user_id}`
-- `POST /api/v1/profile-documents` multipart
-- `GET /api/v1/profile-documents/{id}/download`
-- `DELETE /api/v1/profile-documents/{id}`
-
-## 6. Customers
-
-### Customer DTO
-
-```ts
-type Customer = {
-  id: string;
-  organization_id: string;
-  name: string;
-  tax_code?: string | null;
-  deleted_at?: string | null;
-  created_at: string;
-  actions?: Actions;
-};
-```
-
-### GET `/api/v1/customers`
-
-Query:
-
-- `limit`: number, default `20`, chi accept gia tri `> 0`.
-- `offset`: number, default `0`, chi accept gia tri `>= 0`.
-
-Response `200`:
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "organization_id": "uuid",
-      "name": "Cong ty A",
-      "tax_code": "0312345678",
-      "created_at": "2026-06-15T10:30:00Z",
-      "actions": { "edit": true, "delete": true, "restore": false }
-    }
-  ],
-  "pagination": { "total": 1, "limit": 20, "offset": 0, "count": 1 }
-}
-```
-
-### GET `/api/v1/customers/{id}`
-
-Response `200`: Customer DTO.
-
-### POST `/api/v1/customers`
-
-Request:
-
-```json
-{
-  "name": "Cong ty A",
-  "tax_code": "0312345678"
-}
-```
-
-Rules:
-
-- `name` bat buoc.
-- BE co check conflict of interest trong customer service.
-
-Response `201`: Customer DTO.
-
-Loi dang chu y:
-
-- `409 CONFLICT_OF_INTEREST`
-
-### PUT `/api/v1/customers/{id}`
-
-Request:
-
-```json
-{
-  "name": "Cong ty A Updated",
-  "tax_code": "0312345678"
-}
-```
-
-Rules:
-
-- `name` bat buoc.
-
-Response `200`: Customer DTO.
-
-### DELETE `/api/v1/customers/{id}`
-
-Soft delete.
-
-Response `200`:
-
-```json
-{ "message": "Customer deleted successfully" }
-```
-
-### POST `/api/v1/customers/{id}/restore`
-
-Response `200`:
-
-```json
-{ "message": "Customer restored successfully" }
-```
-
-### GET `/api/v1/customers/{id}/conflicts`
-
-Response `200`:
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "customer_id": "uuid",
-      "conflict_name": "Cong ty doi ung"
-    }
-  ]
-}
-```
-
-### POST `/api/v1/customers/{id}/conflicts`
-
-Request:
-
-```json
-{ "conflict_name": "Cong ty doi ung" }
-```
-
-Rules:
-
-- `conflict_name` bat buoc.
-
-Response `201`:
-
-```json
-{ "message": "Conflict entry added successfully" }
-```
-
-### Profile documents cho customer
-
-Customer profile co the upload/list/download/delete ho so qua:
-
-- `GET /api/v1/profile-documents?entity_type=customer&entity_id={customer_id}`
-- `POST /api/v1/profile-documents` multipart
-- `GET /api/v1/profile-documents/{id}/download`
-- `DELETE /api/v1/profile-documents/{id}`
-
-Multipart upload fields:
-
-- `entity_type`: `user` hoac `customer`.
-- `entity_id`: uuid.
-- `title`: optional.
-- `file`: required.
-
-## 7. Projects
-
-### Project DTO
-
-```ts
-type Project = {
-  id: string;
-  organization_id: string;
-  customer_id: string;
-  name: string;
-  hourly_rate: number;
-  status: "ACTIVE" | "CLOSED";
-  workflow_template_id?: string | null;
-  current_workflow_step_id?: string | null;
-  total_contract_value: number;
-  total_paid: number;
-  remaining_amount: number;
-  conflict_status: "CLEARED" | "CONFLICT_DETECTED" | "OVERRIDDEN_CLEARED";
-  opposing_party_name?: string | null;
-  opposing_party_tax_code?: string | null;
-  created_at: string;
-  updated_at?: string | null;
-  actions?: Actions;
-};
-```
-
-### GET `/api/v1/projects`
-
-Query:
-
-- `limit`: default `20`.
-- `offset`: default `0`.
-- `customer_id`: optional uuid.
-- `status`: optional, FE nen gui `ACTIVE` hoac `CLOSED`.
-
-Response `200`:
-
-```json
-{
-  "data": [],
-  "pagination": { "total": 0, "limit": 20, "offset": 0, "count": 0 }
-}
-```
-
-Luu y:
-
-- Neu co `customer_id`, BE list theo customer roi paginate bang memory.
-- Neu co `status`, BE loc sau khi lay list. `total` co the khong phan anh tong dataset.
-
-### GET `/api/v1/projects/{id}`
-
-Response `200`: Project DTO.
-
-### POST `/api/v1/projects`
-
-Request:
-
-```json
-{
-  "customer_id": "uuid",
-  "name": "Vu viec hop dong",
-  "hourly_rate": 1000000,
-  "workflow_template_id": "uuid",
-  "total_contract_value": 50000000,
-  "opposing_party_name": "Ben doi ung",
-  "opposing_party_tax_code": "0311111111"
-}
-```
-
-Rules:
-
-- `customer_id` bat buoc.
-- `name` bat buoc.
-- `hourly_rate >= 0`.
-- `total_contract_value >= 0`.
-- Neu co `workflow_template_id`, template phai active va co step dau tien.
-- BE tu set `status = ACTIVE`, `total_paid = 0`.
-- BE scan conflict khi tao project; neu conflict thi `conflict_status = CONFLICT_DETECTED`.
-
-Response `201`: Project DTO.
-
-### PUT `/api/v1/projects/{id}`
-
-Request:
-
-```json
-{
-  "name": "Vu viec hop dong updated",
-  "hourly_rate": 1200000,
-  "workflow_template_id": "uuid",
-  "current_workflow_step_id": "uuid",
-  "total_contract_value": 60000000,
-  "opposing_party_name": "Ben doi ung",
-  "opposing_party_tax_code": "0311111111"
-}
-```
-
-Rules:
-
-- `name` bat buoc.
-- `hourly_rate >= 0`.
-- `total_contract_value >= 0` neu gui.
-- FE nen dung endpoint workflow-step de chuyen step thay vi update thang `current_workflow_step_id`, vi endpoint workflow-step co guard thanh toan va audit.
-
-Response `200`: Project DTO.
-
-### POST `/api/v1/projects/{id}/close`
-
-Response `200`:
-
-- Thuong tra Project DTO da `status = CLOSED`.
-- Neu BE close xong nhung fetch lai fail, tra `{ "message": "Project closed successfully" }`.
-
-## 8. Workflow
-
-### Workflow Template DTO
-
-```ts
-type WorkflowTemplate = {
-  id: string;
-  organization_id: string;
-  template_name: string;
-  description?: string | null;
-  is_default: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  steps?: WorkflowStep[];
-  steps_count?: number;
-};
-```
-
-### Workflow Step DTO
-
-```ts
-type WorkflowStep = {
-  id: string;
-  organization_id: string;
-  template_id: string;
-  step_key: string;
-  step_name: string;
-  macro_column: "INTAKE" | "IN_PROGRESS" | "BILLING" | "ARCHIVED";
-  sort_order: number;
-  financial_trigger?: Record<string, unknown>;
-  security_trigger?: Record<string, unknown>;
-  task_trigger?: Record<string, unknown>;
-  is_terminal: boolean;
-  created_at: string;
-  updated_at: string;
-};
-```
-
-### GET `/api/v1/workflow-templates`
-
-Query:
-
-- `active=true` de chi lay active template.
-- Neu khong gui hoac gui `false`, BE tra tat ca template theo org.
-
-Response `200`:
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "organization_id": "uuid",
-      "template_name": "Default Workflow",
-      "description": null,
-      "is_default": true,
-      "is_active": true,
-      "created_at": "2026-06-15T10:30:00Z",
-      "updated_at": "2026-06-15T10:30:00Z",
-      "steps_count": 4
-    }
-  ]
-}
-```
-
-### GET `/api/v1/workflow-templates/{id}`
-
-Response `200`: WorkflowTemplate co `steps`.
-
-### POST `/api/v1/workflow-templates`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
-
-```json
-{
-  "template_name": "Legal Matter Workflow",
-  "description": "Quy trinh xu ly vu viec",
-  "is_default": true,
-  "steps": [
-    {
-      "step_key": "intake",
-      "step_name": "Tiep nhan",
-      "macro_column": "INTAKE",
-      "sort_order": 1,
-      "financial_trigger": {
-        "requires_payment": false,
-        "payment_type": "NONE"
-      },
-      "security_trigger": {},
-      "task_trigger": {},
-      "is_terminal": false
-    }
-  ]
-}
-```
-
-Rules:
-
-- `template_name` bat buoc.
-- `steps` phai co it nhat 1 item.
-- `step_key` bat buoc va unique trong template.
-- `step_name` bat buoc.
-- `sort_order > 0` va unique trong template.
-- `macro_column` chi duoc: `INTAKE`, `IN_PROGRESS`, `BILLING`, `ARCHIVED`.
-- Neu co `financial_trigger.financial_tags`, moi item phai hop le.
-
-Financial tag hop le:
-
-- `type = FREE`: `amount` neu co phai bang `0`.
-- `type = FIXED_AMOUNT`: `amount > 0`.
-- `type = PERCENTAGE`: `value > 0 && value <= 100`, `base` neu co phai la `fee`, `deposit`, `total_contract_value`.
-- `type = CALCULATED` hoac `MANUAL`.
-- `key` phai thuoc metric hop le hoac `custom`.
-- Neu `key = custom` thi can `custom_key`.
-
-Metric hop le:
-
-- `fee`, `deposit`, `discount`, `refund`, `paid`, `remaining`, `deposit_due`, `unpaid_fee`, `free_count`, `free_hours`, `free_projects`
-
-Response `201`:
+Customer DTO:
 
 ```json
 {
   "id": "uuid",
-  "template_name": "Legal Matter Workflow",
-  "steps_count": 1
+  "organization_id": "uuid",
+  "name": "Công ty ABC",
+  "tax_code": "0101234567",
+  "email": "contact@abc.vn",
+  "phone": "0900000000",
+  "address": "Hà Nội",
+  "representative_name": "Nguyễn Văn A",
+  "notes": "Khách hàng chiến lược",
+  "deleted_at": null,
+  "created_at": "2026-06-15T10:30:00Z",
+  "actions": {}
 }
 ```
 
-### PUT `/api/v1/workflow-templates/{id}`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
+Create/update:
 
 ```json
 {
-  "template_name": "Legal Matter Workflow",
-  "description": "Updated",
-  "is_default": false,
-  "is_active": true
+  "name": "Công ty ABC",
+  "tax_code": "0101234567",
+  "email": "contact@abc.vn",
+  "phone": "0900000000",
+  "address": "Hà Nội",
+  "representative_name": "Nguyễn Văn A",
+  "notes": "Ghi chú hồ sơ"
 }
 ```
 
-Response `200`: WorkflowTemplate co steps.
-
-### DELETE `/api/v1/workflow-templates/{id}`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Behavior: archive template bang `is_active=false`, khong hard delete.
-
-Response `200`:
+Conflict request:
 
 ```json
-{ "message": "Workflow template archived successfully" }
+{
+  "conflict_name": "Công ty đối thủ"
+}
 ```
 
-### GET `/api/v1/projects/board`
+## 6. Profile Documents
 
-Query:
+Dùng cho tài liệu hồ sơ user/customer.
 
-- `workflow_template_id`: bat buoc uuid.
+```text
+GET    /profile-documents?entity_type=user|customer&entity_id={uuid}
+POST   /profile-documents
+GET    /profile-documents/{id}/download
+DELETE /profile-documents/{id}
+```
 
-Response `200`:
+Upload: `multipart/form-data`
+
+```text
+entity_type = user | customer
+entity_id   = uuid
+title       = string
+file        = binary
+```
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "organization_id": "uuid",
+  "entity_type": "customer",
+  "entity_id": "uuid",
+  "title": "Hồ sơ pháp lý",
+  "file_size": 123456,
+  "uploaded_by": "uuid",
+  "created_at": "2026-06-15T10:30:00Z"
+}
+```
+
+## 7. Projects / Vụ Việc
+
+Endpoints:
+
+```text
+GET    /projects?limit=&offset=&customer_id=&status=
+POST   /projects
+GET    /projects/{id}
+PUT    /projects/{id}
+POST   /projects/{id}/close
+PATCH  /projects/{id}/workflow-step
+POST   /projects/{id}/override-conflict
+GET    /projects/board?workflow_template_id={uuid}
+```
+
+Project DTO:
+
+```json
+{
+  "id": "uuid",
+  "organization_id": "uuid",
+  "customer_id": "uuid",
+  "name": "Tư vấn hợp đồng",
+  "hourly_rate": 1000000,
+  "status": "ACTIVE",
+  "workflow_template_id": "uuid",
+  "current_workflow_step_id": "uuid",
+  "total_contract_value": 50000000,
+  "total_paid": 10000000,
+  "conflict_status": "CLEARED",
+  "opposing_party_name": "Công ty XYZ",
+  "opposing_party_tax_code": "0109999999",
+  "created_at": "2026-06-15T10:30:00Z",
+  "updated_at": "2026-06-15T10:30:00Z",
+  "actions": {}
+}
+```
+
+Create/update:
+
+```json
+{
+  "customer_id": "uuid",
+  "name": "Tư vấn hợp đồng",
+  "hourly_rate": 1000000,
+  "workflow_template_id": "uuid",
+  "current_workflow_step_id": "uuid",
+  "total_contract_value": 50000000,
+  "opposing_party_name": "Công ty XYZ",
+  "opposing_party_tax_code": "0109999999"
+}
+```
+
+Move workflow step:
+
+```json
+{
+  "target_step_key": "billing",
+  "incoming_payment_confirmation": 10000000,
+  "payment_method": "bank_transfer",
+  "payment_note": "Khách đã thanh toán",
+  "payment_type": "DEPOSIT"
+}
+```
+
+Project board response:
 
 ```json
 {
   "macro_columns": [
     {
-      "key": "INTAKE",
-      "title": "Intake",
+      "key": "IN_PROGRESS",
+      "title": "In Progress",
       "steps": [
         {
           "step_id": "uuid",
-          "step_key": "intake",
-          "step_name": "Tiep nhan",
-          "sort_order": 1,
-          "projects": [
-            {
-              "id": "uuid",
-              "name": "Vu viec A",
-              "customer_id": "uuid",
-              "status": "ACTIVE",
-              "conflict_status": "CLEARED",
-              "total_contract_value": 50000000,
-              "total_paid": 10000000,
-              "remaining_amount": 40000000
-            }
-          ]
+          "step_key": "soan_thao",
+          "step_name": "Soạn thảo",
+          "sort_order": 2,
+          "projects": []
         }
       ]
     }
@@ -922,34 +349,728 @@ Response `200`:
 }
 ```
 
-Macro columns luon theo thu tu: `INTAKE`, `IN_PROGRESS`, `BILLING`, `ARCHIVED`.
+## 8. Workflow Templates
 
-### PATCH `/api/v1/projects/{id}/workflow-step`
+```text
+GET    /workflow-templates?active=true|false
+POST   /workflow-templates
+GET    /workflow-templates/{id}
+PUT    /workflow-templates/{id}
+DELETE /workflow-templates/{id}
+```
+
+Create:
+
+```json
+{
+  "template_name": "Quy trình dịch vụ pháp lý",
+  "description": "Mô tả",
+  "is_default": true,
+  "steps": [
+    {
+      "step_key": "intake",
+      "step_name": "Tiếp nhận",
+      "macro_column": "INTAKE",
+      "sort_order": 1,
+      "financial_trigger": null,
+      "security_trigger": null,
+      "task_trigger": {},
+      "is_terminal": false
+    }
+  ]
+}
+```
+
+Valid macro columns:
+
+```text
+INTAKE
+IN_PROGRESS
+BILLING
+ARCHIVED
+```
+
+## 9. Tasks / Issues / GitLab-Style Board
+
+Trong BE, issue của FE chính là `project_tasks`.
+
+Task endpoints:
+
+```text
+GET    /tasks?limit=&offset=&project_id=&assignee_id=&workflow_step_id=&status=&q=
+GET    /tasks/board?workflow_template_id=&project_id=&assignee_id=&status=&q=&include_unassigned=true
+GET    /projects/{id}/tasks
+POST   /tasks
+GET    /tasks/{id}
+PUT    /tasks/{id}
+PATCH  /tasks/{id}/workflow-step
+PATCH  /tasks/{id}/status
+PATCH  /tasks/{id}/assignee
+PATCH  /tasks/reorder
+DELETE /tasks/{id}
+```
+
+Issue aliases:
+
+```text
+GET    /issues?limit=&offset=&project_id=&assignee_id=&workflow_step_id=&status=&q=
+GET    /issues/board?workflow_template_id=&project_id=&assignee_id=&status=&q=&include_unassigned=true
+POST   /issues
+GET    /issues/{id}
+PUT    /issues/{id}
+PATCH  /issues/{id}/workflow-step
+POST   /issues/{id}/move
+PATCH  /issues/{id}/status
+PATCH  /issues/{id}/assignee
+PATCH  /issues/reorder
+DELETE /issues/{id}
+```
+
+Task DTO:
+
+```json
+{
+  "id": "uuid",
+  "organization_id": "uuid",
+  "project_id": "uuid",
+  "workflow_step_id": "uuid",
+  "title": "Soạn hợp đồng",
+  "description": "Nội dung việc",
+  "status": "TODO",
+  "assignee_id": "uuid",
+  "due_date": "2026-06-30",
+  "position": 0,
+  "created_at": "2026-06-15T10:30:00Z",
+  "updated_at": "2026-06-15T10:30:00Z"
+}
+```
+
+Create/update:
+
+```json
+{
+  "project_id": "uuid",
+  "workflow_step_id": "uuid",
+  "title": "Soạn hợp đồng",
+  "description": "Nội dung việc",
+  "status": "TODO",
+  "assignee_id": "uuid",
+  "due_date": "2026-06-30",
+  "position": 0
+}
+```
+
+Move issue/card:
+
+```json
+{
+  "workflow_step_id": "uuid",
+  "position": 10
+}
+```
+
+Board response:
+
+```json
+{
+  "workflow_template_id": "uuid",
+  "columns": [
+    {
+      "workflow_step_id": "uuid",
+      "step_key": "soan_thao",
+      "step_name": "Soạn thảo",
+      "macro_column": "IN_PROGRESS",
+      "sort_order": 2,
+      "tasks": []
+    }
+  ],
+  "unassigned_tasks": []
+}
+```
+
+Valid status:
+
+```text
+TODO
+DOING
+DONE
+CANCELLED
+```
+
+Lưu ý quan trọng:
+
+- Column board lấy từ `workflow_steps`, không lấy từ status.
+- `status` chỉ là trạng thái nội bộ của task.
+- FE nên dùng `PATCH /issues/{id}/workflow-step` hoặc `POST /issues/{id}/move` khi kéo thả.
+- `PUT /tasks/{id}` vẫn là full update.
+
+## 10. Labels
+
+```text
+GET    /labels?project_id=&archived=
+POST   /labels
+GET    /labels/{id}
+PUT    /labels/{id}
+DELETE /labels/{id}
+GET    /label-assignments?entity_type=&entity_id=
+POST   /label-assignments
+DELETE /label-assignments/{id}
+```
+
+Label request:
+
+```json
+{
+  "project_id": "uuid",
+  "title": "priority::high",
+  "description": "Độ ưu tiên cao",
+  "color": "#d73a4a",
+  "scoped_key": "priority",
+  "scoped_value": "high",
+  "priority": 10
+}
+```
+
+Assignment:
+
+```json
+{
+  "label_id": "uuid",
+  "entity_type": "task",
+  "entity_id": "uuid"
+}
+```
+
+Valid `entity_type`: `customer`, `project`, `task`, `document`.
+
+## 11. Documents
+
+```text
+GET    /documents?project_id=&limit=&offset=
+POST   /documents
+GET    /documents/{id}
+GET    /documents/{id}/download
+DELETE /documents/{id}
+POST   /documents/{id}/lock
+```
+
+Upload: `multipart/form-data`
+
+```text
+project_id = uuid
+title = string
+file = binary
+client_created_at = RFC3339 optional
+```
+
+## 12. Time Entries
+
+```text
+GET    /time-entries?project_id=&user_id=&billable=
+POST   /time-entries
+GET    /time-entries/{id}
+PUT    /time-entries/{id}
+DELETE /time-entries/{id}
+```
 
 Request:
 
 ```json
 {
-  "target_step_key": "billing",
-  "incoming_payment_confirmation": 10000000,
-  "payment_method": "bank_transfer",
-  "payment_note": "Khach da chuyen khoan",
-  "payment_type": "DEPOSIT"
+  "project_id": "uuid",
+  "duration_minutes": 120,
+  "description": "Soạn hợp đồng",
+  "billable": true,
+  "client_created_at": "2026-06-15T10:30:00Z"
 }
 ```
 
-Rules:
+## 13. Invoices / Payments
 
-- `target_step_key` bat buoc.
-- `incoming_payment_confirmation >= 0`.
-- Project dang `CONFLICT_DETECTED` bi block.
-- Project phai co `workflow_template_id`.
-- Target step phai thuoc template cua project.
-- Neu target step co financial guard, BE kiem tra nguong thanh toan.
+```text
+GET  /invoices?customer_id=&status=
+POST /invoices/generate
+GET  /invoices/{id}
+PUT  /invoices/{id}/status
+GET  /invoices/{id}/time-entries
+GET  /project-payments?project_id={uuid}
+GET  /project-payments/{id}
+```
 
-Response `200`: Project DTO.
+Generate invoice:
 
-Financial blocked response `422`:
+```json
+{
+  "project_id": "uuid",
+  "customer_id": "uuid",
+  "status": "DRAFT"
+}
+```
+
+Invoice status: `DRAFT`, `UNPAID`, `PAID`, `VOID`.
+
+## 14. Dashboard / Reports
+
+```text
+GET /dashboard/summary?from=YYYY-MM-DD&to=YYYY-MM-DD
+GET /reports/tasks/summary
+GET /reports/tasks/by-assignee
+GET /reports/tasks/by-status
+GET /reports/tasks/overdue?limit=
+GET /reports/workload
+GET /reports/okr/summary
+```
+
+Dashboard response gồm:
+
+```json
+{
+  "range": {},
+  "kpis": {
+    "open_issues": 0,
+    "overdue_issues": 0,
+    "active_projects": 0,
+    "revenue_collected": 0
+  },
+  "issue_status": [],
+  "project_workflow": [],
+  "due_items": [],
+  "projects_need_attention": []
+}
+```
+
+## 15. OKR
+
+```text
+GET    /okr/cycles
+POST   /okr/cycles
+GET    /okr/objectives
+POST   /okr/objectives
+PUT    /okr/objectives/{id}
+DELETE /okr/objectives/{id}
+POST   /okr/objectives/{id}/key-results
+PUT    /okr/key-results/{id}
+```
+
+OKR status: `ON_TRACK`, `AT_RISK`, `OFF_TRACK`, `DONE`, `CANCELLED`.
+
+## 16. Audit / Admin / Metadata
+
+Audit:
+
+```text
+GET  /audit-logs?limit=&offset=&user_id=&action=
+GET  /audit-logs/{id}
+POST /audit-logs/verify
+```
+
+Admin:
+
+```text
+POST /admin/purge
+GET  /admin/tenant-settings
+PUT  /admin/tenant-settings
+```
+
+Metadata:
+
+```text
+GET /metadata/schemas/{entity}
+```
+
+## 17. FE Cần Lưu Ý
+
+- BE hiện chưa có frontend source.
+- BE đã có `/issues` alias nhưng dữ liệu vẫn là `project_tasks`.
+- Board công việc giống GitLab nên dùng `/issues/board`.
+- Project workflow board dùng `/projects/board`, khác với issue/task board.
+- Task list chưa embed `project_name`, `customer_name`, `labels`; FE cần join/fetch thêm nếu muốn hiển thị trên card.
+- Chưa có saved board views/user preferences; FE có thể lưu local storage tạm.
+
+## 18. Repository Method Contract Đầy Đủ
+
+### `auth.repository.ts`
+
+```ts
+login(input)
+getAuthMe()
+getCurrentUser()
+updateCurrentUser(input)
+enableMfa()
+disableMfa(input)
+logoutLocal()
+```
+
+### `users.repository.ts`
+
+```ts
+listUsers(params)
+createUser(input)
+getUser(id)
+updateUser(id, input)
+activateUser(id, version)
+deactivateUser(id, version)
+resetUserPassword(id, temporaryPassword)
+resetUserMfa(id)
+```
+
+### `customers.repository.ts`
+
+```ts
+listCustomers(params)
+createCustomer(input)
+getCustomer(id)
+updateCustomer(id, input)
+deleteCustomer(id)
+restoreCustomer(id)
+listCustomerConflicts(customerId)
+addCustomerConflict(customerId, input)
+```
+
+### `profile-documents.repository.ts`
+
+```ts
+listProfileDocuments(entityType, entityId)
+uploadProfileDocument(input: FormData)
+downloadProfileDocument(id)
+deleteProfileDocument(id)
+```
+
+### `projects.repository.ts`
+
+```ts
+listProjects(params)
+createProject(input)
+getProject(id)
+updateProject(id, input)
+closeProject(id)
+moveProjectWorkflowStep(id, input)
+overrideProjectConflict(id, input)
+getProjectsBoard(workflowTemplateId)
+```
+
+### `workflow.repository.ts`
+
+```ts
+listWorkflowTemplates(params)
+createWorkflowTemplate(input)
+getWorkflowTemplate(id)
+updateWorkflowTemplate(id, input)
+archiveWorkflowTemplate(id)
+```
+
+### `issues.repository.ts`
+
+```ts
+getIssueBoard(params)
+listIssues(params)
+createIssue(input)
+getIssue(id)
+updateIssue(id, input)
+moveIssueWorkflowStep(id, input)
+moveIssue(id, input)
+updateIssueStatus(id, status)
+updateIssueAssignee(id, assigneeId)
+reorderIssues(items)
+deleteIssue(id)
+```
+
+### `tasks.repository.ts`
+
+`tasks.repository.ts` có thể wrap cùng endpoint với issues nếu FE muốn dùng tên task trong project detail.
+
+```ts
+listTasks(params)
+getTasksBoard(params)
+listProjectTasks(projectId, params)
+createTask(input)
+getTask(id)
+updateTask(id, input)
+moveTaskWorkflowStep(id, input)
+updateTaskStatus(id, status)
+updateTaskAssignee(id, assigneeId)
+reorderTasks(items)
+deleteTask(id)
+```
+
+### `labels.repository.ts`
+
+```ts
+listLabels(params)
+createLabel(input)
+getLabel(id)
+updateLabel(id, input)
+archiveLabel(id)
+listLabelAssignments(params)
+assignLabel(input)
+removeLabelAssignment(id)
+```
+
+### `documents.repository.ts`
+
+```ts
+listDocuments(params)
+uploadDocument(input: FormData)
+getDocument(id)
+downloadDocument(id)
+deleteDocument(id)
+lockDocument(id)
+```
+
+### `time-entries.repository.ts`
+
+```ts
+listTimeEntries(params)
+createTimeEntry(input)
+getTimeEntry(id)
+updateTimeEntry(id, input)
+deleteTimeEntry(id)
+```
+
+### `invoices.repository.ts`
+
+```ts
+listInvoices(params)
+generateInvoice(input)
+getInvoice(id)
+updateInvoiceStatus(id, status)
+listInvoiceTimeEntries(id)
+```
+
+### `payments.repository.ts`
+
+```ts
+listProjectPayments(projectId)
+getProjectPayment(id)
+```
+
+### `dashboard.repository.ts`
+
+```ts
+getDashboardSummary(params)
+```
+
+### `reports.repository.ts`
+
+```ts
+getTaskReportSummary()
+getTaskReportByAssignee()
+getTaskReportByStatus()
+getTaskReportOverdue(params)
+getWorkloadReport()
+getOkrSummary()
+```
+
+### `okr.repository.ts`
+
+```ts
+listOkrCycles()
+createOkrCycle(input)
+listOkrObjectives(params)
+createOkrObjective(input)
+updateOkrObjective(id, input)
+deleteOkrObjective(id)
+createOkrKeyResult(objectiveId, input)
+updateOkrKeyResult(id, input)
+```
+
+### `audit.repository.ts`
+
+```ts
+listAuditLogs(params)
+getAuditLog(id)
+verifyAuditChain()
+```
+
+### `admin.repository.ts`
+
+```ts
+manualPurge()
+getTenantSettings()
+updateTenantSettings(input)
+```
+
+### `metadata.repository.ts`
+
+```ts
+getMetadataSchema(entity)
+```
+
+## 19. FE Use-Case Coverage
+
+FE hoàn chỉnh phải map API thành các use-case sau:
+
+| Use-case | Repository calls |
+| --- | --- |
+| Login + MFA | `login`, `getCurrentUser`, `enableMfa`, `disableMfa` |
+| Dashboard vận hành | `getDashboardSummary`, task reports, workload, OKR summary |
+| GitLab-style work board | `getIssueBoard`, `moveIssue`, labels, users, projects |
+| Project workflow board | `listWorkflowTemplates`, `getProjectsBoard`, `moveProjectWorkflowStep` |
+| Project 360 detail | project, tasks, documents, time entries, invoices, payments |
+| Customer 360 detail | customer, conflicts, projects, profile documents, labels |
+| User 360 detail | user, profile documents, assigned issues |
+| Document center | documents upload/download/delete/lock |
+| Billing | time entries, generate invoice, invoice status, project payments |
+| Reports | all `/reports/*` endpoints |
+| OKR | cycles/objectives/key results + OKR report |
+| Admin | tenant settings, purge, metadata, audit verify |
+
+## 20. HTTP Client Requirements Chi Tiết
+
+Phần này merge từ `SRS_OLD.md` và cập nhật theo BE hiện tại.
+
+Content types:
+
+- Request JSON: `Content-Type: application/json`.
+- Response JSON: `Content-Type: application/json`.
+- Error: `Content-Type: application/problem+json`.
+- Upload tài liệu: `multipart/form-data`.
+- Download tài liệu: binary/blob.
+
+HTTP client bắt buộc:
+
+- Tự gắn `Authorization: Bearer <token>` cho mọi private request.
+- Không gắn auth cho `POST /auth/login`, `/health`, `/`.
+- Tự parse `application/problem+json` thành typed error.
+- Không parse lỗi từ plain text.
+- Nếu response là blob, trả `{ blob, filename }`.
+- Khi upload `FormData`, không tự set `Content-Type`; để browser set boundary.
+- Nếu gặp `401`, clear session và redirect `/login`.
+- Nếu gặp `403`, trả typed `ForbiddenError` cho UI route/action guard.
+- Nếu gặp `423`, hiển thị lock reason như WORM lock hoặc billing lock.
+- Nếu gặp `428`, refetch record và báo optimistic lock.
+
+Idempotency:
+
+- FE nên gửi `Idempotency-Key` cho mọi `POST`, `PUT`, `PATCH`, `DELETE`.
+- Key nên là UUID/string 16-255 ký tự.
+- Nếu BE replay, response có thể có header `X-Idempotency-Replay: true`.
+- Repository không được retry mutation với key khác nếu request trước có thể đã thành công.
+
+Pagination caveat:
+
+- Một số endpoint hiện có `total` chưa chắc là tổng toàn bộ dataset; có thể là count sau lọc/paging.
+- FE không dùng `pagination.total` làm số liệu báo cáo nghiệp vụ.
+- Số liệu dashboard/report phải lấy từ `/dashboard/summary` hoặc `/reports/*`.
+
+Date/time:
+
+- Date-time response thường là RFC3339.
+- `due_date` là `YYYY-MM-DD`.
+- Dashboard date dùng `YYYY-MM-DD`.
+- `client_created_at` gửi RFC3339.
+
+## 21. Enum Và Permission Chi Tiết
+
+Roles:
+
+```text
+SUPER_ADMIN
+PARTNER
+LAWYER
+ACCOUNTANT
+```
+
+Project status:
+
+```text
+ACTIVE
+CLOSED
+```
+
+Conflict status:
+
+```text
+CLEARED
+CONFLICT_DETECTED
+OVERRIDDEN_CLEARED
+```
+
+Workflow macro column:
+
+```text
+INTAKE
+IN_PROGRESS
+BILLING
+ARCHIVED
+```
+
+Task status:
+
+```text
+TODO
+DOING
+DONE
+CANCELLED
+```
+
+Invoice status:
+
+```text
+DRAFT
+UNPAID
+PAID
+VOID
+```
+
+OKR status:
+
+```text
+ON_TRACK
+AT_RISK
+OFF_TRACK
+DONE
+CANCELLED
+```
+
+Role guard BE hiện tại:
+
+| Endpoint group | Role |
+| --- | --- |
+| `GET/POST/PUT /users`, user activate/deactivate/reset | `PARTNER`, `SUPER_ADMIN` |
+| `POST/PUT/DELETE /workflow-templates` | `PARTNER`, `SUPER_ADMIN` |
+| `POST /projects/{id}/override-conflict` | `PARTNER`, `SUPER_ADMIN` |
+| `POST /documents/{id}/lock` | `PARTNER` |
+| `POST /labels`, `PUT/DELETE /labels/{id}` | `PARTNER`, `SUPER_ADMIN` |
+| `POST /invoices/generate` | `PARTNER`, `ACCOUNTANT` |
+| OKR create/update/delete | `PARTNER`, `SUPER_ADMIN` |
+| Tenant settings/admin purge | `SUPER_ADMIN` |
+
+Các endpoint task/issue hiện `requireAuth`, chưa role-guard sâu ở BE. FE vẫn phải guard theo product policy.
+
+## 22. Endpoint Rules Và Edge Cases Quan Trọng
+
+### Auth/User
+
+- `POST /auth/login` trả `INVALID_CREDENTIALS` nếu sai thông tin.
+- Nếu account inactive, BE trả `FORBIDDEN`.
+- Nếu user bật MFA nhưng thiếu code, BE trả bad request với detail yêu cầu MFA.
+- `PUT /users/me` yêu cầu `version > 0` và ít nhất một field cần update.
+- User management dùng optimistic locking qua `version`.
+- `PARTNER` không được quản lý `SUPER_ADMIN`.
+- Không được deactivate chính mình.
+- Không được deactivate active admin cuối cùng của tenant.
+- Reset password yêu cầu `temporary_password` tối thiểu 8 ký tự.
+
+### Customers
+
+- Delete customer là soft delete.
+- Restore dùng endpoint riêng.
+- Customer conflict dùng cho conflict-of-interest list thủ công.
+- Customer DTO hiện đã có thêm: `email`, `phone`, `address`, `representative_name`, `notes`.
+- Customer profile documents dùng `profile-documents`, không dùng project documents.
+
+### Projects
+
+- Create project cần `customer_id`, `name`, `hourly_rate >= 0`, `total_contract_value >= 0`.
+- Nếu có `workflow_template_id`, template phải active và có step đầu tiên.
+- BE tự set `status=ACTIVE`, `total_paid=0`.
+- BE scan conflict khi tạo project.
+- Nếu conflict, project vẫn được tạo với `conflict_status=CONFLICT_DETECTED`.
+- FE nên dùng `PATCH /projects/{id}/workflow-step` để move project, không update trực tiếp `current_workflow_step_id`.
+- `override_justification` tối thiểu 50 ký tự.
+
+Financial blocked response:
 
 ```json
 {
@@ -968,792 +1089,213 @@ Financial blocked response `422`:
 }
 ```
 
-Luu y: response 422 nay khong theo RFC 7807. Repository can handle rieng.
-
-### POST `/api/v1/projects/{id}/override-conflict`
-
-Role: `PARTNER`, `SUPER_ADMIN`.
-
-Request:
-
-```json
-{
-  "override_justification": "Ly do override it nhat 50 ky tu, ghi ro nguoi phe duyet va can cu nghiep vu."
-}
-```
-
-Rules:
-
-- `override_justification` toi thieu 50 ky tu.
-- BE set `conflict_status = OVERRIDDEN_CLEARED` va ghi audit.
-
-Response `200`: Project DTO.
-
-## 9. Dashboard
-
-### GET `/api/v1/dashboard/summary`
-
-Query:
-
-- `range`: `7d`, `30d`, `90d`, `custom`. Default `30d`.
-- Neu `range=custom`, can `from=YYYY-MM-DD` va `to=YYYY-MM-DD`.
-- `workflow_template_id`: optional uuid, chi ap dung cho group workflow.
-- `due_limit`: optional, default `10`, max `50`, invalid se fallback default.
-- `attention_limit`: optional, default `10`, max `50`, invalid se fallback default.
-
-Response `200`:
-
-```json
-{
-  "range": { "from": "2026-05-17", "to": "2026-06-15" },
-  "kpis": {
-    "open_issues": 3,
-    "overdue_issues": 1,
-    "active_projects": 12,
-    "revenue_collected": 100000000
-  },
-  "issue_status": [
-    { "status": "OPEN", "count": 3 }
-  ],
-  "project_workflow": [
-    { "macro_column": "INTAKE", "title": "Intake", "count": 4 }
-  ],
-  "due_items": [
-    {
-      "id": "uuid",
-      "title": "Soan hop dong",
-      "project_id": "uuid",
-      "project_name": "Vu viec A",
-      "assignee_id": "uuid",
-      "assignee_name": "Nguyen Van A",
-      "priority": "HIGH",
-      "due_date": "2026-06-16",
-      "overdue": false
-    }
-  ],
-  "projects_need_attention": [
-    {
-      "id": "uuid",
-      "name": "Vu viec A",
-      "customer_id": "uuid",
-      "customer_name": "Cong ty A",
-      "reason": "CONFLICT_DETECTED",
-      "reason_label": "Conflict detected",
-      "current_step_name": "Tiep nhan",
-      "remaining_amount": 40000000
-    }
-  ]
-}
-```
-
-## 10. Tasks, Labels, Reports, OKR
-
-### Task API
-
-BE da co CRUD task tren bang `project_tasks`.
-
-Endpoints:
-
-- `GET /api/v1/tasks?limit=&offset=&project_id=&assignee_id=&status=&q=`
-- `GET /api/v1/projects/{id}/tasks`
-- `GET /api/v1/tasks/{id}`
-- `POST /api/v1/tasks`
-- `PUT /api/v1/tasks/{id}`
-- `PATCH /api/v1/tasks/{id}/status`
-- `PATCH /api/v1/tasks/{id}/assignee`
-- `PATCH /api/v1/tasks/reorder`
-- `DELETE /api/v1/tasks/{id}`
-
-Task DTO:
-
-```json
-{
-  "id": "uuid",
-  "organization_id": "uuid",
-  "project_id": "uuid",
-  "workflow_step_id": "uuid",
-  "title": "Soan hop dong",
-  "description": "Noi dung viec",
-  "status": "TODO",
-  "assignee_id": "uuid",
-  "due_date": "2026-06-30",
-  "position": 0,
-  "created_at": "2026-06-15T10:30:00Z",
-  "updated_at": "2026-06-15T10:30:00Z"
-}
-```
-
-Create/update request:
-
-```json
-{
-  "project_id": "uuid",
-  "workflow_step_id": "uuid",
-  "title": "Soan hop dong",
-  "description": "Noi dung viec",
-  "status": "TODO",
-  "assignee_id": "uuid",
-  "due_date": "2026-06-30",
-  "position": 0
-}
-```
-
-Status hop le: `TODO`, `DOING`, `DONE`, `CANCELLED`.
-
-### Label API
-
-BE da co label catalog va label assignments.
-
-Endpoints:
-
-- `GET /api/v1/labels?project_id=&archived=`
-- `POST /api/v1/labels`
-- `GET /api/v1/labels/{id}`
-- `PUT /api/v1/labels/{id}`
-- `DELETE /api/v1/labels/{id}` soft archive
-- `GET /api/v1/label-assignments?entity_type=&entity_id=`
-- `POST /api/v1/label-assignments`
-- `DELETE /api/v1/label-assignments/{id}`
-
-Label request:
-
-```json
-{
-  "project_id": "uuid",
-  "title": "priority::high",
-  "description": "Viec uu tien cao",
-  "color": "#d32f2f",
-  "scoped_key": "priority",
-  "scoped_value": "high",
-  "priority": 1,
-  "is_archived": false
-}
-```
-
-Label assignment request:
-
-```json
-{
-  "label_id": "uuid",
-  "entity_type": "task",
-  "entity_id": "uuid"
-}
-```
-
-`entity_type` hop le: `customer`, `project`, `task`, `document`.
-
-### Task Reports
-
-BE da co report endpoints rieng cho dashboard/thong ke task:
-
-- `GET /api/v1/reports/tasks/summary`
-- `GET /api/v1/reports/tasks/by-assignee`
-- `GET /api/v1/reports/tasks/by-status`
-- `GET /api/v1/reports/tasks/overdue?limit=`
-- `GET /api/v1/reports/workload` alias cua by-assignee
-
-Summary response:
-
-```json
-{
-  "total_tasks": 10,
-  "open_tasks": 6,
-  "overdue_tasks": 2,
-  "completed_tasks": 4,
-  "completion_rate": 40
-}
-```
-
-### OKR API
-
-BE da co OKR cycle/objective/key result co ban.
-
-Endpoints:
-
-- `GET /api/v1/okr/cycles?status=`
-- `POST /api/v1/okr/cycles`
-- `GET /api/v1/okr/objectives?cycle_id=`
-- `POST /api/v1/okr/objectives`
-- `PUT /api/v1/okr/objectives/{id}`
-- `DELETE /api/v1/okr/objectives/{id}`
-- `POST /api/v1/okr/objectives/{id}/key-results`
-- `PUT /api/v1/okr/key-results/{id}`
-- `GET /api/v1/reports/okr/summary`
-
-Cycle request:
-
-```json
-{
-  "name": "Q3 2026",
-  "period_type": "QUARTER",
-  "starts_at": "2026-07-01",
-  "ends_at": "2026-09-30",
-  "status": "ACTIVE"
-}
-```
-
-Objective request:
-
-```json
-{
-  "cycle_id": "uuid",
-  "owner_user_id": "uuid",
-  "owner_role": "LAWYER",
-  "title": "Nang cao toc do xu ly ho so",
-  "description": "Muc tieu quy",
-  "progress": 35,
-  "status": "ON_TRACK",
-  "weight": 1
-}
-```
-
-Key result request:
-
-```json
-{
-  "title": "Hoan thanh 30 task dung han",
-  "target_value": 30,
-  "current_value": 10,
-  "unit": "tasks",
-  "progress": 33.33,
-  "status": "ON_TRACK",
-  "linked_entity_type": "manual",
-  "linked_entity_id": null
-}
-```
-
-OKR status hop le: `ON_TRACK`, `AT_RISK`, `OFF_TRACK`, `DONE`, `CANCELLED`.
-
-## 11. Documents
-
-### Document DTO
-
-```ts
-type Document = {
-  id: string;
-  organization_id: string;
-  project_id: string;
-  title: string;
-  file_size: number;
-  is_locked_worm: boolean;
-  uploaded_by?: string | null;
-  deleted_at?: string | null;
-  created_at: string;
-  client_created_at?: string | null;
-  actions?: Actions;
-};
-```
-
-### GET `/api/v1/documents`
-
-Query:
-
-- `limit`: default `20`.
-- `offset`: default `0`.
-- `project_id`: optional uuid.
-
-Response `200`: `{ data: Document[], pagination }`.
-
-### GET `/api/v1/documents/{id}`
-
-Response `200`: Document DTO.
-
-### GET `/api/v1/documents/{id}/download`
-
-Response `200`:
-
-- Binary body.
-- Header `Content-Disposition: attachment; filename="<title>"`.
-- FE repository nen tra `Blob` va filename parse tu header.
-
-### POST `/api/v1/documents`
-
-Content type: `multipart/form-data`.
-
-Fields:
-
-- `file`: bat buoc.
-- `project_id`: bat buoc uuid.
-- `title`: optional, neu trong thi BE dung filename.
-- `client_created_at`: optional RFC3339.
-
-Response `201`: Document DTO.
-
-Loi dang chu y:
-
-- `FILE_TOO_LARGE`
-- `MALWARE_DETECTED`
-
-### DELETE `/api/v1/documents/{id}`
-
-Soft delete.
-
-Response `200`:
-
-```json
-{ "message": "Document deleted successfully" }
-```
-
-Loi dang chu y:
-
-- `423 WORM_LOCK_ACTIVE`
-
-### POST `/api/v1/documents/{id}/lock`
-
-Role: `PARTNER`.
-
-Response `200`:
-
-```json
-{ "message": "Document locked successfully" }
-```
-
-## 12. Time Entries
-
-### TimeEntry DTO
-
-```ts
-type TimeEntry = {
-  id: string;
-  organization_id: string;
-  project_id: string;
-  user_id: string;
-  duration_minutes: number;
-  description: string;
-  billable: boolean;
-  invoice_id?: string | null;
-  created_at: string;
-  client_created_at?: string | null;
-  actions?: Actions;
-};
-```
-
-### GET `/api/v1/time-entries`
-
-Query:
-
-- `limit`: default `20`.
-- `offset`: default `0`.
-- `project_id`: optional uuid.
-- `user_id`: optional uuid.
-- `billable`: optional, string `true` de lay billable, moi gia tri khac voi non-empty se duoc hieu la `false`.
-
-Response `200`: `{ data: TimeEntry[], pagination }`.
-
-### GET `/api/v1/time-entries/{id}`
-
-Response `200`: TimeEntry DTO.
-
-### POST `/api/v1/time-entries`
-
-Request:
-
-```json
-{
-  "project_id": "uuid",
-  "duration_minutes": 90,
-  "description": "Soan hop dong",
-  "billable": true,
-  "client_created_at": "2026-06-15T10:30:00Z"
-}
-```
-
-Rules:
-
-- `project_id` bat buoc.
-- `duration_minutes > 0`.
-- `description` bat buoc.
-
-Response `201`: TimeEntry DTO.
-
-### PUT `/api/v1/time-entries/{id}`
-
-Request:
-
-```json
-{
-  "project_id": "uuid",
-  "duration_minutes": 120,
-  "description": "Cap nhat cong viec",
-  "billable": true
-}
-```
-
-Rules:
-
-- `duration_minutes > 0`.
-- `description` bat buoc.
-- Neu time entry da co `invoice_id`, BE tra `423 BILLING_LOCK_ACTIVE`.
-
-Response `200`: TimeEntry DTO.
-
-### DELETE `/api/v1/time-entries/{id}`
-
-Rules:
-
-- Neu time entry da co `invoice_id`, BE tra `423 BILLING_LOCK_ACTIVE`.
-
-Response `200`:
-
-```json
-{ "message": "Time entry deleted successfully" }
-```
-
-## 13. Invoices
-
-### Invoice DTO
-
-```ts
-type Invoice = {
-  id: string;
-  organization_id: string;
-  customer_id: string;
-  total_amount: number;
-  status: "DRAFT" | "UNPAID" | "PAID" | "VOID";
-  issued_at: string;
-  created_at: string;
-  actions?: Actions;
-};
-```
-
-### GET `/api/v1/invoices`
-
-Query:
-
-- `limit`: default `20`.
-- `offset`: default `0`.
-- `customer_id`: optional uuid.
-- `status`: optional.
-
-Response `200`: `{ data: Invoice[], pagination }`.
-
-### GET `/api/v1/invoices/{id}`
-
-Response `200`: Invoice DTO.
-
-### GET `/api/v1/invoices/{id}/time-entries`
-
-Response `200`:
-
-```json
-{
-  "data": []
-}
-```
-
-Dung endpoint nay nhu invoice line items hien tai, vi BE generate invoice tu time entries.
-
-### POST `/api/v1/invoices/generate`
-
-Role: `PARTNER`, `ACCOUNTANT`.
-
-Request:
-
-```json
-{
-  "project_id": "uuid",
-  "customer_id": "uuid",
-  "status": "DRAFT"
-}
-```
-
-Rules:
-
-- `project_id` bat buoc.
-- `customer_id` bat buoc.
-- `status` optional, default `DRAFT`.
-- `status` phai la `DRAFT`, `UNPAID`, `PAID`, `VOID`.
-- BE tao invoice tu unbilled time entries cua project.
-
-Response `201`: Invoice DTO.
-
-Loi dang chu y:
-
-- `400 BAD_REQUEST`: `No unbilled time entries found for this project`.
-
-### PUT `/api/v1/invoices/{id}/status`
-
-Request:
-
-```json
-{ "status": "PAID" }
-```
-
-Rules:
-
-- `status` phai la `DRAFT`, `UNPAID`, `PAID`, `VOID`.
-
-Response `200`:
-
-- Thuong tra Invoice DTO.
-- Neu update xong nhung fetch lai fail, tra `{ "message": "Invoice status updated successfully" }`.
-
-### GET `/api/v1/project-payments`
-
-Query:
-
-- `project_id`: optional uuid.
-
-Response `200`:
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "organization_id": "uuid",
-      "project_id": "uuid",
-      "workflow_step_id": "uuid",
-      "amount": 1000000,
-      "payment_type": "DEPOSIT",
-      "payment_method": "bank_transfer",
-      "paid_at": "2026-06-15T10:30:00Z",
-      "note": "Thanh toan coc",
-      "created_by": "uuid",
-      "created_at": "2026-06-15T10:30:00Z"
-    }
-  ]
-}
-```
-
-### GET `/api/v1/project-payments/{id}`
-
-Response `200`: project payment DTO.
-
-## 14. Audit Logs
-
-### AuditLog DTO
-
-```ts
-type AuditLog = {
-  id: string;
-  organization_id: string;
-  user_id?: string | null;
-  action: string;
-  metadata?: Record<string, unknown>;
-  previous_hash: string;
-  current_hash: string;
-  created_at: string;
-};
-```
-
-### GET `/api/v1/audit-logs`
-
-Query:
-
-- `limit`: default `20`.
-- `offset`: default `0`.
-- `user_id`: optional uuid.
-- `action`: optional string.
-
-Response `200`: `{ data: AuditLog[], pagination }`.
-
-Luu y:
-
-- Khi filter `user_id` hoac `action`, BE lay list theo filter nhung `pagination.total` van count theo organization.
-
-### GET `/api/v1/audit-logs/{id}`
-
-Response `200`: AuditLog DTO.
-
-### POST `/api/v1/audit-logs/verify`
-
-Response `200`:
-
-```json
-{
-  "valid": true,
-  "broken_at": null,
-  "message": "Audit chain is valid"
-}
-```
-
-## 15. Admin
-
-### POST `/api/v1/admin/purge`
-
-Role: `SUPER_ADMIN`.
-
-Response `200`:
-
-```json
-{
-  "customers_deleted": 0,
-  "documents_deleted": 0,
-  "files_deleted": 0,
-  "retention_days": 90,
-  "errors": []
-}
-```
-
-### GET `/api/v1/admin/tenant-settings`
-
-Role: `SUPER_ADMIN`.
-
-Response `200`:
-
-```json
-{
-  "tier_plan": "STARTER",
-  "feature_flags": ["advanced_billing"]
-}
-```
-
-### PUT `/api/v1/admin/tenant-settings`
-
-Role: `SUPER_ADMIN`.
-
-Request:
-
-```json
-{
-  "tier_plan": "PRO",
-  "feature_flags": ["advanced_billing", "audit_export"]
-}
-```
-
-Response `200`:
-
-```json
-{ "message": "Tenant settings updated successfully" }
-```
-
-`errors` chi xuat hien neu co loi.
-
-## 16. Metadata Schema
-
-### GET `/api/v1/metadata/schemas/{entity}`
-
-Supported entity:
-
-- `customers`
-- `projects`
-- `documents`
-- `time_entries`
-- `invoices`
-- `workflow_templates`
-- `workflow_steps`
-- `project_payments`
-
-Response `200`:
-
-```json
-{
-  "entity": "projects",
-  "columns": [
-    {
-      "key": "name",
-      "type": "TEXT",
-      "sortable": true,
-      "filterable": true,
-      "required": false
-    }
-  ]
-}
-```
-
-Column type hien co:
-
-- `UUID`
-- `TEXT`
-- `NUMBER`
-- `DATE`
-- `BOOLEAN`
-
-FE dung schema nay de render DataGrid columns/filter basic, nhung khong nen suy dien rang backend da support sort/filter server-side cho moi column. Nhieu list endpoint hien tai chi support filter rieng duoc liet ke o tren.
-
-## 17. Repository module de xay dung o FE
-
-De xuat cau truc:
+Lưu ý: response financial blocked có thể không theo RFC7807, repository phải handle riêng.
+
+### Workflow Templates
+
+- `step_key` unique trong template.
+- `sort_order > 0` và unique trong template.
+- `macro_column` chỉ nhận `INTAKE`, `IN_PROGRESS`, `BILLING`, `ARCHIVED`.
+- `financial_trigger`, `security_trigger`, `task_trigger` là object JSON nếu có.
+- Delete workflow template là archive `is_active=false`.
+- BE hiện chưa CRUD từng workflow step sau khi template đã tạo.
+
+Financial trigger validation đáng chú ý:
+
+- `payment_type`: `NONE`, `FIXED_AMOUNT`, `PERCENTAGE`, `REMAINING`.
+- Financial tag `FREE`: amount nếu có phải bằng `0`.
+- `FIXED_AMOUNT`: amount > 0.
+- `PERCENTAGE`: value > 0 và <= 100.
+- `PERCENTAGE.base` nếu có: `fee`, `deposit`, `total_contract_value`.
+- `key` phải là metric hợp lệ hoặc `custom`; nếu `custom` cần `custom_key`.
+
+Metric hợp lệ:
 
 ```text
-src/lib/api/http-client.ts
-src/lib/api/errors.ts
-src/lib/api/idempotency.ts
-src/repositories/auth.repository.ts
-src/repositories/users.repository.ts
-src/repositories/customers.repository.ts
-src/repositories/projects.repository.ts
-src/repositories/workflow.repository.ts
-src/repositories/dashboard.repository.ts
-src/repositories/tasks.repository.ts
-src/repositories/task-reports.repository.ts
-src/repositories/labels.repository.ts
-src/repositories/okr.repository.ts
-src/repositories/documents.repository.ts
-src/repositories/profile-documents.repository.ts
-src/repositories/time-entries.repository.ts
-src/repositories/invoices.repository.ts
-src/repositories/project-payments.repository.ts
-src/repositories/audit-logs.repository.ts
-src/repositories/metadata.repository.ts
+fee
+deposit
+discount
+refund
+paid
+remaining
+deposit_due
+unpaid_fee
+free_count
+free_hours
+free_projects
 ```
 
-HTTP client requirements:
+### Issues/Tasks
 
-- Tu dong gan `Authorization`.
-- Tu dong gan `Idempotency-Key` cho mutation neu caller khong truyen.
-- Parse JSON response neu content-type la JSON.
-- Parse `application/problem+json` thanh typed error.
-- Handle `422 ERR_WORKFLOW_FINANCIAL_BLOCKED` rieng.
-- Download document tra `{ blob, filename }`.
-- Upload document dung `FormData`, khong set manual `Content-Type`.
+- `/issues/*` là alias UX cho `project_tasks`.
+- Board công việc dùng `/issues/board`.
+- Column board lấy từ workflow steps, không lấy từ task status.
+- `PATCH /issues/{id}/workflow-step` là endpoint đúng cho drag/drop.
+- `POST /issues/{id}/move` là alias cho move.
+- `PUT /issues/{id}` là full update, chỉ dùng khi edit form đầy đủ.
+- `workflow_step_id` có thể null để đưa task về unassigned.
+- `include_unassigned=true` trả thêm `unassigned_tasks`.
 
-## 18. BE chua co endpoint cho cac nhu cau FE thuong gap
+### Labels
 
-Khong build UI phu thuoc vao cac API chua ton tai:
+- Label có thể tenant-scoped hoặc project-scoped.
+- Scoped label nên dùng `scoped_key`, `scoped_value`, ví dụ `priority::high`.
+- `DELETE /labels/{id}` là archive/soft behavior.
+- Valid assignment entity types:
 
-- Chua co endpoint search full-text customer/project/document.
-- Chua co endpoint update/delete invoice ngoai update status.
-- Chua co invoice line_items table rieng; hien dung invoice time entries lam line items.
-- Chua co OKR dashboard nang cao theo workload/revenue contribution; OKR CRUD va summary co ban da co.
+```text
+customer
+project
+task
+document
+```
 
-Neu UI can cac chuc nang nay, phai bo sung BE truoc hoac hien thi dang read-only/placeholder co kiem soat.
+### Documents
 
-## 19. Trang thai day du chuc nang BE
+- Project documents dùng `/documents`.
+- Customer/user profile documents dùng `/profile-documents`.
+- Upload document có thể trả:
+  - `FILE_TOO_LARGE`
+  - `MALWARE_DETECTED`
+  - `WORM_LOCK_ACTIVE` khi delete locked document.
+- Download repository phải parse filename từ `Content-Disposition`.
 
-Bang nay tra loi nhanh "BE da co chuc nang nay chua?" de FE khong build nham vao API chua ton tai.
+### Time Entries
 
-| Nhom chuc nang | Trang thai BE | Ghi chu |
-| --- | --- | --- |
-| Xac thuc, MFA, profile ca nhan | Da co API | Login, MFA enable/disable, `/users/me`, update profile co optimistic lock |
-| Phan quyen page/action | Da co mot phan | Role guard cho endpoint nhay cam; record `actions` co tren customer/project/document/time entry/invoice |
-| Quan ly user/nhan vien | Da co API | List/detail/create/update/activate/deactivate/reset password/reset MFA |
-| Quan ly thong tin khach hang | Da co API co ban | CRUD customer, soft delete/restore, add/list conflict entries |
-| Ho so khach hang nang cao | Da co mot phan | Da co email, phone, address, representative_name, notes va profile documents; chua co contact persons nhieu dong/custom fields persisted |
-| Quan ly project/vu viec | Da co API co ban | CRUD project, close, workflow board, conflict override, financial guard |
-| Quan ly workflow | Da co mot phan | Create/list/get/update/archive template, move project step; chua co update/delete step rieng |
-| Quan ly tai lieu | Da co API | Upload, metadata, download, soft delete, WORM lock |
-| Quan ly cham cong | Da co API | Create/list/get/update/delete; billing lock khi da gan invoice |
-| Quan ly hoa don | Da co mot phan | Generate/list/get/update status, invoice time entries; chua co invoice line_items table rieng va update/delete day du |
-| Labels | Da co API co ban | Catalog CRUD, archive, assign/unassign label cho customer/project/task/document |
-| Task/project task | Da co API co ban | CRUD task, status/assignee update, reorder, list theo project |
-| Thong ke/bao cao task | Da co API co ban | Summary, by assignee, by status, overdue; chua co report theo label va on-time rate nang cao |
-| OKR/performance | Da co API co ban | OKR cycles/objectives/key results va summary; chua co performance dashboard nang cao |
-| Audit logs | Da co API | List/get/verify chain |
-| Metadata schema | Da co mot phan | Built-in schema cho mot so entity; custom fields chua persisted |
-| Tenant settings/subscription/feature flags admin | Da co API co ban | SUPER_ADMIN get/update tier_plan va enabled feature flags |
+- `duration_minutes > 0`.
+- `description` bắt buộc.
+- Nếu time entry đã có `invoice_id`, update/delete trả `BILLING_LOCK_ACTIVE`.
+- `billable` query là string; `true` nghĩa billable, non-empty khác true có thể hiểu false theo BE.
 
-## 20. User Management da co tren BE
+### Invoices
 
-BE da co nhom endpoint quan ly nhan vien tai section Authentication va User:
+- Generate invoice lấy unbilled billable time entries của project.
+- Nếu không có unbilled time entries, BE trả bad request.
+- Invoice detail hiện dùng `/invoices/{id}/time-entries` thay cho line items.
+- BE chưa có CRUD invoice line items riêng.
 
-- `GET /api/v1/users`
-- `GET /api/v1/users/{id}`
-- `POST /api/v1/users`
-- `PUT /api/v1/users/{id}`
-- `POST /api/v1/users/{id}/activate`
-- `POST /api/v1/users/{id}/deactivate`
-- `POST /api/v1/users/{id}/reset-password`
-- `POST /api/v1/users/{id}/mfa/reset`
+### Audit/Admin
 
-Moi mutation user ghi audit:
+- Audit list có thể filter `user_id`, `action`.
+- Verify audit chain trả `valid`, `broken_at`, `message`.
+- Tenant settings và purge chỉ `SUPER_ADMIN`.
 
-- `USER_CREATED`
-- `USER_UPDATED`
-- `USER_ACTIVATED`
-- `USER_DEACTIVATED`
-- `USER_PASSWORD_RESET`
-- `USER_MFA_RESET`
+## 23. Detailed API Coverage Checklist
 
-Metadata nen co `target_user_id`, `before`, `after`, `actor_user_id`.
+FE repository được xem là đủ khi có method cho toàn bộ endpoint sau:
+
+```text
+POST /auth/login
+GET /auth/me
+GET /users/me
+PUT /users/me
+POST /auth/mfa/enable
+POST /auth/mfa/disable
+
+GET /users
+POST /users
+GET /users/{id}
+PUT /users/{id}
+POST /users/{id}/activate
+POST /users/{id}/deactivate
+POST /users/{id}/reset-password
+POST /users/{id}/mfa/reset
+
+GET /customers
+POST /customers
+GET /customers/{id}
+PUT /customers/{id}
+DELETE /customers/{id}
+POST /customers/{id}/restore
+GET /customers/{id}/conflicts
+POST /customers/{id}/conflicts
+
+GET /profile-documents
+POST /profile-documents
+GET /profile-documents/{id}/download
+DELETE /profile-documents/{id}
+
+GET /projects
+POST /projects
+GET /projects/{id}
+PUT /projects/{id}
+POST /projects/{id}/close
+PATCH /projects/{id}/workflow-step
+POST /projects/{id}/override-conflict
+GET /projects/board
+
+GET /workflow-templates
+POST /workflow-templates
+GET /workflow-templates/{id}
+PUT /workflow-templates/{id}
+DELETE /workflow-templates/{id}
+
+GET /issues
+GET /issues/board
+POST /issues
+GET /issues/{id}
+PUT /issues/{id}
+PATCH /issues/{id}/workflow-step
+POST /issues/{id}/move
+PATCH /issues/{id}/status
+PATCH /issues/{id}/assignee
+PATCH /issues/reorder
+DELETE /issues/{id}
+
+GET /labels
+POST /labels
+GET /labels/{id}
+PUT /labels/{id}
+DELETE /labels/{id}
+GET /label-assignments
+POST /label-assignments
+DELETE /label-assignments/{id}
+
+GET /documents
+POST /documents
+GET /documents/{id}
+GET /documents/{id}/download
+DELETE /documents/{id}
+POST /documents/{id}/lock
+
+GET /time-entries
+POST /time-entries
+GET /time-entries/{id}
+PUT /time-entries/{id}
+DELETE /time-entries/{id}
+
+GET /invoices
+POST /invoices/generate
+GET /invoices/{id}
+PUT /invoices/{id}/status
+GET /invoices/{id}/time-entries
+GET /project-payments
+GET /project-payments/{id}
+
+GET /dashboard/summary
+GET /reports/tasks/summary
+GET /reports/tasks/by-assignee
+GET /reports/tasks/by-status
+GET /reports/tasks/overdue
+GET /reports/workload
+GET /reports/okr/summary
+
+GET /okr/cycles
+POST /okr/cycles
+GET /okr/objectives
+POST /okr/objectives
+PUT /okr/objectives/{id}
+DELETE /okr/objectives/{id}
+POST /okr/objectives/{id}/key-results
+PUT /okr/key-results/{id}
+
+GET /audit-logs
+GET /audit-logs/{id}
+POST /audit-logs/verify
+
+POST /admin/purge
+GET /admin/tenant-settings
+PUT /admin/tenant-settings
+
+GET /metadata/schemas/{entity}
+```

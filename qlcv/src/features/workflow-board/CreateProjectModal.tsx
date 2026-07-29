@@ -1,6 +1,18 @@
 "use client";
 
-import { Alert, Form, Input, InputNumber, Modal, Select } from "antd";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Box,
+  MenuItem,
+  Stack,
+  TextField,
+} from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import type { CreateProjectRequest, ProjectSummary } from "@/api/projects.api";
 import type { WorkflowTemplate } from "@/api/workflow.api";
 import { getUserFacingErrorMessage } from "@/api/errors";
@@ -21,104 +33,167 @@ export function CreateProjectModal({
   onCancel,
   onCreated,
 }: CreateProjectModalProps) {
-  const [form] = Form.useForm<CreateProjectRequest>();
   const createProjectMutation = useCreateProject();
+  const initialValues = useMemo<CreateProjectRequest>(
+    () => ({
+      customer_id: "",
+      name: "",
+      hourly_rate: 0,
+      workflow_template_id: defaultWorkflowTemplateId ?? workflowTemplates[0]?.id,
+      total_contract_value: 0,
+      opposing_party_name: "",
+      opposing_party_tax_code: "",
+    }),
+    [defaultWorkflowTemplateId, workflowTemplates],
+  );
+  const [values, setValues] = useState<CreateProjectRequest>(initialValues);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof CreateProjectRequest, string>>>({});
+
+  useEffect(() => {
+    if (open) {
+      setValues(initialValues);
+      setFieldErrors({});
+    }
+  }, [initialValues, open]);
+
+  function submit(values: CreateProjectRequest) {
+    const nextErrors = validateProject(values);
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    createProjectMutation.mutate(values, {
+      onSuccess: (project) => {
+        onCreated?.(project);
+        setValues(initialValues);
+        setFieldErrors({});
+        onCancel();
+      },
+    });
+  }
+
+  function updateField<TKey extends keyof CreateProjectRequest>(
+    key: TKey,
+    value: CreateProjectRequest[TKey],
+  ) {
+    setValues((current) => ({ ...current, [key]: value }));
+    setFieldErrors((current) => ({ ...current, [key]: undefined }));
+  }
 
   return (
-    <Modal
-      title="Tạo project"
-      open={open}
-      okText="Tạo project"
-      cancelText="Hủy"
-      confirmLoading={createProjectMutation.isPending}
-      onCancel={onCancel}
-      onOk={() => form.submit()}
-      destroyOnHidden
-      width={680}
-    >
-      {createProjectMutation.isError ? (
-        <Alert
-          type="error"
-          showIcon
-          message={getUserFacingErrorMessage(createProjectMutation.error)}
-          className="workflow-modal-alert"
-        />
-      ) : null}
+    <Dialog open={open} onClose={onCancel} fullWidth maxWidth="md">
+      <DialogTitle>Tạo project</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          {createProjectMutation.isError ? (
+            <Alert severity="error">{getUserFacingErrorMessage(createProjectMutation.error)}</Alert>
+          ) : null}
 
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          hourly_rate: 0,
-          total_contract_value: 0,
-          workflow_template_id: defaultWorkflowTemplateId ?? undefined,
-        }}
-        onFinish={(values) => {
-          createProjectMutation.mutate(values, {
-            onSuccess: (project) => {
-              onCreated?.(project);
-              form.resetFields();
-              onCancel();
-            },
-          });
-        }}
-      >
-        <Form.Item
-          name="customer_id"
-          label="Customer ID"
-          rules={[{ required: true, message: "Vui lòng nhập customer_id." }]}
+          <Box className="workflow-form-grid">
+            <TextField
+              label="Customer ID"
+              value={values.customer_id}
+              onChange={(event) => updateField("customer_id", event.target.value)}
+              error={Boolean(fieldErrors.customer_id)}
+              helperText={fieldErrors.customer_id}
+              fullWidth
+            />
+            <TextField
+              label="Tên project"
+              value={values.name}
+              onChange={(event) => updateField("name", event.target.value)}
+              error={Boolean(fieldErrors.name)}
+              helperText={fieldErrors.name}
+              fullWidth
+            />
+            <TextField
+              select
+              label="Workflow template"
+              value={values.workflow_template_id ?? ""}
+              onChange={(event) => updateField("workflow_template_id", event.target.value)}
+              error={Boolean(fieldErrors.workflow_template_id)}
+              helperText={fieldErrors.workflow_template_id}
+              fullWidth
+            >
+              {workflowTemplates.map((template) => (
+                <MenuItem key={template.id} value={template.id}>
+                  {template.template_name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Hourly rate"
+              type="number"
+              value={values.hourly_rate}
+              onChange={(event) => updateField("hourly_rate", Number(event.target.value))}
+              error={Boolean(fieldErrors.hourly_rate)}
+              helperText={fieldErrors.hourly_rate}
+              fullWidth
+            />
+            <TextField
+              label="Tổng giá trị hợp đồng"
+              type="number"
+              value={values.total_contract_value}
+              onChange={(event) => updateField("total_contract_value", Number(event.target.value))}
+              error={Boolean(fieldErrors.total_contract_value)}
+              helperText={fieldErrors.total_contract_value}
+              fullWidth
+            />
+            <TextField
+              label="Mã số thuế bên đối ứng"
+              value={values.opposing_party_tax_code ?? ""}
+              onChange={(event) => updateField("opposing_party_tax_code", event.target.value)}
+              fullWidth
+            />
+            <TextField
+              className="workflow-form-full"
+              label="Tên bên đối ứng"
+              value={values.opposing_party_name ?? ""}
+              onChange={(event) => updateField("opposing_party_name", event.target.value)}
+              fullWidth
+            />
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Hủy</Button>
+        <Button
+          variant="contained"
+          onClick={() => submit(values)}
+          disabled={createProjectMutation.isPending}
         >
-          <Input placeholder="uuid" />
-        </Form.Item>
-
-        <Form.Item
-          name="name"
-          label="Tên project"
-          rules={[{ required: true, message: "Vui lòng nhập tên project." }]}
-        >
-          <Input placeholder="Tư vấn cấu trúc Tập đoàn X" />
-        </Form.Item>
-
-        <Form.Item
-          name="workflow_template_id"
-          label="Workflow template"
-          rules={[{ required: true, message: "Vui lòng chọn workflow template." }]}
-        >
-          <Select
-            placeholder="Chọn workflow"
-            options={workflowTemplates.map((template) => ({
-              value: template.id,
-              label: template.template_name,
-            }))}
-          />
-        </Form.Item>
-
-        <div className="workflow-form-grid">
-          <Form.Item
-            name="hourly_rate"
-            label="Hourly rate"
-            rules={[{ required: true, message: "Vui lòng nhập hourly_rate." }]}
-          >
-            <InputNumber<number> min={0} precision={0} addonAfter="VND" />
-          </Form.Item>
-
-          <Form.Item
-            name="total_contract_value"
-            label="Tổng giá trị hợp đồng"
-            rules={[{ required: true, message: "Vui lòng nhập tổng giá trị hợp đồng." }]}
-          >
-            <InputNumber<number> min={0} precision={0} addonAfter="VND" />
-          </Form.Item>
-        </div>
-
-        <Form.Item name="opposing_party_name" label="Tên bên đối ứng">
-          <Input placeholder="Công ty B" />
-        </Form.Item>
-
-        <Form.Item name="opposing_party_tax_code" label="Mã số thuế bên đối ứng">
-          <Input placeholder="0109999999" />
-        </Form.Item>
-      </Form>
-    </Modal>
+          Tạo project
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
+}
+
+function validateProject(
+  values: CreateProjectRequest,
+): Partial<Record<keyof CreateProjectRequest, string>> {
+  const errors: Partial<Record<keyof CreateProjectRequest, string>> = {};
+
+  if (!values.customer_id.trim()) {
+    errors.customer_id = "Vui lòng nhập customer ID.";
+  }
+
+  if (!values.name.trim()) {
+    errors.name = "Vui lòng nhập tên project.";
+  }
+
+  if (!values.workflow_template_id) {
+    errors.workflow_template_id = "Vui lòng chọn workflow template.";
+  }
+
+  if (!Number.isFinite(values.hourly_rate) || values.hourly_rate < 0) {
+    errors.hourly_rate = "Hourly rate phải lớn hơn hoặc bằng 0.";
+  }
+
+  if (!Number.isFinite(values.total_contract_value) || values.total_contract_value < 0) {
+    errors.total_contract_value = "Tổng giá trị hợp đồng phải lớn hơn hoặc bằng 0.";
+  }
+
+  return errors;
 }

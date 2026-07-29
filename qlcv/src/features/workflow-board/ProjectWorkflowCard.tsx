@@ -1,8 +1,8 @@
 "use client";
 
-import { LockOutlined, WarningOutlined } from "@ant-design/icons";
+import { DragIndicatorOutlined, LockOutlined, WarningOutlined } from "@mui/icons-material";
+import { Box, Button, Chip, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import { useDraggable } from "@dnd-kit/core";
-import { Button, Space, Tag, Tooltip, Typography } from "antd";
 import type { ProjectBoardCard } from "@/api/projects.api";
 import { CONFLICT_LABELS, formatCurrency, getConflictColor } from "./workflow-board.utils";
 
@@ -16,7 +16,7 @@ export function ProjectWorkflowCard({
   onOverrideConflict,
 }: ProjectWorkflowCardProps) {
   const hasConflict = project.conflict_status === "CONFLICT_DETECTED";
-  const canMove = Boolean(project.actions?.move) && !hasConflict;
+  const canMove = (project.actions?.move ?? true) && !hasConflict;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: project.id,
     data: { project },
@@ -24,82 +24,116 @@ export function ProjectWorkflowCard({
   });
 
   const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
 
   return (
-    <article
+    <Paper
       ref={setNodeRef}
-      className={[
-        "workflow-card",
-        hasConflict ? "workflow-card--conflict" : "",
-        !canMove ? "workflow-card--locked" : "",
-        isDragging ? "workflow-card--dragging" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      component="article"
+      elevation={0}
+      sx={{
+        p: 1.25,
+        border: "1px solid",
+        borderColor: hasConflict ? "error.main" : "divider",
+        borderRadius: 2,
+        cursor: canMove ? "grab" : "not-allowed",
+        opacity: isDragging ? 0.72 : 1,
+        boxShadow: hasConflict ? "inset 3px 0 0 #d32f2f" : "none",
+        bgcolor: "background.paper",
+        touchAction: "none",
+      }}
       style={style}
       {...listeners}
       {...attributes}
     >
-      <div className="workflow-card__header">
-        <Typography.Text strong className="workflow-card__title">
-          {project.name}
-        </Typography.Text>
-        {!canMove ? (
-          <Tooltip title={hasConflict ? "Project đang bị conflict" : "Không có quyền move"}>
-            <LockOutlined className="workflow-card__lock" />
-          </Tooltip>
-        ) : null}
-      </div>
+      <Stack spacing={1}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, alignItems: "flex-start" }}>
+          <Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+              {canMove ? <DragIndicatorOutlined sx={{ fontSize: 16, color: "text.secondary" }} /> : null}
+              <Typography sx={{ fontWeight: 700, lineHeight: 1.35, minWidth: 0 }}>
+                {project.name}
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              {canMove ? "Kéo để đổi bước" : hasConflict ? "Project đang bị conflict" : "Không có quyền move"}
+            </Typography>
+          </Stack>
+          {!canMove ? (
+            <Tooltip title={hasConflict ? "Project đang bị conflict" : "Không có quyền move"}>
+              <LockOutlined fontSize="small" />
+            </Tooltip>
+          ) : null}
+        </Box>
 
-      <Space size={6} wrap>
-        {project.conflict_status ? (
-          <Tag
-            color={getConflictColor(project.conflict_status)}
-            icon={hasConflict ? <WarningOutlined /> : undefined}
-          >
-            {CONFLICT_LABELS[project.conflict_status]}
-          </Tag>
-        ) : null}
-        {hasConflict ? <Tag color="red">Khóa move/assign</Tag> : null}
-      </Space>
+        <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: "wrap" }}>
+          {project.conflict_status ? (
+            <Chip
+              size="small"
+              color={getConflictColor(project.conflict_status)}
+              icon={hasConflict ? <WarningOutlined fontSize="small" /> : undefined}
+              label={CONFLICT_LABELS[project.conflict_status]}
+            />
+          ) : null}
+          {hasConflict ? <Chip size="small" color="error" label="Khóa move/assign" /> : null}
+        </Stack>
 
-      <dl className="workflow-card__money">
-        <div>
-          <dt>Hợp đồng</dt>
-          <dd>{formatCurrency(project.total_contract_value)}</dd>
-        </div>
-        <div>
-          <dt>Đã thu</dt>
-          <dd>{formatCurrency(project.total_paid)}</dd>
-        </div>
-        <div>
-          <dt>Còn lại</dt>
-          <dd>{formatCurrency(project.remaining_amount)}</dd>
-        </div>
-      </dl>
-
-      {project.opposing_party_name ? (
-        <Typography.Text type="secondary" className="workflow-card__opposing">
-          Đối ứng: {project.opposing_party_name}
-        </Typography.Text>
-      ) : null}
-
-      {hasConflict && project.actions?.override_conflict ? (
-        <Button
-          size="small"
-          danger
-          onClick={(event) => {
-            event.stopPropagation();
-            onOverrideConflict(project);
+        <Box
+          component="dl"
+          sx={{
+            display: "grid",
+            gap: 0.75,
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            m: 0,
           }}
         >
-          Ghi đè conflict
-        </Button>
-      ) : null}
-    </article>
+          <Box>
+            <Typography variant="caption" color="text.secondary" component="dt">
+              Hợp đồng
+            </Typography>
+            <Typography component="dd" sx={{ m: 0, fontWeight: 600, fontSize: 12 }}>
+              {formatCurrency(project.total_contract_value)}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" component="dt">
+              Đã thu
+            </Typography>
+            <Typography component="dd" sx={{ m: 0, fontWeight: 600, fontSize: 12 }}>
+              {formatCurrency(project.total_paid)}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" component="dt">
+              Còn lại
+            </Typography>
+            <Typography component="dd" sx={{ m: 0, fontWeight: 600, fontSize: 12 }}>
+              {formatCurrency(project.remaining_amount)}
+            </Typography>
+          </Box>
+        </Box>
+
+        {project.opposing_party_name ? (
+          <Typography variant="body2" color="text.secondary">
+            Đối ứng: {project.opposing_party_name}
+          </Typography>
+        ) : null}
+
+        {hasConflict && project.actions?.override_conflict ? (
+          <Button
+            size="small"
+            color="error"
+            variant="outlined"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOverrideConflict(project);
+            }}
+          >
+            Ghi đè conflict
+          </Button>
+        ) : null}
+      </Stack>
+    </Paper>
   );
 }

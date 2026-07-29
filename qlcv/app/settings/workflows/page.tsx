@@ -1,5 +1,5 @@
-import { WorkflowTemplateSettingsPage } from "@/features/workflow-board/WorkflowTemplateSettingsPage";
+import { redirect } from "next/navigation";
 
-export default function WorkflowSettingsRoute() {
-  return <WorkflowTemplateSettingsPage />;
+export default function LegacyWorkflowSettingsRoute() {
+  redirect("/settings/workflow-templates");
 }

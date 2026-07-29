@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/app/providers";
-import "antd/dist/reset.css";
+import { AppShell } from "@/features/shared/AppShell";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi">
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <AppShell>{children}</AppShell>
+        </AppProviders>
       </body>
     </html>
   );

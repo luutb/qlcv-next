@@ -21,6 +21,11 @@ export type ApiRequestOptions<TBody = unknown> = {
   responseType?: "json" | "blob" | "text";
 };
 
+export type DownloadResult = {
+  blob: Blob;
+  filename?: string;
+};
+
 export class ApiError extends Error {
   status: number;
   payload: unknown;
@@ -34,6 +39,7 @@ export class ApiError extends Error {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_VERSION_PREFIX = "/api/v1";
 const TOKEN_STORAGE_KEY = "access_token";
 
 export function getAccessToken(): string | null {
@@ -68,43 +74,11 @@ export async function apiRequest<TResponse, TBody = unknown>(
   path: string,
   options: ApiRequestOptions<TBody> = {},
 ): Promise<TResponse> {
-  const method = options.method ?? "GET";
-  const url = buildUrl(path, options.query);
-  const headers = new Headers(options.headers);
-  const token = getAccessToken();
-
-  headers.set("Accept", "application/json");
-
-  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
-  const isBodyInit = isFormData || isBodyInitValue(options.body);
-
-  if (options.body !== undefined && !isFormData && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  if (method !== "GET" && !headers.has("Idempotency-Key")) {
-    headers.set("Idempotency-Key", options.idempotencyKey ?? createIdempotencyKey());
-  }
-
-  const response = await fetch(url, {
-    method,
-    headers,
-    body:
-      options.body === undefined
-        ? undefined
-        : isBodyInit
-          ? (options.body as BodyInit)
-          : JSON.stringify(options.body),
-    signal: options.signal,
-  });
+  const response = await performRequest(path, options);
 
   const payload = await parseResponse(response, options.responseType);
 
-  if (response.status === 401) {
+  if (response.status === 401 && !isAuthLoginPath(path)) {
     clearAccessToken();
     if (typeof window !== "undefined") {
       window.location.assign("/login");
@@ -118,9 +92,84 @@ export async function apiRequest<TResponse, TBody = unknown>(
   return payload as TResponse;
 }
 
+export async function downloadRequest<TBody = unknown>(
+  path: string,
+  options: ApiRequestOptions<TBody> = {},
+): Promise<DownloadResult> {
+  const response = await performRequest(path, options);
+
+  if (!response.ok) {
+    const payload = await parseResponse(response, "json");
+    throw new ApiError(getErrorMessage(payload, response.status), response.status, payload);
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: parseContentDispositionFilename(response.headers.get("content-disposition")),
+  };
+}
+
+async function performRequest<TBody = unknown>(
+  path: string,
+  options: ApiRequestOptions<TBody> = {},
+): Promise<Response> {
+  const method = options.method ?? "GET";
+  const url = buildUrl(path, options.query);
+  const headers = new Headers(options.headers);
+  const token = getAccessToken();
+
+  headers.set("Accept", "application/json");
+
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const isSearchParams =
+    typeof URLSearchParams !== "undefined" && options.body instanceof URLSearchParams;
+  const isBodyInit = isFormData || isSearchParams || isBodyInitValue(options.body);
+
+  if (options.body !== undefined && !headers.has("Content-Type")) {
+    if (isFormData) {
+      // Browser will set multipart boundary automatically.
+    } else if (isSearchParams) {
+      headers.set("Content-Type", "application/x-www-form-urlencoded");
+    } else {
+      headers.set("Content-Type", "application/json");
+    }
+  }
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (method !== "GET" && !headers.has("Idempotency-Key")) {
+    headers.set("Idempotency-Key", options.idempotencyKey ?? createIdempotencyKey());
+  }
+
+  try {
+    return await fetch(url, {
+      method,
+      headers,
+      body:
+        options.body === undefined
+          ? undefined
+          : isBodyInit
+            ? (options.body as BodyInit)
+            : JSON.stringify(options.body),
+      signal: options.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+
+    throw new ApiError("Không kết nối được backend tại localhost:8080", 0, {
+      message: "Không kết nối được backend tại localhost:8080",
+      code: "NETWORK_ERROR",
+    });
+  }
+}
+
 function buildUrl(path: string, query?: QueryParams): string {
   const normalizedBaseUrl = API_BASE_URL.replace(/\/$/, "");
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const normalizedPath = normalizePathForBase(path, normalizedBaseUrl);
   const url = new URL(`${normalizedBaseUrl}${normalizedPath}`, windowOrigin());
 
   Object.entries(query ?? {}).forEach(([key, value]) => {
@@ -137,6 +186,24 @@ function buildUrl(path: string, query?: QueryParams): string {
   });
 
   return url.toString();
+}
+
+function normalizePathForBase(path: string, baseUrl: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!baseUrl.endsWith(API_VERSION_PREFIX)) {
+    return normalizedPath;
+  }
+
+  if (normalizedPath === API_VERSION_PREFIX) {
+    return "";
+  }
+
+  if (normalizedPath.startsWith(`${API_VERSION_PREFIX}/`)) {
+    return normalizedPath.slice(API_VERSION_PREFIX.length);
+  }
+
+  return normalizedPath;
 }
 
 function windowOrigin(): string {
@@ -185,6 +252,10 @@ function isBodyInitValue(body: unknown): body is BodyInit {
 }
 
 function getErrorMessage(payload: unknown, status: number): string {
+  if (typeof payload === "string" && payload.trim()) {
+    return payload;
+  }
+
   if (payload && typeof payload === "object" && "detail" in payload) {
     return String((payload as { detail: unknown }).detail);
   }
@@ -194,4 +265,23 @@ function getErrorMessage(payload: unknown, status: number): string {
   }
 
   return `Request failed with status ${status}`;
+}
+
+function isAuthLoginPath(path: string): boolean {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return normalizedPath === "/auth/login" || normalizedPath === "/api/v1/auth/login";
+}
+
+function parseContentDispositionFilename(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const utf8Match = value.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const asciiMatch = value.match(/filename="?([^";]+)"?/i);
+  return asciiMatch?.[1];
 }

@@ -1,6 +1,19 @@
 "use client";
 
-import { Alert, Descriptions, Form, Input, InputNumber, Modal, Select } from "antd";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Box,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 import type { ProjectBoardCard } from "@/api/projects.api";
 import type { WorkflowFinancialBlockedDetails } from "@/api/errors";
 import { formatCurrency } from "./workflow-board.utils";
@@ -30,86 +43,115 @@ export function PaymentRequiredModal({
   onCancel,
   onSubmit,
 }: PaymentRequiredModalProps) {
-  const [form] = Form.useForm<PaymentRequiredFormValues>();
+  const [formValues, setFormValues] = useState<PaymentRequiredFormValues>({
+    incoming_payment_confirmation: details?.incoming_payment_confirmation ?? 0,
+    payment_method: "BANK_TRANSFER",
+    payment_note: "",
+  });
 
   return (
-    <Modal
-      title="Cần xác nhận thanh toán"
-      open={open}
-      okText="Xác nhận và chuyển bước"
-      cancelText="Hủy"
-      confirmLoading={loading}
-      onCancel={onCancel}
-      onOk={() => form.submit()}
-      destroyOnHidden
-    >
-      <Alert
-        type="warning"
-        showIcon
-        message="Backend chặn chuyển bước vì bước đích cần điều kiện thanh toán."
-        description={`Project ${project?.name ?? ""} sẽ được chuyển tới ${targetStepKey ?? "step đã chọn"} sau khi xác nhận tiền.`}
-        className="workflow-modal-alert"
-      />
+    <Dialog open={open} onClose={onCancel} fullWidth maxWidth="sm">
+      <DialogTitle>Cần xác nhận thanh toán</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <Alert severity="warning">
+            Backend chặn chuyển bước vì bước đích cần điều kiện thanh toán.
+          </Alert>
 
-      <Descriptions size="small" column={1} bordered className="workflow-payment-summary">
-        <Descriptions.Item label="Số tiền cần thu">
-          {formatCurrency(details?.required_amount)}
-        </Descriptions.Item>
-        <Descriptions.Item label="Đã thu hiện tại">
-          {formatCurrency(details?.current_paid)}
-        </Descriptions.Item>
-        <Descriptions.Item label="Số tiền backend gợi ý">
-          {formatCurrency(details?.incoming_payment_confirmation)}
-        </Descriptions.Item>
-        <Descriptions.Item label="Tổng sau xác nhận">
-          {formatCurrency(details?.new_total_paid)}
-        </Descriptions.Item>
-      </Descriptions>
+          <Typography color="text.secondary">
+            Project <strong>{project?.name}</strong> sẽ được chuyển tới{" "}
+            <strong>{targetStepKey ?? "step đã chọn"}</strong> sau khi xác nhận tiền.
+          </Typography>
 
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          incoming_payment_confirmation: details?.incoming_payment_confirmation ?? 0,
-          payment_method: "BANK_TRANSFER",
-        }}
-        onFinish={onSubmit}
-      >
-        <Form.Item
-          name="incoming_payment_confirmation"
-          label="Số tiền xác nhận"
-          rules={[
-            { required: true, message: "Vui lòng nhập số tiền xác nhận." },
-            { type: "number", min: 1, message: "Số tiền phải lớn hơn 0." },
-          ]}
-        >
-          <InputNumber<number>
-            min={0}
-            precision={0}
-            addonAfter="VND"
-            className="workflow-form-full"
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+            }}
+          >
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Số tiền cần thu
+              </Typography>
+              <Typography sx={{ fontWeight: 600 }}>{formatCurrency(details?.required_amount)}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Đã thu hiện tại
+              </Typography>
+              <Typography sx={{ fontWeight: 600 }}>{formatCurrency(details?.current_paid)}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Số tiền backend gợi ý
+              </Typography>
+              <Typography sx={{ fontWeight: 600 }}>
+                {formatCurrency(details?.incoming_payment_confirmation)}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Tổng sau xác nhận
+              </Typography>
+              <Typography sx={{ fontWeight: 600 }}>{formatCurrency(details?.new_total_paid)}</Typography>
+            </Box>
+          </Box>
+
+          <TextField
+            label="Số tiền xác nhận"
+            type="number"
+            value={formValues.incoming_payment_confirmation}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                incoming_payment_confirmation: Number(event.target.value),
+              }))
+            }
+            fullWidth
           />
-        </Form.Item>
-
-        <Form.Item
-          name="payment_method"
-          label="Phương thức thanh toán"
-          rules={[{ required: true, message: "Vui lòng chọn phương thức thanh toán." }]}
-        >
-          <Select
-            options={[
-              { value: "BANK_TRANSFER", label: "Chuyển khoản" },
-              { value: "CASH", label: "Tiền mặt" },
-              { value: "CARD", label: "Thẻ" },
-              { value: "OTHER", label: "Khác" },
-            ]}
+          <TextField
+            select
+            label="Phương thức thanh toán"
+            value={formValues.payment_method}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                payment_method: event.target.value,
+              }))
+            }
+            fullWidth
+          >
+            <MenuItem value="BANK_TRANSFER">Chuyển khoản</MenuItem>
+            <MenuItem value="CASH">Tiền mặt</MenuItem>
+            <MenuItem value="CARD">Thẻ</MenuItem>
+            <MenuItem value="OTHER">Khác</MenuItem>
+          </TextField>
+          <TextField
+            label="Ghi chú"
+            value={formValues.payment_note ?? ""}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                payment_note: event.target.value,
+              }))
+            }
+            multiline
+            minRows={3}
+            fullWidth
           />
-        </Form.Item>
-
-        <Form.Item name="payment_note" label="Ghi chú">
-          <Input.TextArea rows={3} placeholder="Ví dụ: Khách đã chuyển cọc" />
-        </Form.Item>
-      </Form>
-    </Modal>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Hủy</Button>
+        <Button
+          variant="contained"
+          onClick={() => onSubmit(formValues)}
+          disabled={loading}
+        >
+          Xác nhận và chuyển bước
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

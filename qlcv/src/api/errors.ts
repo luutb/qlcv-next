@@ -1,6 +1,12 @@
 import { ApiError } from "./client";
 
 export type ApiErrorCode =
+  | "NETWORK_ERROR"
+  | "BAD_REQUEST"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "INVALID_CREDENTIALS"
+  | "INVALID_MFA_TOKEN"
   | "ERR_WORKFLOW_TEMPLATE_NOT_FOUND"
   | "ERR_WORKFLOW_TEMPLATE_INACTIVE"
   | "ERR_WORKFLOW_STEP_INVALID"
@@ -31,6 +37,12 @@ export type ApiErrorPayload = {
 };
 
 const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
+  NETWORK_ERROR: "Không kết nối được backend tại localhost:8080",
+  BAD_REQUEST: "Dữ liệu gửi lên không hợp lệ.",
+  UNAUTHORIZED: "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
+  FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
+  INVALID_CREDENTIALS: "Sai tên đăng nhập hoặc mật khẩu.",
+  INVALID_MFA_TOKEN: "Mã MFA không hợp lệ.",
   ERR_WORKFLOW_TEMPLATE_NOT_FOUND: "Workflow template không tồn tại.",
   ERR_WORKFLOW_TEMPLATE_INACTIVE: "Workflow template đã bị tắt.",
   ERR_WORKFLOW_STEP_INVALID: "Workflow step không hợp lệ.",
@@ -51,7 +63,7 @@ export function getApiErrorPayload(error: unknown): ApiErrorPayload | null {
 
 export function getApiErrorCode(error: unknown): ApiErrorCode | undefined {
   const payload = getApiErrorPayload(error);
-  const code = payload?.error_code ?? payload?.code;
+  const code = payload?.error_code ?? payload?.code ?? statusToCode(payload?.status);
   return isKnownApiErrorCode(code) ? code : undefined;
 }
 
@@ -61,11 +73,7 @@ export function getApiErrorDetails<TDetails>(error: unknown): TDetails | undefin
 
 export function getUserFacingErrorMessage(error: unknown): string {
   const payload = getApiErrorPayload(error);
-  const code = payload?.error_code ?? payload?.code;
-
-  if (isKnownApiErrorCode(code)) {
-    return ERROR_MESSAGES[code];
-  }
+  const code = payload?.error_code ?? payload?.code ?? statusToCode(payload?.status);
 
   if (payload?.detail) {
     return payload.detail;
@@ -73,6 +81,17 @@ export function getUserFacingErrorMessage(error: unknown): string {
 
   if (payload?.message) {
     return payload.message;
+  }
+
+  if (isKnownApiErrorCode(code)) {
+    return ERROR_MESSAGES[code];
+  }
+
+  if (error instanceof ApiError) {
+    const statusCode = statusToCode(error.status);
+    if (statusCode) {
+      return ERROR_MESSAGES[statusCode];
+    }
   }
 
   if (payload?.title && payload?.status) {
@@ -103,4 +122,17 @@ export function getDebugErrorInfo(error: unknown): string | undefined {
 
 function isKnownApiErrorCode(code: unknown): code is ApiErrorCode {
   return typeof code === "string" && code in ERROR_MESSAGES;
+}
+
+function statusToCode(status: unknown): ApiErrorCode | undefined {
+  switch (status) {
+    case 400:
+      return "BAD_REQUEST";
+    case 401:
+      return "UNAUTHORIZED";
+    case 403:
+      return "FORBIDDEN";
+    default:
+      return undefined;
+  }
 }

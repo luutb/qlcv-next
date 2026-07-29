@@ -1,6 +1,6 @@
 "use client";
 
-import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Empty, Select, Skeleton, Space, Tabs, Typography } from "antd";
@@ -95,6 +95,11 @@ export function WorkflowBoardPage() {
   });
 
   const overrideMutation = useOverrideProjectConflict(workflowTemplateId ?? "");
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  );
 
   function handleDragEnd(event: DragEndEvent) {
     const project = event.active.data.current?.project as ProjectBoardCard | undefined;
@@ -196,7 +201,7 @@ export function WorkflowBoardPage() {
         ) : board ? (
           <>
             <div className="workflow-board workflow-board--desktop">
-              <DndContext onDragEnd={handleDragEnd}>
+              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                 {visibleMacroColumns.map((macroColumn) => (
                   <WorkflowMacroColumn
                     key={macroColumn.macro_column}
@@ -208,7 +213,7 @@ export function WorkflowBoardPage() {
             </div>
 
             <div className="workflow-board--mobile">
-              <DndContext onDragEnd={handleDragEnd}>
+              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                 <Tabs
                   activeKey={activeMacroColumn?.macro_column}
                   onChange={setActiveMacro}

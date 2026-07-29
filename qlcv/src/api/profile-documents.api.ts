@@ -1,6 +1,6 @@
-import { apiRequest } from "./client";
+import { apiRequest, downloadRequest } from "./client";
 import type { MessageResponse } from "./types";
-import { fetchDocumentDownload, type DocumentRecord, type DownloadResponse } from "./documents.api";
+import type { DocumentRecord, DownloadResponse } from "./documents.api";
 
 export type ProfileDocumentEntityType = "user" | "customer";
 
@@ -45,7 +45,7 @@ export function downloadProfileDocument(
   id: string,
   signal?: AbortSignal,
 ): Promise<DownloadResponse> {
-  return fetchDocumentDownload(`/api/v1/profile-documents/${id}/download`, signal);
+  return downloadRequest(`/api/v1/profile-documents/${id}/download`, { signal });
 }
 
 export function deleteProfileDocument(id: string) {

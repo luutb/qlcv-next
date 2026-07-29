@@ -1,5 +1,5 @@
-import { IssueBoardPage } from "@/features/issue-board/IssueBoardPage";
+import { redirect } from "next/navigation";
 
 export default function IssueBoardRoute() {
-  return <IssueBoardPage />;
+  redirect("/work");
 }

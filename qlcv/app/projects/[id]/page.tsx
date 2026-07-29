@@ -1,3 +1,10 @@
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  return <main>Project {params.id}</main>;
+import { PlaceholderPage } from "@/features/shared/PlaceholderPage";
+
+export default function ProjectDetailRoute() {
+  return (
+    <PlaceholderPage
+      title="Project Detail"
+      description="Chi tiết project, workflow step, payment và conflict state."
+    />
+  );
 }

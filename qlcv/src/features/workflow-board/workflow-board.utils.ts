@@ -1,5 +1,6 @@
 import type { ConflictStatus } from "@/api/projects.api";
 import type { MacroColumnKey } from "@/api/workflow.api";
+import type { ChipProps } from "@mui/material";
 
 export const MACRO_COLUMN_TITLES: Record<MacroColumnKey, string> = {
   INTAKE: "Intake",
@@ -23,14 +24,14 @@ export function formatCurrency(value?: number | null) {
   }).format(value ?? 0);
 }
 
-export function getConflictColor(status?: ConflictStatus) {
+export function getConflictColor(status?: ConflictStatus): ChipProps["color"] {
   if (status === "CONFLICT_DETECTED") {
-    return "red";
+    return "error";
   }
 
   if (status === "PENDING") {
-    return "gold";
+    return "warning";
   }
 
-  return "green";
+  return "success";
 }

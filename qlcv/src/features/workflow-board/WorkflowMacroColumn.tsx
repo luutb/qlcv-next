@@ -1,6 +1,6 @@
 "use client";
 
-import { Typography } from "antd";
+import { Box, Stack, Typography } from "@mui/material";
 import type { ProjectBoardCard, ProjectBoardMacroColumn } from "@/api/projects.api";
 import { WorkflowStepColumn } from "./WorkflowStepColumn";
 
@@ -16,17 +16,28 @@ export function WorkflowMacroColumn({
   const projectCount = macroColumn.steps.reduce((count, step) => count + step.projects.length, 0);
 
   return (
-    <section className="workflow-macro">
-      <header className="workflow-macro__header">
-        <div>
-          <Typography.Title level={4}>{macroColumn.title}</Typography.Title>
-          <Typography.Text type="secondary">
+    <Box
+      sx={{
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 2,
+        minWidth: 360,
+        overflow: "hidden",
+      }}
+    >
+      <Box sx={{ p: 1.5, borderBottom: "1px solid", borderColor: "divider", bgcolor: "grey.50" }}>
+        <Stack spacing={0.25}>
+          <Typography variant="h6" sx={{ fontSize: 18, fontWeight: 700 }}>
+            {macroColumn.title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             {macroColumn.steps.length} bước, {projectCount} project
-          </Typography.Text>
-        </div>
-      </header>
+          </Typography>
+        </Stack>
+      </Box>
 
-      <div className="workflow-macro__steps">
+      <Stack spacing={1.25} sx={{ p: 1.25 }}>
         {macroColumn.steps
           .slice()
           .sort((left, right) => left.sort_order - right.sort_order)
@@ -37,7 +48,7 @@ export function WorkflowMacroColumn({
               onOverrideConflict={onOverrideConflict}
             />
           ))}
-      </div>
-    </section>
+      </Stack>
+    </Box>
   );
 }
