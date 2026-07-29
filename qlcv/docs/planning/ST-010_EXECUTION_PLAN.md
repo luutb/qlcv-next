@@ -1,6 +1,6 @@
 # ST-010 Execution Plan — Auth, Profile, MFA and RBAC
 
-Status: Non-MFA scope implemented; runtime QA partially verified
+Status: Non-MFA scope complete and QA PASS; remote develop unresolved
 
 Date: 2026-07-29
 
@@ -17,6 +17,10 @@ in EP-002.
 The Story is complete only when normal login and MFA work against the backend,
 session expiry is safe, profile updates use optimistic versioning, direct URLs
 respect role access and QA passes before Reviewer.
+
+Scope override: the PO/user explicitly deferred MFA on 2026-07-29. Story
+completion in this delivery therefore means all non-MFA acceptance criteria
+pass while `I-0102` and `I-0104` remain `DEFERRED`.
 
 ## Roles
 
@@ -47,17 +51,18 @@ branch, latest commit and any blocker.
 
 ## Assignment board
 
-| Issue | Owner | Depends on | Owned paths | Initial status |
+| Issue | Owner | Depends on | Owned paths | Current status |
 | --- | --- | --- | --- | --- |
 | `I-0100` Execution plan | PM | — | `docs/planning/ST-010_EXECUTION_PLAN.md` | `DONE` |
-| `I-0101` Current-user/session cache | FE DEV1 | BA identity check | `src/api/client.ts`, `src/features/auth/auth.store.ts`, `src/layouts/app-shell/AppShell.tsx` | `QA` |
+| `I-0101` Current-user/session cache | FE DEV1 | BA identity check | `src/api/client.ts`, `src/features/auth/auth.store.ts`, `src/layouts/app-shell/AppShell.tsx` | `DONE` |
 | `I-0102` Login MFA challenge/return URL | FE DEV1 | `I-0101`, MFA challenge shape | `src/features/auth/LoginForm.tsx`, `src/api/auth.api.ts` | `DEFERRED` |
-| `I-0103` Profile/update/version | FE DEV2 | BA `/users/me` check | `app/settings/profile/page.tsx`, `src/features/profile/**`, profile portion of `src/api/users.api.ts` | `QA` |
+| `I-0103` Profile/update/version | FE DEV2 | BA `/users/me` check | `app/settings/profile/page.tsx`, `src/features/profile/**`, profile portion of `src/api/users.api.ts` | `DONE` |
 | `I-0104` Enable/disable MFA | FE DEV2 | `I-0103`, MFA enrollment response | `src/features/profile/mfa/**`; consume public methods from `src/api/auth.api.ts` | `DEFERRED` |
-| `I-0105` Route/action guards | FE DEV1 | `I-0101`; MFA dependency waived for current scope | `src/layouts/app-shell/model/access.ts`, guard UI and action-policy helpers | `QA` |
-| `I-0106` Manual QA/Reviewer fixes | QA, then responsible DEV | Current non-MFA scope | `docs/qa/ST-010-manual-auth-rbac.md`; regression fixes stay with original owner | `IN_PROGRESS` |
-| `I-0107` Local runtime smoke | QA | `I-0106`, running FE/BE | `README.md`, runtime section of `docs/qa/ST-010-manual-auth-rbac.md` | `QA` |
-| Backend identity support | BE DEV | BA contract checklist | Backend auth/user/MFA handlers and DTOs in `qlcv-work-board` | `TODO` |
+| `I-0105` Route/action guards | FE DEV1 | `I-0101`; MFA dependency waived for current scope | `src/layouts/app-shell/model/access.ts`, guard UI and action-policy helpers | `DONE` |
+| `I-0106` Manual QA/Reviewer fixes | QA, then responsible DEV | Current non-MFA scope | `docs/qa/ST-010-manual-auth-rbac.md`; regression fixes stay with original owner | `DONE` |
+| `I-0107` Local runtime smoke | QA | `I-0106`, running FE/BE | `README.md`, runtime section of `docs/qa/ST-010-manual-auth-rbac.md` | `DONE` |
+| `I-0108` MUI SSR hydration | FE DEV1, QA | `I-0107`, browser reproduction | `app/layout.tsx`, MUI SSR runtime dependencies, QA evidence | `DONE` |
+| Backend identity support | BE DEV | BA contract checklist | Backend auth/user/MFA handlers and DTOs in `qlcv-work-board` | `DONE` for non-MFA scope |
 
 ## Branches
 
@@ -71,7 +76,8 @@ develop
         ├── issue/QLCV-I-0104-mfa-settings
         ├── issue/QLCV-I-0105-role-guards
         ├── issue/QLCV-I-0106-manual-qa
-        └── issue/QLCV-I-0107-runtime-smoke
+        ├── issue/QLCV-I-0107-runtime-smoke
+        └── issue/QLCV-I-0108-mui-ssr-hydration
 ```
 
 Each issue branches from the latest Story HEAD. An issue is squash-merged into
@@ -257,6 +263,7 @@ Recommended Story merge order:
 5. `I-0104` MFA settings.
 6. `I-0105` route/action guards.
 7. `I-0106` QA evidence and Reviewer fixes.
+8. `I-0107` runtime evidence and `I-0108` hydration regression fix.
 
 ## Daily update template
 
@@ -283,9 +290,12 @@ QA evidence:
   remediation is required before `I-0102`/`I-0104` resume.
 - Static quality gates: lint, strict typecheck and production build PASS on
   2026-07-29.
-- Local runtime QA: backend health, three seeded-role logins/current-user,
-  user-management API authorization, profile update/428 and frontend HTTP route
-  smoke PASS on 2026-07-29. Browser interaction/hydration and SUPER_ADMIN remain
-  `NOT VERIFIED` because no browser harness or SUPER_ADMIN seed is available.
+- Local runtime QA: PASS for all four roles using the three official demo users
+  plus one local-only SUPER_ADMIN fixture. Login/logout, safe return URLs,
+  refresh, profile, direct-route RBAC, project actions, expired/inactive cleanup
+  and optimistic 428 behavior were verified.
+- Hydration regression: reproduced against the pre-fix build and resolved with
+  MUI's Next 16 App Router cache provider. Production browser smoke completed
+  with zero hydration errors and zero console errors for all four roles.
 - Correct frontend remote repository: unresolved; destructive merge into the
   unrelated `origin/develop` is forbidden.

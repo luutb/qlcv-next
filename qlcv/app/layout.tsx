@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/layouts/app-shell";
 import "@/styles/globals.css";
@@ -12,9 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi">
       <body>
-        <AppProviders>
-          <AppShell>{children}</AppShell>
-        </AppProviders>
+        <AppRouterCacheProvider>
+          <AppProviders>
+            <AppShell>{children}</AppShell>
+          </AppProviders>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

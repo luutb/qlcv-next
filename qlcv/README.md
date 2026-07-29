@@ -43,12 +43,15 @@ The backend demo seed currently provides:
 
 | Role | Username | Password |
 | --- | --- | --- |
+| SUPER_ADMIN (local QA fixture) | `superadmin` | `password` |
 | PARTNER | `admin` | `password` |
 | LAWYER | `lawyer1` | `password` |
 | ACCOUNTANT | `accountant` | `password` |
 
-There is no SUPER_ADMIN in the current seed. MFA is disabled for these local
-accounts and the frontend MFA flow is intentionally deferred.
+The official backend seed does not create SUPER_ADMIN. The `superadmin` row was
+added only to the current local Docker database for four-role QA and persists
+in its local volume. MFA is disabled for these local accounts and the frontend
+MFA flow is intentionally deferred.
 
 These credentials are for local demo data only. Do not reuse them in staging or
 production.

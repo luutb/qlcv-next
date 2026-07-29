@@ -118,7 +118,9 @@ I-0015. Full login/session UX is implemented in ST-010.
 6. Enable/disable MFA request and response shape with all secret values redacted.
 
 Backend handler source was inspected on 2026-07-29. Live login and `/users/me`
-were verified for the seeded PARTNER, LAWYER and ACCOUNTANT users. Profile
-update and stale HTTP 428 behavior were also verified. SUPER_ADMIN and browser
-behavior remain unverified. MFA UI was explicitly deferred and must not be
-enabled until disable requires verified TOTP or another approved proof.
+were verified for SUPER_ADMIN, PARTNER, LAWYER and ACCOUNTANT using local demo
+fixtures. Profile update, stale HTTP 428, session refresh/logout, expired and
+inactive cleanup, direct-route policy and hydration-safe rendering were also
+verified in a production browser session. MFA UI was explicitly deferred and
+must not be enabled until disable requires verified TOTP or another approved
+proof.

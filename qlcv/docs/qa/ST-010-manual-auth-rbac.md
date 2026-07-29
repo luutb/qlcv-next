@@ -2,11 +2,10 @@
 
 Date: 2026-07-29
 
-Scope: `I-0101`, `I-0103`, `I-0105`. MFA issues `I-0102` and `I-0104` are
-explicitly deferred.
+Scope: `I-0101`, `I-0103`, `I-0105`, `I-0107` and `I-0108`. MFA issues
+`I-0102` and `I-0104` are explicitly deferred.
 
-Overall result: `PARTIAL PASS`; static gates and available local API/HTTP smoke
-PASS. Browser interaction and SUPER_ADMIN remain `NOT VERIFIED`.
+Overall result: `PASS` for the agreed non-MFA scope.
 
 ## Static gates
 
@@ -30,21 +29,21 @@ PASS. Browser interaction and SUPER_ADMIN remain `NOT VERIFIED`.
 
 ## Runtime matrix
 
-Frontend `http://127.0.0.1:3000` and backend `http://127.0.0.1:8080` were running
-during the follow-up smoke. The database contains PARTNER, LAWYER and ACCOUNTANT
-demo users but no SUPER_ADMIN.
+Frontend `http://localhost:3000` and backend `http://localhost:8080` were running
+during the final smoke. A local-only SUPER_ADMIN fixture was added to complete
+the four-role matrix; no production or staging data was changed.
 
 | Scenario | SUPER_ADMIN | PARTNER | LAWYER | ACCOUNTANT |
 | --- | --- | --- | --- | --- |
-| Login API and `/users/me` | NOT VERIFIED — no seed | PASS | PASS | PASS |
-| Profile read API | NOT VERIFIED — no seed | PASS | PASS | PASS |
-| Profile update API | NOT VERIFIED — no seed | PASS | NOT VERIFIED | NOT VERIFIED |
-| Profile stale 428 response | NOT VERIFIED — no seed | PASS | NOT VERIFIED | NOT VERIFIED |
-| Profile direct URL | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| User-management API role policy | NOT VERIFIED — no seed | PASS — 200 | PASS — 403 | PASS — 403 |
-| Sidebar/direct-route browser policy | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| Project action visibility | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
-| Expired/inactive session | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED |
+| Login, `/users/me`, refresh and logout | PASS | PASS | PASS | PASS |
+| Profile read/direct URL | PASS | PASS | PASS | PASS |
+| Profile update API | PASS | PASS | NOT REPEATED | NOT REPEATED |
+| Profile stale 428 response | PASS | PASS | NOT REPEATED | NOT REPEATED |
+| User-management API role policy | PASS — 200 | PASS — 200 | PASS — 403 | PASS — 403 |
+| Sidebar/direct-route browser policy | PASS | PASS | PASS | PASS |
+| Project action visibility | PASS | PASS | PASS | PASS |
+| Expired/inactive session cleanup | PASS | PASS | PASS | PASS |
+| Hydration and browser console | PASS — 0 errors | PASS — 0 errors | PASS — 0 errors | PASS — 0 errors |
 
 Additional runtime evidence:
 
@@ -53,10 +52,18 @@ Additional runtime evidence:
 - Invalid bearer token on `/users/me`: HTTP 401.
 - PARTNER profile update increased optimistic version from 1 to 2.
 - Reusing version 1 returned HTTP 428.
-- Next development server returned HTTP 200 for `/login`, `/dashboard`,
-  `/settings/profile`, `/users`, `/admin/tenant-settings` and `/projects/board`.
-- HTTP 200 only proves route compilation/response. It does not prove client-side
-  RBAC, localStorage session behavior or absence of hydration console warnings.
+- Production SSR browser smoke logged in through the React form for all roles.
+- Safe internal return URLs were honored; `//evil.example` fell back to the
+  internal dashboard and never changed origin.
+- Authenticated refresh preserved the session and logout cleared both storage
+  keys for every role.
+- Invalid/expired token and inactive cached-user fixtures cleared both storage
+  keys and returned to login.
+- Project actions matched policy: SUPER_ADMIN/PARTNER edit/move/close, LAWYER
+  move without edit/close, ACCOUNTANT view-only.
+- The original hydration failure was reproduced before the fix. With
+  `AppRouterCacheProvider` on the production build, every role completed with
+  zero hydration errors and zero console errors.
 
 ## Code-level review notes
 
@@ -71,10 +78,8 @@ Additional runtime evidence:
 - Explicit DTO action decisions win; missing decisions use a conservative role
   fallback and unknown roles are denied.
 
-## Remaining acceptance work
+## Deferred work
 
-1. Add or provide a safe local SUPER_ADMIN fixture.
-2. Execute the UI matrix in a real browser for all four roles.
-3. Verify logout, refresh, inactive session and hydration console behavior.
-4. Capture only non-secret evidence; never record JWTs, QR payloads or MFA data.
-5. Fix regressions, rerun all static gates, then obtain Reviewer approval.
+MFA remains outside the agreed delivery scope. Do not expose self-service MFA
+disable until the backend requires verified proof. No token, MFA secret or QR
+payload was included in QA output.
