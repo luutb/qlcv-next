@@ -5,205 +5,37 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Popover, Stack } from "@mui/material";
 import { FilterAltOutlined } from "@mui/icons-material";
-
-type WorkStatus = "TODO" | "DOING" | "DONE" | "CANCELLED";
-type WorkPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-type WorkStepId = "intake" | "drafting" | "customer" | "signing" | "billing" | "done" | "unassigned";
-type ViewMode = "board" | "list";
-type DueFilter = "all" | "overdue" | "today" | "week";
-type SettingsField = "project" | "assignee" | "labels" | "due" | "status" | "created";
-
-type WorkStep = {
-  id: WorkStepId;
-  name: string;
-  macro: string;
-};
-
-type WorkProject = {
-  id: string;
-  name: string;
-  customer: string;
-};
-
-type WorkIssue = {
-  id: string;
-  title: string;
-  projectId: string;
-  step: WorkStepId;
-  status: WorkStatus;
-  assignee: string;
-  due: string;
-  labels: string[];
-  description: string;
-  created: string;
-  updated: string;
-  priority: WorkPriority;
-};
-
-type WorkDraft = {
-  title: string;
-  projectId: string;
-  step: WorkStepId;
-  status: WorkStatus;
-  assignee: string;
-  due: string;
-  labels: string;
-  description: string;
-};
-
-type CreateDraft = WorkDraft;
-
-type Settings = {
-  density: "comfortable" | "compact";
-  fields: Record<SettingsField, boolean>;
-};
-
-const STORAGE_KEY = "work-board-settings";
-
-const STEPS: WorkStep[] = [
-  { id: "intake", name: "Tiếp nhận", macro: "Intake" },
-  { id: "drafting", name: "Soạn thảo", macro: "In Progress" },
-  { id: "customer", name: "Chờ khách hàng", macro: "External" },
-  { id: "signing", name: "Ký kết", macro: "Approval" },
-  { id: "billing", name: "Thanh toán", macro: "Billing" },
-  { id: "done", name: "Hoàn tất", macro: "Archived" },
-  { id: "unassigned", name: "Unassigned", macro: "Unassigned" },
-];
-
-const PROJECTS: WorkProject[] = [
-  { id: "prj-1024", name: "M&A Delta", customer: "Delta Holdings" },
-  { id: "prj-1038", name: "KCN Tân Việt", customer: "KCN Tân Việt" },
-  { id: "prj-1044", name: "Hợp đồng Đông Phú", customer: "Đông Phú Logistics" },
-];
-
-const INITIAL_ISSUES: WorkIssue[] = [
-  {
-    id: "ISS-2418",
-    title: "Kiểm tra hồ sơ pháp lý bên bán trước phiên ký",
-    projectId: "prj-1024",
-    step: "intake",
-    status: "TODO",
-    assignee: "Lan",
-    due: "2026-06-16",
-    labels: ["contract", "urgent"],
-    description: "Đối chiếu checklist hồ sơ pháp lý trước khi chuyển sang drafting.",
-    created: "2026-06-12",
-    updated: "09:20",
-    priority: "HIGH",
-  },
-  {
-    id: "ISS-2419",
-    title: "Soạn phụ lục điều chỉnh điều khoản thanh toán",
-    projectId: "prj-1044",
-    step: "drafting",
-    status: "DOING",
-    assignee: "Minh",
-    due: "2026-06-18",
-    labels: ["billing"],
-    description: "Chuẩn bị bản nháp phụ lục B theo yêu cầu kế toán.",
-    created: "2026-06-13",
-    updated: "08:45",
-    priority: "MEDIUM",
-  },
-  {
-    id: "ISS-2420",
-    title: "Chờ khách hàng xác nhận danh sách người ký",
-    projectId: "prj-1038",
-    step: "customer",
-    status: "DOING",
-    assignee: "Huy",
-    due: "2026-06-15",
-    labels: ["customer"],
-    description: "Cần xác nhận thẩm quyền ký trước khi phát hành bản cuối.",
-    created: "2026-06-10",
-    updated: "Hôm qua",
-    priority: "HIGH",
-  },
-  {
-    id: "ISS-2421",
-    title: "Rà soát điều khoản bảo mật cho hồ sơ lao động",
-    projectId: "prj-1038",
-    step: "drafting",
-    status: "TODO",
-    assignee: "Lan",
-    due: "2026-06-21",
-    labels: ["contract"],
-    description: "Đảm bảo điều khoản bảo mật khớp mẫu mới.",
-    created: "2026-06-14",
-    updated: "10:05",
-    priority: "LOW",
-  },
-  {
-    id: "ISS-2422",
-    title: "Chuẩn bị bộ ký điện tử cho hợp đồng dịch vụ",
-    projectId: "prj-1044",
-    step: "signing",
-    status: "DOING",
-    assignee: "Minh",
-    due: "2026-06-17",
-    labels: ["contract"],
-    description: "Upload bản cuối và kiểm tra thứ tự ký.",
-    created: "2026-06-11",
-    updated: "11:10",
-    priority: "MEDIUM",
-  },
-  {
-    id: "ISS-2423",
-    title: "Xác nhận invoice sau nghiệm thu đợt 2",
-    projectId: "prj-1044",
-    step: "billing",
-    status: "TODO",
-    assignee: "Unassigned",
-    due: "2026-06-16",
-    labels: ["billing", "urgent"],
-    description: "Chưa có người phụ trách. Cần assign trước cuối ngày.",
-    created: "2026-06-15",
-    updated: "12:30",
-    priority: "URGENT",
-  },
-  {
-    id: "ISS-2424",
-    title: "Đóng checklist lưu trữ hồ sơ sau ký",
-    projectId: "prj-1024",
-    step: "done",
-    status: "DONE",
-    assignee: "Huy",
-    due: "2026-06-14",
-    labels: ["contract"],
-    description: "Hoàn tất lưu trữ và cập nhật activity log.",
-    created: "2026-06-09",
-    updated: "Thứ sáu",
-    priority: "LOW",
-  },
-  {
-    id: "ISS-2425",
-    title: "Thiếu workflow step từ API trả về",
-    projectId: "prj-1038",
-    step: "unassigned",
-    status: "TODO",
-    assignee: "Unassigned",
-    due: "2026-06-20",
-    labels: ["customer"],
-    description: "Issue nằm trong unassigned_tasks cho đến khi chọn workflow step.",
-    created: "2026-06-15",
-    updated: "13:05",
-    priority: "MEDIUM",
-  },
-];
-
-const DEFAULT_SETTINGS: Settings = {
-  density: "comfortable",
-  fields: {
-    project: true,
-    assignee: true,
-    labels: true,
-    due: true,
-    status: true,
-    created: false,
-  },
-};
-
-const TODAY = new Date("2026-06-16T00:00:00");
+import { INITIAL_ISSUES, PROJECTS, STEPS } from "./model/work-board.fixtures";
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_FIELDS,
+  applyBodySettings,
+  applyFieldVisibility,
+  fieldLabel,
+  persistSettings,
+  readSettings,
+} from "./model/work-board.settings";
+import type {
+  CreateDraft,
+  DueFilter,
+  Settings,
+  SettingsField,
+  ViewMode,
+  WorkDraft,
+  WorkIssue,
+  WorkStatus,
+  WorkStepId,
+} from "./model/work-board.types";
+import {
+  dayDiff,
+  defaultCreateDraft,
+  dueState,
+  initials,
+  issueToDraft,
+  parseLabels,
+  projectFor,
+  stepFor,
+} from "./model/work-board.utils";
 
 export function WorkBoardPage() {
   const searchParams = useSearchParams();
@@ -1243,121 +1075,4 @@ function CloseIcon() {
       <path d="m6 6 12 12" />
     </svg>
   );
-}
-
-function projectFor(issue: WorkIssue) {
-  return PROJECTS.find((project) => project.id === issue.projectId) ?? PROJECTS[0];
-}
-
-function stepFor(id: string) {
-  return STEPS.find((step) => step.id === id) ?? STEPS[0];
-}
-
-function dueState(due: string) {
-  const diff = dayDiff(due);
-  if (diff < 0) return "overdue";
-  if (diff <= 1) return "soon";
-  return "normal";
-}
-
-function dayDiff(due: string) {
-  const date = new Date(`${due}T00:00:00`);
-  return Math.round((date.getTime() - TODAY.getTime()) / 86400000);
-}
-
-function initials(name: string) {
-  if (name === "Unassigned") return "--";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-}
-
-function parseLabels(raw: string) {
-  return raw
-    .split(",")
-    .map((label) => label.trim())
-    .filter(Boolean);
-}
-
-function issueToDraft(issue: WorkIssue): WorkDraft {
-  return {
-    title: issue.title,
-    projectId: issue.projectId,
-    step: issue.step,
-    status: issue.status,
-    assignee: issue.assignee,
-    due: issue.due,
-    labels: issue.labels.join(", "),
-    description: issue.description,
-  };
-}
-
-function defaultCreateDraft(step: WorkStepId = "intake"): CreateDraft {
-  return {
-    title: "",
-    projectId: PROJECTS[0].id,
-    step,
-    status: "TODO",
-    assignee: "Lan",
-    due: "2026-06-21",
-    labels: "",
-    description: "",
-  };
-}
-
-function readSettings(): Settings {
-  if (typeof window === "undefined") {
-    return DEFAULT_SETTINGS;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<Settings>;
-    return {
-      density: parsed.density === "compact" ? "compact" : "comfortable",
-      fields: {
-        ...DEFAULT_SETTINGS.fields,
-        ...(parsed.fields ?? {}),
-      },
-    };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
-function persistSettings(settings: Settings) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }
-}
-
-const SETTINGS_FIELDS: SettingsField[] = ["project", "assignee", "labels", "due", "status", "created"];
-
-function fieldLabel(field: SettingsField) {
-  const labels: Record<SettingsField, string> = {
-    project: "Project",
-    assignee: "Assignee",
-    labels: "Labels",
-    due: "Due date",
-    status: "Status",
-    created: "Created date",
-  };
-
-  return labels[field];
-}
-
-function applyBodySettings(settings: Settings) {
-  document.body.classList.toggle("od-workboard--density-compact", settings.density === "compact");
-  applyFieldVisibility(settings.fields);
-}
-
-function applyFieldVisibility(fields: Record<SettingsField, boolean>) {
-  SETTINGS_FIELDS.forEach((field) => {
-    document.body.classList.toggle(`od-workboard--hide-${field}`, !fields[field]);
-  });
 }
