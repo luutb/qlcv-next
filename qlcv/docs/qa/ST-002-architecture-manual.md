@@ -55,11 +55,13 @@ The local production server ran at `http://127.0.0.1:3101`.
 - Dormant Issue Board UI/query scaffolding was removed only after a zero-consumer
   source search; `issues.api.ts` was not removed.
 
-Status: **PASS**.
+Status: **STRUCTURAL PASS**.
 
-## Human staging checks still required
+## Human browser and staging checks still required
 
-The following behavior needs the four staging roles and representative data:
+The interaction checks below have not been executed in a normal browser. Some
+can use local fixtures; API-backed flows additionally need the four staging
+roles and representative data:
 
 1. Login/session expiry, safe return URL and logout.
 2. Sidebar visibility and direct-route guard for all roles.
@@ -69,13 +71,16 @@ The following behavior needs the four staging roles and representative data:
 6. Work Board create/edit/delete/drag/drop/settings interactions.
 7. Browser network comparison of endpoint, payload and request count.
 
-Status: **BLOCKED — STAGING URL, ACCOUNTS AND FIXTURES NOT PROVIDED**.
+Status: **NOT VERIFIED — NO HUMAN BROWSER RUN; STAGING ACCESS ALSO NOT PROVIDED**.
 
 ## QA disposition
 
-Local structural QA: **PASS WITH ACCEPTED STAGING EXCEPTION**.
+Local structural QA: **PASS**.
+
+Interactive UI parity: **NOT VERIFIED; PROJECT-OWNER EXCEPTION REQUIRED FOR
+LOCAL MERGE**.
 
 The project owner's existing direction permits local progression without
-automated-test installation and with external staging checks recorded as
-pending. It does not authorize a remote push or classify staging checks as
-completed.
+automated-test installation and with browser/staging checks recorded as
+pending. This evidence does not claim those checks passed. The exception does
+not authorize a remote push or classify browser/staging checks as completed.

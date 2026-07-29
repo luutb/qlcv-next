@@ -1,7 +1,2 @@
 export { WorkflowTemplateSettingsPage } from "./WorkflowTemplateSettingsPage";
-export {
-  useCreateWorkflowTemplate,
-  useWorkflowTemplate,
-  useWorkflowTemplates,
-  workflowTemplateQueryKeys,
-} from "./queries/workflow-template.queries";
+export { useWorkflowTemplates } from "./queries/workflow-template.queries";

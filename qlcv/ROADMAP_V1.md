@@ -163,6 +163,7 @@ Issues:
 - `I-0024`: Hợp nhất Work Board namespace và loại dormant Issue Board.
 - `I-0025`: Sửa dependency `api → feature`, chuẩn hóa public imports và lint boundary.
 - `I-0026`: Manual structural regression QA và Reviewer fixes.
+- `I-0027`: Sửa Reviewer findings về QA evidence, query-key ownership và public exports.
 
 Acceptance criteria:
 

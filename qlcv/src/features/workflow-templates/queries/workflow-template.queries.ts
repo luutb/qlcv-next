@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { workflowQueryKeys } from "@/api/query-keys";
 import {
   createWorkflowTemplate,
   getWorkflowTemplate,
@@ -8,22 +9,16 @@ import {
   type CreateWorkflowTemplateRequest,
 } from "@/api/workflow.api";
 
-export const workflowTemplateQueryKeys = {
-  all: ["workflow-board"] as const,
-  templates: () => [...workflowTemplateQueryKeys.all, "templates"] as const,
-  template: (id: string) => [...workflowTemplateQueryKeys.templates(), id] as const,
-};
-
 export function useWorkflowTemplates() {
   return useQuery({
-    queryKey: workflowTemplateQueryKeys.templates(),
+    queryKey: workflowQueryKeys.templates(),
     queryFn: ({ signal }) => listWorkflowTemplates(true, signal),
   });
 }
 
 export function useWorkflowTemplate(id?: string | null) {
   return useQuery({
-    queryKey: workflowTemplateQueryKeys.template(id ?? ""),
+    queryKey: workflowQueryKeys.template(id ?? ""),
     queryFn: ({ signal }) => getWorkflowTemplate(id as string, signal),
     enabled: Boolean(id),
   });
@@ -35,7 +30,7 @@ export function useCreateWorkflowTemplate() {
   return useMutation({
     mutationFn: (payload: CreateWorkflowTemplateRequest) => createWorkflowTemplate(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workflowTemplateQueryKeys.templates() });
+      queryClient.invalidateQueries({ queryKey: workflowQueryKeys.templates() });
     },
   });
 }

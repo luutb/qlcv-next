@@ -17,6 +17,7 @@ import {
   getUserFacingErrorMessage,
   type WorkflowFinancialBlockedDetails,
 } from "@/api/errors";
+import { workflowQueryKeys } from "@/api/query-keys";
 import { useWorkflowTemplates } from "@/features/workflow-templates";
 import { CreateProjectModal } from "@/features/projects";
 import { WorkflowMacroColumn } from "./components/WorkflowMacroColumn";
@@ -26,7 +27,6 @@ import {
 } from "./components/PaymentRequiredModal";
 import { ConflictOverrideModal } from "./components/ConflictOverrideModal";
 import {
-  workflowBoardQueryKeys,
   useOverrideProjectConflict,
   useProjectBoard,
 } from "./queries/project-workflow-board.queries";
@@ -81,7 +81,7 @@ export function WorkflowBoardPage() {
       setPaymentDetails(null);
       if (selectedWorkflowTemplateId) {
         queryClient.invalidateQueries({
-          queryKey: workflowBoardQueryKeys.board(selectedWorkflowTemplateId),
+          queryKey: workflowQueryKeys.board(selectedWorkflowTemplateId),
         });
       }
     },

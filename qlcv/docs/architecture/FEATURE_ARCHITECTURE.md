@@ -49,7 +49,7 @@ Allowed:
 app -> feature public entry or layout
 layout -> feature public entry + shared + api
 feature -> shared + api
-shared -> framework/library only
+shared -> api + framework/library
 api -> framework/library + api-local types
 ```
 
@@ -93,6 +93,8 @@ internal file.
 - Preserve the six legacy redirect destinations and complete query strings.
 - Preserve API path, method, headers, payload, DTO mapping and idempotency.
 - Preserve React Query keys, invalidation targets and enabled conditions.
+- Keep shared React Query key factories in `src/api/query-keys.ts`; features
+  must not redeclare the same resource keys.
 - Preserve `access_token`, `auth_user` and `work-board-settings` storage keys.
 - Preserve CSS selectors, copy, role visibility and confirmation behavior.
 - Preserve client boundaries and component identity where remount changes state.

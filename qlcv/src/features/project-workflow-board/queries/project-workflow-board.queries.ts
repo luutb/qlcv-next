@@ -8,16 +8,11 @@ import {
   type MoveProjectWorkflowStepRequest,
   type OverrideConflictRequest,
 } from "@/api/projects.api";
-
-export const workflowBoardQueryKeys = {
-  all: ["workflow-board"] as const,
-  board: (workflowTemplateId: string) =>
-    [...workflowBoardQueryKeys.all, "board", workflowTemplateId] as const,
-};
+import { workflowQueryKeys } from "@/api/query-keys";
 
 export function useProjectBoard(workflowTemplateId?: string | null) {
   return useQuery({
-    queryKey: workflowBoardQueryKeys.board(workflowTemplateId ?? ""),
+    queryKey: workflowQueryKeys.board(workflowTemplateId ?? ""),
     queryFn: ({ signal }) => getProjectBoard(workflowTemplateId as string, signal),
     enabled: Boolean(workflowTemplateId),
   });
@@ -31,7 +26,7 @@ export function useMoveProjectWorkflowStep(projectId: string, workflowTemplateId
       moveProjectWorkflowStep(projectId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: workflowBoardQueryKeys.board(workflowTemplateId),
+        queryKey: workflowQueryKeys.board(workflowTemplateId),
       });
     },
   });
@@ -50,7 +45,7 @@ export function useOverrideProjectConflict(workflowTemplateId: string) {
     }) => overrideProjectConflict(projectId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: workflowBoardQueryKeys.board(workflowTemplateId),
+        queryKey: workflowQueryKeys.board(workflowTemplateId),
       });
     },
   });
