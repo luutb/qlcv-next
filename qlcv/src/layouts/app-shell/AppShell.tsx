@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Box, LinearProgress } from "@mui/material";
-import { logout } from "@/api/auth.api";
+import { logout, type AuthUser } from "@/api/auth.api";
 import { SessionExpiredError } from "@/api/client";
 import { authStore } from "@/features/auth";
 import { AppShellSidebar } from "./components/AppShellSidebar";
@@ -18,42 +18,48 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginRoute = pathname === "/login";
-  const [userLoaded, setUserLoaded] = useState(false);
+  const [sessionStatus, setSessionStatus] = useState<"checking" | "authenticated" | "anonymous">("checking");
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
-  const [user, setUser] = useState(authStore.getUser());
-  const hasToken = authStore.isAuthenticated();
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function syncUser() {
-      if (!hasToken) {
-        setUserLoaded(true);
+      if (!authStore.isAuthenticated()) {
+        if (!cancelled) setSessionStatus("anonymous");
         if (!isLoginRoute) router.replace("/login");
         return;
       }
       const cachedUser = authStore.getUser();
       if (cachedUser) {
-        setUser(cachedUser);
-        setUserLoaded(true);
+        if (!cancelled) {
+          setUser(cachedUser);
+          setSessionStatus("authenticated");
+        }
         return;
       }
       try {
         const nextUser = await authStore.refreshUser();
         authStore.setUser(nextUser);
-        if (!cancelled) setUser(nextUser);
+        if (!cancelled) {
+          setUser(nextUser);
+          setSessionStatus("authenticated");
+        }
       } catch (error) {
         authStore.clearToken();
-        if (!cancelled && !(error instanceof SessionExpiredError)) router.replace("/login");
-      } finally {
-        if (!cancelled) setUserLoaded(true);
+        if (!cancelled) {
+          setUser(null);
+          setSessionStatus("anonymous");
+          if (!(error instanceof SessionExpiredError)) router.replace("/login");
+        }
       }
     }
     void syncUser();
     return () => { cancelled = true; };
-  }, [hasToken, isLoginRoute, router]);
+  }, [isLoginRoute, router]);
 
   if (isLoginRoute) return <>{children}</>;
-  if (!userLoaded || !hasToken) return <LinearProgress />;
+  if (sessionStatus !== "authenticated") return <LinearProgress />;
 
   const role = user?.role ?? "";
   return (
