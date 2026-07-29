@@ -222,12 +222,11 @@ export function WorkBoardPage() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerDraft, setDrawerDraft] = useState<WorkDraft | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(() => searchParams.get("new") === "1");
   const [createDraft, setCreateDraft] = useState<CreateDraft>(() => defaultCreateDraft());
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<Settings>(() => readSettings());
   const [toast, setToast] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
   const [dropTarget, setDropTarget] = useState<WorkStepId | null>(null);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
   const toastTimer = useRef<number | null>(null);
@@ -257,26 +256,17 @@ export function WorkBoardPage() {
   }, [assigneeFilter, dueFilter, issues, labelFilter, projectFilter, search, statusFilter, workflowFilter]);
 
   useEffect(() => {
-    const saved = readSettings();
-    setSettings(saved);
-    applyBodySettings(saved);
+    applyBodySettings(settings);
     return () => {
       document.body.classList.remove("od-workboard--density-compact", "od-workboard--readonly");
       SETTINGS_FIELDS.forEach((field) => document.body.classList.remove(`od-workboard--hide-${field}`));
     };
-  }, []);
+  }, [settings]);
 
   useEffect(() => {
-    const saved = readSettings();
     document.body.classList.toggle("od-workboard--readonly", readonly);
-    applyFieldVisibility(saved.fields);
-  }, [readonly]);
-
-  useEffect(() => {
-    if (searchParams.get("new") === "1") {
-      setCreateOpen(true);
-    }
-  }, [searchParams]);
+    applyFieldVisibility(settings.fields);
+  }, [readonly, settings.fields]);
 
   function notify(message: string) {
     setToast(message);
@@ -287,9 +277,7 @@ export function WorkBoardPage() {
   }
 
   function refreshBoard() {
-    setRefreshing(true);
     window.setTimeout(() => {
-      setRefreshing(false);
       notify("Work Board đã được tải lại.");
     }, 650);
   }
@@ -472,12 +460,9 @@ export function WorkBoardPage() {
   const visibleSteps = useMemo(() => {
     return STEPS.filter((step) => filteredIssues.some((issue) => issue.step === step.id));
   }, [filteredIssues]);
-
-  useEffect(() => {
-    if (!visibleSteps.some((step) => step.id === activeStep) && visibleSteps[0]) {
-      setActiveStep(visibleSteps[0].id);
-    }
-  }, [activeStep, visibleSteps]);
+  const displayedActiveStep = visibleSteps.some((step) => step.id === activeStep)
+    ? activeStep
+    : (visibleSteps[0]?.id ?? activeStep);
 
   return (
     <section className="od-workboard" aria-labelledby="workBoardTitle">
@@ -547,7 +532,7 @@ export function WorkBoardPage() {
 
         <div className="od-workboard__mobile-columns" aria-label="Workflow steps">
           {visibleSteps.map((step) => (
-            <button key={step.id} type="button" className={activeStep === step.id ? "is-active" : ""} onClick={() => setActiveStep(step.id)}>
+            <button key={step.id} type="button" className={displayedActiveStep === step.id ? "is-active" : ""} onClick={() => setActiveStep(step.id)}>
               {step.name} · {filteredIssues.filter((issue) => issue.step === step.id).length}
             </button>
           ))}
@@ -638,7 +623,7 @@ export function WorkBoardPage() {
             <div className="od-workboard__board">
               {STEPS.map((step) => {
                 const columnIssues = filteredIssues.filter((issue) => issue.step === step.id);
-                const isActiveMobile = step.id === activeStep;
+                const isActiveMobile = step.id === displayedActiveStep;
                 return (
                   <section
                     key={step.id}
@@ -674,7 +659,7 @@ export function WorkBoardPage() {
                           selected={selectedIssueId === issue.id}
                           readonly={readonly}
                           onOpen={() => openDrawer(issue.id)}
-                          onDragStart={(id) => {
+                          onDragStart={() => {
                             if (readonly) {
                               notify("Tài khoản read-only không thể kéo thả issue.");
                               return false;
@@ -1246,10 +1231,6 @@ function projectFor(issue: WorkIssue) {
   return PROJECTS.find((project) => project.id === issue.projectId) ?? PROJECTS[0];
 }
 
-function projectForId(projectId: string) {
-  return PROJECTS.find((project) => project.id === projectId);
-}
-
 function stepFor(id: string) {
   return STEPS.find((step) => step.id === id) ?? STEPS[0];
 }
@@ -1361,15 +1342,4 @@ function applyFieldVisibility(fields: Record<SettingsField, boolean>) {
   SETTINGS_FIELDS.forEach((field) => {
     document.body.classList.toggle(`od-workboard--hide-${field}`, !fields[field]);
   });
-}
-
-function dueFilterLabel(filter: DueFilter) {
-  const labels: Record<DueFilter, string> = {
-    all: "All",
-    overdue: "Overdue",
-    today: "Due today",
-    week: "Due this week",
-  };
-
-  return labels[filter];
 }

@@ -30,7 +30,6 @@ import {
   Category,
   Dashboard,
   Description,
-  Gavel,
   Home,
   Inventory2,
   Logout,
@@ -42,7 +41,7 @@ import {
   ViewKanban,
   WorkHistory,
 } from "@mui/icons-material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getAuthMe, logout } from "@/api/auth.api";
 import { authStore } from "@/features/auth/auth.store";
 
