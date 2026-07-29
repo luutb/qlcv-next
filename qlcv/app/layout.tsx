@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/app/providers";
-import { AppShell } from "@/features/shared/AppShell";
+import { AppShell } from "@/layouts/app-shell";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
