@@ -1,6 +1,7 @@
 import type { DashboardDueItem, DashboardProjectAttention } from "@/api/dashboard.types";
+import { getInitials } from "@/shared/lib/presentation";
 import type { WorkloadItem } from "../model/dashboard.utils";
-import { formatCompactVnd, formatDate, initials, priorityLabel, reasonLabel, reasonTone } from "../model/dashboard.utils";
+import { formatCompactVnd, formatDate, priorityLabel, reasonLabel, reasonTone } from "../model/dashboard.utils";
 import { InlineEmpty } from "./DashboardPrimitives";
 
 export function ProjectsAttentionList({ items }: { items: DashboardProjectAttention[] }) {
@@ -15,5 +16,5 @@ export function DueItemsList({ items }: { items: DashboardDueItem[] }) {
 
 export function WorkloadList({ items }: { items: WorkloadItem[] }) {
   if (items.length === 0) return <InlineEmpty>Chưa có dữ liệu workload.</InlineEmpty>;
-  return <div className="od-dashboard__workload-list">{items.slice(0, 4).map((item) => <a key={item.id} className="od-dashboard__workload-row" href={`/work?assignee_id=${item.id}`}><span className="od-dashboard__avatar">{initials(item.name)}</span><div className="od-dashboard__truncate"><strong>{item.name}</strong><span>{item.open} open · {item.overdue} overdue</span><span className={`od-dashboard__capacity ${item.capacity >= 90 ? "over" : item.capacity >= 80 ? "warn" : ""}`}><span style={{ width: `${item.capacity}%` }} /></span></div><span className="od-dashboard__percent">{item.capacity}%</span></a>)}</div>;
+  return <div className="od-dashboard__workload-list">{items.slice(0, 4).map((item) => <a key={item.id} className="od-dashboard__workload-row" href={`/work?assignee_id=${item.id}`}><span className="od-dashboard__avatar">{getInitials(item.name)}</span><div className="od-dashboard__truncate"><strong>{item.name}</strong><span>{item.open} open · {item.overdue} overdue</span><span className={`od-dashboard__capacity ${item.capacity >= 90 ? "over" : item.capacity >= 80 ? "warn" : ""}`}><span style={{ width: `${item.capacity}%` }} /></span></div><span className="od-dashboard__percent">{item.capacity}%</span></a>)}</div>;
 }

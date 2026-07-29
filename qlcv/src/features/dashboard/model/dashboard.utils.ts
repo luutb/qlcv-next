@@ -78,10 +78,6 @@ export function priorityLabel(priority: DashboardDueItem["priority"]) {
   return ({ LOW: "Low", MEDIUM: "Medium", HIGH: "High", URGENT: "Urgent" })[priority];
 }
 
-export function initials(name: string) {
-  return name.split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase();
-}
-
 function isDashboardRange(value: string | null): value is DashboardRange {
   return value === "7d" || value === "30d" || value === "90d" || value === "custom";
 }

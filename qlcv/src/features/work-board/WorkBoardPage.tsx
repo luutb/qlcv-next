@@ -2,15 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Box, Popover, Stack } from "@mui/material";
-import { FilterAltOutlined } from "@mui/icons-material";
 import { CreateIssueDialog } from "./components/CreateIssueDialog";
 import { DisplaySettingsSheet } from "./components/DisplaySettingsSheet";
-import { IssueCard } from "./components/IssueCard";
 import { IssueDrawer } from "./components/IssueDrawer";
-import { PlusIcon, RefreshIcon, SettingsIcon } from "./components/WorkBoardIcons";
-import { FilterSelect, StatusChip } from "./components/WorkBoardPrimitives";
-import { INITIAL_ISSUES, PROJECTS, STEPS } from "./model/work-board.fixtures";
+import { WorkBoardControls } from "./components/WorkBoardControls";
+import { WorkBoardViews } from "./components/WorkBoardViews";
+import { INITIAL_ISSUES, STEPS } from "./model/work-board.fixtures";
 import {
   DEFAULT_SETTINGS,
   SETTINGS_FIELDS,
@@ -318,291 +315,51 @@ export function WorkBoardPage() {
 
   return (
     <section className="od-workboard" aria-labelledby="workBoardTitle">
-      <div className="od-workboard__head">
-        <div>
-          <div className="od-workboard__eyebrow">/work</div>
-          <h1 id="workBoardTitle">Work Board</h1>
-        <p className="od-workboard__subtitle">
-          Theo dõi và xử lý công việc theo workflow step, không trộn lẫn với status nội bộ của issue.
-        </p>
-        <p className="od-workboard__drag-hint">
-          Kéo thả card vào cột đích, hoặc mở detail drawer để đổi workflow step bằng nút nhanh.
-        </p>
-      </div>
-        <div className="od-workboard__head-actions">
-          <button className="od-workboard__icon-button" type="button" onClick={refreshBoard} aria-label="Tải lại Work Board">
-            <RefreshIcon />
-          </button>
-          <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={() => setCreateOpen(true)}>
-            <PlusIcon />
-            New issue
-          </button>
-          <button className="od-workboard__button" type="button" onClick={openSettings} aria-label="Display settings">
-            <SettingsIcon />
-          </button>
-          <div className="od-workboard__user-chip">
-            <span className="od-workboard__avatar">AT</span>
-            <span>Anh Tran</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="od-workboard__toolbar">
-        <div className="od-workboard__toolbar-row">
-          <label className="od-workboard__search-shell">
-            <input
-              className="od-workboard__search"
-              type="search"
-              placeholder="Tìm issue, project, mô tả..."
-              aria-label="Search issue"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
-          <button
-            className="od-workboard__icon-button od-workboard__icon-button--filter"
-            type="button"
-            onClick={(event) => setFilterAnchorEl(event.currentTarget)}
-            aria-label="Mở bộ lọc"
-            aria-haspopup="dialog"
-            aria-expanded={Boolean(filterAnchorEl)}
-          >
-            <FilterAltOutlined fontSize="small" />
-          </button>
-          <div className="od-workboard__segmented" role="tablist" aria-label="Chế độ xem">
-            <button type="button" className={viewMode === "board" ? "is-active" : ""} onClick={() => setViewMode("board")}>
-              Board
-            </button>
-            <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>
-              List
-            </button>
-          </div>
-          <button className="od-workboard__button od-workboard__button--ghost" type="button" onClick={clearFilters}>
-            Clear
-          </button>
-        </div>
-
-        <div className="od-workboard__mobile-columns" aria-label="Workflow steps">
-          {visibleSteps.map((step) => (
-            <button key={step.id} type="button" className={displayedActiveStep === step.id ? "is-active" : ""} onClick={() => setActiveStep(step.id)}>
-              {step.name} · {filteredIssues.filter((issue) => issue.step === step.id).length}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Popover
-        open={Boolean(filterAnchorEl)}
-        anchorEl={filterAnchorEl}
-        onClose={() => setFilterAnchorEl(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{ paper: { sx: { mt: 1, width: 320, borderRadius: 2, border: "1px solid", borderColor: "divider" } } }}
-      >
-        <Box sx={{ p: 2 }}>
-          <Stack spacing={1.5}>
-            <FilterSelect
-              label="Workflow"
-              value={workflowFilter}
-              onChange={setWorkflowFilter}
-              options={[
-                { value: "all", label: "All workflows" },
-                ...STEPS.filter((step) => step.id !== "unassigned").map((step) => ({ value: step.id, label: step.name })),
-              ]}
-            />
-            <FilterSelect
-              label="Project"
-              value={projectFilter}
-              onChange={setProjectFilter}
-              options={[
-                { value: "all", label: "All projects" },
-                ...PROJECTS.map((project) => ({ value: project.id, label: project.name })),
-              ]}
-            />
-            <FilterSelect
-              label="Assignee"
-              value={assigneeFilter}
-              onChange={setAssigneeFilter}
-              options={[
-                { value: "all", label: "All assignees" },
-                ...["Lan", "Minh", "Huy", "Unassigned"].map((assignee) => ({ value: assignee, label: assignee })),
-              ]}
-            />
-            <FilterSelect
-              label="Status"
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={[
-                { value: "all", label: "All statuses" },
-                ...["TODO", "DOING", "DONE", "CANCELLED"].map((status) => ({ value: status, label: status })),
-              ]}
-            />
-            <FilterSelect
-              label="Label"
-              value={labelFilter}
-              onChange={setLabelFilter}
-              options={[
-                { value: "all", label: "All labels" },
-                ...["contract", "urgent", "billing", "customer"].map((label) => ({ value: label, label })),
-              ]}
-            />
-            <FilterSelect
-              label="Due"
-              value={dueFilter}
-              onChange={(value) => setDueFilter(value as DueFilter)}
-              options={[
-                { value: "all", label: "Any due date" },
-                { value: "overdue", label: "Overdue" },
-                { value: "today", label: "Due today" },
-                { value: "week", label: "Due this week" },
-              ]}
-            />
-          </Stack>
-          <div className="od-workboard__popover-actions">
-            <button className="od-workboard__button od-workboard__button--ghost" type="button" onClick={clearFilters}>
-              Clear filters
-            </button>
-            <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={() => setFilterAnchorEl(null)}>
-              Done
-            </button>
-          </div>
-        </Box>
-      </Popover>
-
-      <div className="od-workboard__board-wrap">
-        {viewMode === "board" ? (
-          <div className="od-workboard__board-scroll">
-            <div className="od-workboard__board">
-              {STEPS.map((step) => {
-                const columnIssues = filteredIssues.filter((issue) => issue.step === step.id);
-                const isActiveMobile = step.id === displayedActiveStep;
-                return (
-                  <section
-                    key={step.id}
-                    className={`od-workboard__column ${dropTarget === step.id ? "is-drop-target" : ""} ${isActiveMobile ? "is-mobile-active" : ""}`}
-                    aria-label={step.name}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = "move";
-                      setDropTarget(step.id);
-                    }}
-                    onDragEnter={() => setDropTarget(step.id)}
-                    onDragLeave={() => setDropTarget(null)}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      setDropTarget(null);
-                      const issueId = event.dataTransfer.getData("text/plain");
-                      moveIssue(issueId, step.id);
-                    }}
-                  >
-                    <header className="od-workboard__column-head">
-                      <div className="od-workboard__column-title">
-                        <strong>{step.name}</strong>
-                        <span>{step.macro}</span>
-                      </div>
-                      <span className="od-workboard__count-badge">{columnIssues.length}</span>
-                    </header>
-                    <div className="od-workboard__card-list">
-                      {columnIssues.length > 0 ? (
-                        columnIssues.map((issue) => (
-                        <IssueCard
-                          key={issue.id}
-                          issue={issue}
-                          selected={selectedIssueId === issue.id}
-                          readonly={readonly}
-                          onOpen={() => openDrawer(issue.id)}
-                          onDragStart={() => {
-                            if (readonly) {
-                              notify("Tài khoản read-only không thể kéo thả issue.");
-                              return false;
-                            }
-                            return true;
-                          }}
-                          onDragEnd={() => setDropTarget(null)}
-                        />
-                      ))
-                      ) : (
-                        <div className="od-workboard__empty-column">Không có issue</div>
-                      )}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        {viewMode === "list" ? (
-          <div className="od-workboard__list-view">
-            <table>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Project</th>
-                  <th>Workflow step</th>
-                  <th>Status</th>
-                  <th>Assignee</th>
-                  <th>Due date</th>
-                  <th>Labels</th>
-                  <th>Updated at</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredIssues.length > 0 ? (
-                  filteredIssues.map((issue) => {
-                    const project = projectFor(issue);
-                    return (
-                      <tr key={issue.id}>
-                        <td>
-                          <strong>{issue.title}</strong>
-                          <span>{issue.id}</span>
-                        </td>
-                        <td>
-                          <a href={`/projects/${issue.projectId}`}>{project.name}</a>
-                          <span>{project.customer}</span>
-                        </td>
-                        <td>{stepFor(issue.step).name}</td>
-                        <td>
-                          <StatusChip status={issue.status} />
-                        </td>
-                        <td>{issue.assignee}</td>
-                        <td>
-                          <span className={`od-workboard__due ${dueState(issue.due)}`}>{issue.due}</span>
-                        </td>
-                        <td>
-                          <div className="od-workboard__chip-row">
-                            {issue.labels.map((label) => (
-                              <span key={label} className="od-workboard__chip">
-                                {label}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td>{issue.updated}</td>
-                        <td>
-                          <button className="od-workboard__button" type="button" onClick={() => openDrawer(issue.id)}>
-                            Open
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={9}>
-                      <strong>Chưa có issue trong bộ lọc hiện tại.</strong>{" "}
-                      <button className="od-workboard__button" type="button" onClick={clearFilters}>
-                        Clear filters
-                      </button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </div>
+      <WorkBoardControls
+        search={search}
+        viewMode={viewMode}
+        filters={{
+          workflow: workflowFilter,
+          project: projectFilter,
+          assignee: assigneeFilter,
+          status: statusFilter,
+          label: labelFilter,
+          due: dueFilter,
+        }}
+        filterAnchor={filterAnchorEl}
+        visibleSteps={visibleSteps}
+        activeStep={displayedActiveStep}
+        issues={filteredIssues}
+        onSearchChange={setSearch}
+        onViewModeChange={setViewMode}
+        onFilterChange={(key, value) => {
+          if (key === "workflow") setWorkflowFilter(value);
+          if (key === "project") setProjectFilter(value);
+          if (key === "assignee") setAssigneeFilter(value);
+          if (key === "status") setStatusFilter(value);
+          if (key === "label") setLabelFilter(value);
+          if (key === "due") setDueFilter(value as DueFilter);
+        }}
+        onFilterAnchorChange={setFilterAnchorEl}
+        onActiveStepChange={setActiveStep}
+        onClearFilters={clearFilters}
+        onRefresh={refreshBoard}
+        onCreate={() => setCreateOpen(true)}
+        onOpenSettings={openSettings}
+      />
+      <WorkBoardViews
+        viewMode={viewMode}
+        issues={filteredIssues}
+        selectedIssueId={selectedIssueId}
+        readonly={readonly}
+        activeStep={displayedActiveStep}
+        dropTarget={dropTarget}
+        onDropTargetChange={setDropTarget}
+        onMoveIssue={moveIssue}
+        onOpenIssue={openDrawer}
+        onReadonlyDrag={() => notify("Tài khoản read-only không thể kéo thả issue.")}
+        onClearFilters={clearFilters}
+      />
 
       <IssueDrawer
         open={drawerOpen}

@@ -21,17 +21,6 @@ export function dayDiff(due: string) {
   return Math.round((date.getTime() - TODAY.getTime()) / 86400000);
 }
 
-export function initials(name: string) {
-  if (name === "Unassigned") return "--";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-}
-
 export function parseLabels(raw: string) {
   return raw
     .split(",")

@@ -1,5 +1,6 @@
 import type { WorkIssue } from "../model/work-board.types";
-import { dueState, initials, projectFor } from "../model/work-board.utils";
+import { getInitials } from "@/shared/lib/presentation";
+import { dueState, projectFor } from "../model/work-board.utils";
 import { StatusChip } from "./WorkBoardPrimitives";
 
 export function IssueCard({
@@ -60,7 +61,7 @@ export function IssueCard({
       <div className="od-workboard__card-foot">
         <span className="field-assignee">
           <span className="od-workboard__avatar" aria-hidden="true">
-            {initials(issue.assignee)}
+            {getInitials(issue.assignee)}
           </span>
           {issue.assignee}
         </span>
