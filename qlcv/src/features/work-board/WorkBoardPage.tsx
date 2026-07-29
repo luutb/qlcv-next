@@ -1,17 +1,21 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Popover, Stack } from "@mui/material";
 import { FilterAltOutlined } from "@mui/icons-material";
+import { CreateIssueDialog } from "./components/CreateIssueDialog";
+import { DisplaySettingsSheet } from "./components/DisplaySettingsSheet";
+import { IssueCard } from "./components/IssueCard";
+import { IssueDrawer } from "./components/IssueDrawer";
+import { PlusIcon, RefreshIcon, SettingsIcon } from "./components/WorkBoardIcons";
+import { FilterSelect, StatusChip } from "./components/WorkBoardPrimitives";
 import { INITIAL_ISSUES, PROJECTS, STEPS } from "./model/work-board.fixtures";
 import {
   DEFAULT_SETTINGS,
   SETTINGS_FIELDS,
   applyBodySettings,
   applyFieldVisibility,
-  fieldLabel,
   persistSettings,
   readSettings,
 } from "./model/work-board.settings";
@@ -23,14 +27,12 @@ import type {
   ViewMode,
   WorkDraft,
   WorkIssue,
-  WorkStatus,
   WorkStepId,
 } from "./model/work-board.types";
 import {
   dayDiff,
   defaultCreateDraft,
   dueState,
-  initials,
   issueToDraft,
   parseLabels,
   projectFor,
@@ -562,7 +564,7 @@ export function WorkBoardPage() {
                         </td>
                         <td>{stepFor(issue.step).name}</td>
                         <td>
-                          <Chip status={issue.status} />
+                          <StatusChip status={issue.status} />
                         </td>
                         <td>{issue.assignee}</td>
                         <td>
@@ -602,477 +604,43 @@ export function WorkBoardPage() {
         ) : null}
       </div>
 
-      {drawerOpen ? <div className="od-workboard__backdrop" onClick={closeDrawer} aria-hidden="true" /> : null}
-      <aside className={`od-workboard__drawer ${drawerOpen ? "is-open" : ""}`} aria-hidden={!drawerOpen}>
-        <div className="od-workboard__drawer-head">
-          <div>
-            <div className="od-workboard__eyebrow">{selectedIssueId ?? "Issue"}</div>
-            <h2>{drawerDraft?.title || "Issue detail"}</h2>
-          </div>
-          <button className="od-workboard__icon-button" type="button" onClick={closeDrawer} aria-label="Đóng drawer">
-            <CloseIcon />
-          </button>
-        </div>
+      <IssueDrawer
+        open={drawerOpen}
+        readonly={readonly}
+        issueId={selectedIssueId}
+        issue={selectedIssue}
+        draft={drawerDraft}
+        onDraftChange={setDrawerDraft}
+        onClose={closeDrawer}
+        onDelete={deleteIssue}
+        onSave={saveDrawer}
+        onMove={moveSelectedIssue}
+      />
 
-        <div className="od-workboard__drawer-body">
-          <div className={`od-workboard__readonly-note ${readonly ? "is-visible" : ""}`}>
-            Tài khoản hiện tại chỉ được xem. Thao tác tạo, kéo thả và lưu thay đổi đã bị khóa.
-          </div>
-          {selectedIssue ? (
-            <section className="od-workboard__summary">
-              <div className="od-workboard__summary-head">
-                <div>
-                  <div className="od-workboard__eyebrow">Detail</div>
-                  <strong>{selectedIssue.id}</strong>
-                </div>
-                <span className={`od-workboard__summary-priority priority-${selectedIssue.priority.toLowerCase()}`}>
-                  {selectedIssue.priority}
-                </span>
-              </div>
-              <div className="od-workboard__summary-grid">
-                <div>
-                  <label>Project</label>
-                  <p>{projectFor(selectedIssue).name}</p>
-                </div>
-                <div>
-                  <label>Customer</label>
-                  <p>{projectFor(selectedIssue).customer}</p>
-                </div>
-                <div>
-                  <label>Workflow step</label>
-                  <p>{stepFor(selectedIssue.step).name}</p>
-                </div>
-                <div>
-                  <label>Status</label>
-                  <p>{selectedIssue.status}</p>
-                </div>
-                <div>
-                  <label>Assignee</label>
-                  <p>{selectedIssue.assignee}</p>
-                </div>
-                <div>
-                  <label>Due</label>
-                  <p className={dueState(selectedIssue.due)}>{selectedIssue.due}</p>
-                </div>
-              </div>
-              <div className="od-workboard__summary-actions">
-                {STEPS.filter((step) => step.id !== "unassigned").map((step) => (
-                  <button
-                    key={step.id}
-                    className={selectedIssue.step === step.id ? "is-active" : ""}
-                    type="button"
-                    disabled={readonly}
-                    onClick={() => moveSelectedIssue(step.id)}
-                  >
-                    {step.name}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          <Field label="Title" className={readonly ? "can-edit" : ""}>
-            <input
-              value={drawerDraft?.title ?? ""}
-              onChange={(event) => setDrawerDraft((current) => current ? { ...current, title: event.target.value } : current)}
-              disabled={readonly}
-            />
-          </Field>
-          <div className="od-workboard__detail-grid">
-            <Field label="Project" className={readonly ? "can-edit" : ""}>
-              <select
-                value={drawerDraft?.projectId ?? ""}
-                onChange={(event) => setDrawerDraft((current) => current ? { ...current, projectId: event.target.value } : current)}
-                disabled={readonly}
-              >
-                {PROJECTS.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Workflow step" className={readonly ? "can-edit" : ""}>
-              <select
-                value={drawerDraft?.step ?? "intake"}
-                onChange={(event) => setDrawerDraft((current) => current ? { ...current, step: event.target.value as WorkStepId } : current)}
-                disabled={readonly}
-              >
-                {STEPS.map((step) => (
-                  <option key={step.id} value={step.id}>
-                    {step.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Status" className={readonly ? "can-edit" : ""}>
-              <select
-                value={drawerDraft?.status ?? "TODO"}
-                onChange={(event) => setDrawerDraft((current) => current ? { ...current, status: event.target.value as WorkStatus } : current)}
-                disabled={readonly}
-              >
-                {["TODO", "DOING", "DONE", "CANCELLED"].map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Assignee" className={readonly ? "can-edit" : ""}>
-              <select
-                value={drawerDraft?.assignee ?? ""}
-                onChange={(event) => setDrawerDraft((current) => current ? { ...current, assignee: event.target.value } : current)}
-                disabled={readonly}
-              >
-                {["Lan", "Minh", "Huy", "Unassigned"].map((assignee) => (
-                  <option key={assignee} value={assignee}>
-                    {assignee}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Due date" className={readonly ? "can-edit" : ""}>
-              <input
-                type="date"
-                value={drawerDraft?.due ?? ""}
-                onChange={(event) => setDrawerDraft((current) => current ? { ...current, due: event.target.value } : current)}
-                disabled={readonly}
-              />
-            </Field>
-            <Field label="Labels" className={readonly ? "can-edit" : ""}>
-              <input
-                value={drawerDraft?.labels ?? ""}
-                onChange={(event) => setDrawerDraft((current) => current ? { ...current, labels: event.target.value } : current)}
-                disabled={readonly}
-              />
-            </Field>
-          </div>
-          <Field label="Description" className={readonly ? "can-edit" : ""}>
-            <textarea
-              value={drawerDraft?.description ?? ""}
-              onChange={(event) => setDrawerDraft((current) => current ? { ...current, description: event.target.value } : current)}
-              disabled={readonly}
-            />
-          </Field>
-          <div className="od-workboard__detail-grid">
-            <MetaCell label="Created" value={selectedIssue?.created ?? "-"} />
-            <MetaCell label="Updated" value={selectedIssue?.updated ?? "-"} />
-          </div>
-        </div>
-
-        <div className="od-workboard__drawer-foot">
-          <button className="od-workboard__button od-workboard__button--danger" type="button" onClick={deleteIssue} disabled={readonly}>
-            Delete
-          </button>
-          <a className="od-workboard__button" href={selectedIssueId ? `/projects/${issues.find((issue) => issue.id === selectedIssueId)?.projectId ?? ""}` : "/projects"}>
-            Open project
-          </a>
-          <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={saveDrawer} disabled={readonly}>
-            Save
-          </button>
-        </div>
-      </aside>
-
-      {createOpen || createRequested ? <div className="od-workboard__backdrop" onClick={closeCreate} aria-hidden="true" /> : null}
-      <section className={`od-workboard__modal ${createOpen || createRequested ? "is-open" : ""}`} aria-hidden={!createOpen && !createRequested}>
-        <div className="od-workboard__modal-head">
-          <h2>New issue</h2>
-          <button className="od-workboard__icon-button" type="button" onClick={closeCreate} aria-label="Đóng dialog">
-            <CloseIcon />
-          </button>
-        </div>
-        <div className="od-workboard__modal-body">
-          <Field label="Title" required error={!createDraft.title.trim() ? "Title bắt buộc." : undefined}>
-            <input value={createDraft.title} onChange={(event) => setCreateDraft((current) => ({ ...current, title: event.target.value }))} />
-          </Field>
-          <div className="od-workboard__detail-grid">
-            <Field label="Project" required error={!createDraft.projectId ? "Project bắt buộc." : undefined}>
-              <select value={createDraft.projectId} onChange={(event) => setCreateDraft((current) => ({ ...current, projectId: event.target.value }))}>
-                {PROJECTS.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Workflow step" required error={!createDraft.step ? "Workflow step bắt buộc." : undefined}>
-              <select value={createDraft.step} onChange={(event) => setCreateDraft((current) => ({ ...current, step: event.target.value as WorkStepId }))}>
-                {STEPS.map((step) => (
-                  <option key={step.id} value={step.id}>
-                    {step.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Assignee">
-              <select value={createDraft.assignee} onChange={(event) => setCreateDraft((current) => ({ ...current, assignee: event.target.value }))}>
-                {["Lan", "Minh", "Huy", "Unassigned"].map((assignee) => (
-                  <option key={assignee} value={assignee}>
-                    {assignee}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Due date">
-              <input type="date" value={createDraft.due} onChange={(event) => setCreateDraft((current) => ({ ...current, due: event.target.value }))} />
-            </Field>
-            <Field label="Status">
-              <select value={createDraft.status} onChange={(event) => setCreateDraft((current) => ({ ...current, status: event.target.value as WorkStatus }))}>
-                {["TODO", "DOING", "DONE", "CANCELLED"].map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Labels">
-              <input placeholder="contract, urgent" value={createDraft.labels} onChange={(event) => setCreateDraft((current) => ({ ...current, labels: event.target.value }))} />
-            </Field>
-          </div>
-          <Field label="Description">
-            <textarea
-              placeholder="Ghi chú nghiệp vụ cần xử lý"
-              value={createDraft.description}
-              onChange={(event) => setCreateDraft((current) => ({ ...current, description: event.target.value }))}
-            />
-          </Field>
-        </div>
-        <div className="od-workboard__modal-foot">
-          <button className="od-workboard__button" type="button" onClick={closeCreate}>
-            Cancel
-          </button>
-          <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={createIssue}>
-            Create issue
-          </button>
-        </div>
-      </section>
-
-      {settingsOpen ? <div className="od-workboard__backdrop" onClick={closeSettings} aria-hidden="true" /> : null}
-      <section className={`od-workboard__sheet ${settingsOpen ? "is-open" : ""}`} aria-hidden={!settingsOpen}>
-        <div className="od-workboard__sheet-head">
-          <h2>Display settings</h2>
-          <button className="od-workboard__icon-button" type="button" onClick={closeSettings} aria-label="Đóng settings">
-            <CloseIcon />
-          </button>
-        </div>
-        <div className="od-workboard__sheet-body">
-          <Field label="Density">
-            <select
-              value={settings.density}
-              onChange={(event) => {
-                const density = event.target.value as Settings["density"];
-                const next = { ...settings, density };
-                setSettings(next);
-                applyBodySettings(next);
-              }}
-            >
-              <option value="comfortable">Comfortable</option>
-              <option value="compact">Compact</option>
-            </select>
-          </Field>
-          <Field label="Card fields">
-            <div className="od-workboard__check-list">
-              {SETTINGS_FIELDS.map((field) => (
-                <label key={field}>
-                  {fieldLabel(field)}
-                  <input
-                    type="checkbox"
-                    checked={settings.fields[field]}
-                    onChange={(event) => toggleField(field, event.target.checked)}
-                  />
-                </label>
-              ))}
-            </div>
-          </Field>
-        </div>
-        <div className="od-workboard__sheet-foot">
-          <button className="od-workboard__button" type="button" onClick={resetSettings}>
-            Reset
-          </button>
-          <button className="od-workboard__button od-workboard__button--primary" type="button" onClick={saveSettings}>
-            Save
-          </button>
-        </div>
-      </section>
+      <CreateIssueDialog
+        open={createOpen || createRequested}
+        draft={createDraft}
+        onDraftChange={setCreateDraft}
+        onClose={closeCreate}
+        onCreate={createIssue}
+      />
+      <DisplaySettingsSheet
+        open={settingsOpen}
+        settings={settings}
+        onDensityChange={(density) => {
+          const next = { ...settings, density };
+          setSettings(next);
+          applyBodySettings(next);
+        }}
+        onToggleField={toggleField}
+        onClose={closeSettings}
+        onReset={resetSettings}
+        onSave={saveSettings}
+      />
 
       <div className={`od-workboard__toast ${toast ? "is-open" : ""}`} role="status" aria-live="polite">
         {toast}
       </div>
     </section>
-  );
-}
-
-function IssueCard({
-  issue,
-  selected,
-  readonly,
-  onOpen,
-  onDragStart,
-  onDragEnd,
-}: {
-  issue: WorkIssue;
-  selected: boolean;
-  readonly: boolean;
-  onOpen: () => void;
-  onDragStart: (issueId: string) => boolean;
-  onDragEnd: () => void;
-}) {
-  const dueKind = dueState(issue.due);
-  const project = projectFor(issue);
-
-  return (
-    <article
-      className={`od-workboard__issue-card ${selected ? "is-selected" : ""} ${dueKind === "overdue" ? "is-overdue" : ""}`}
-      draggable
-      tabIndex={0}
-      aria-label={`${issue.id} ${issue.title}`}
-      title="Kéo để chuyển sang cột khác"
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") onOpen();
-      }}
-      onDragStart={(event) => {
-        if (!onDragStart(issue.id)) {
-          event.preventDefault();
-          return;
-        }
-        event.dataTransfer.setData("text/plain", issue.id);
-        event.dataTransfer.effectAllowed = "move";
-        event.currentTarget.classList.add("dragging");
-      }}
-      onDragEnd={(event) => {
-        event.currentTarget.classList.remove("dragging");
-        onDragEnd();
-      }}
-    >
-      <p className="od-workboard__card-title">{issue.title}</p>
-      <div className="od-workboard__card-meta field-project">
-        <a href={`/projects/${issue.projectId}`}>{project.name}</a>
-        <span>{issue.id}</span>
-      </div>
-      <div className="od-workboard__chip-row field-labels">
-        {issue.labels.map((label) => (
-          <span key={label} className="od-workboard__chip">
-            {label}
-          </span>
-        ))}
-      </div>
-      <div className="od-workboard__card-foot">
-        <span className="field-assignee">
-          <span className="od-workboard__avatar" aria-hidden="true">
-            {initials(issue.assignee)}
-          </span>
-          {issue.assignee}
-        </span>
-        <span className={`od-workboard__due ${dueKind} field-due`}>{issue.due}</span>
-      </div>
-      <div className="od-workboard__card-foot">
-        <span className="field-status">
-          <Chip status={issue.status} />
-        </span>
-        <span className="field-created">Created {issue.created}</span>
-      </div>
-      {readonly ? <span className="od-workboard__readonly-marker">Read only</span> : null}
-    </article>
-  );
-}
-
-function Field({
-  label,
-  children,
-  required,
-  error,
-  className,
-}: {
-  label: string;
-  children: ReactNode;
-  required?: boolean;
-  error?: string;
-  className?: string;
-}) {
-  return (
-    <div className={`od-workboard__field ${className ?? ""} ${error ? "has-error" : ""}`}>
-      <label>
-        {label}
-        {required ? " *" : ""}
-      </label>
-      {children}
-      {error ? <span className="od-workboard__field-error">{error}</span> : null}
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  return (
-    <label className="od-workboard__popover-field">
-      <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function MetaCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <label>{label}</label>
-      <p>{value}</p>
-    </div>
-  );
-}
-
-function Chip({ status }: { status: WorkStatus }) {
-  return <span className={`od-workboard__chip od-workboard__chip--status-${status.toLowerCase()}`}>{status}</span>;
-}
-
-function RefreshIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M21 12a9 9 0 0 1-15.5 6.2" />
-      <path d="M3 12A9 9 0 0 1 18.5 5.8" />
-      <path d="M18 2v4h4" />
-      <path d="M6 22v-4H2" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
-      <path d="M2 14h4M10 8h4M18 16h4" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
   );
 }
