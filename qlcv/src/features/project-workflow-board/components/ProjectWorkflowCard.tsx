@@ -4,6 +4,8 @@ import { DragIndicatorOutlined, LockOutlined, WarningOutlined } from "@mui/icons
 import { Box, Button, Chip, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import { useDraggable } from "@dnd-kit/core";
 import type { ProjectBoardCard } from "@/api/projects.api";
+import { authStore } from "@/features/auth";
+import { canPerformAction } from "@/layouts/app-shell/model/access";
 import {
   CONFLICT_LABELS,
   formatCurrency,
@@ -20,7 +22,9 @@ export function ProjectWorkflowCard({
   onOverrideConflict,
 }: ProjectWorkflowCardProps) {
   const hasConflict = project.conflict_status === "CONFLICT_DETECTED";
-  const canMove = (project.actions?.move ?? true) && !hasConflict;
+  const role = authStore.getUser()?.role ?? "";
+  const canMove = canPerformAction(project.actions, "move", role) && !hasConflict;
+  const canOverrideConflict = canPerformAction(project.actions, "override_conflict", role);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: project.id,
     data: { project },
@@ -124,7 +128,7 @@ export function ProjectWorkflowCard({
           </Typography>
         ) : null}
 
-        {hasConflict && project.actions?.override_conflict ? (
+        {hasConflict && canOverrideConflict ? (
           <Button
             size="small"
             color="error"

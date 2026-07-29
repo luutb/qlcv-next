@@ -18,8 +18,10 @@ import {
   type WorkflowFinancialBlockedDetails,
 } from "@/api/errors";
 import { workflowQueryKeys } from "@/api/query-keys";
+import { authStore } from "@/features/auth";
 import { useWorkflowTemplates } from "@/features/workflow-templates";
 import { CreateProjectModal } from "@/features/projects";
+import { canPerformAction } from "@/layouts/app-shell/model/access";
 import { WorkflowMacroColumn } from "./components/WorkflowMacroColumn";
 import {
   PaymentRequiredModal,
@@ -117,7 +119,7 @@ export function WorkflowBoardPage() {
       return;
     }
 
-    if (!project.actions?.move) {
+    if (!canPerformAction(project.actions, "move", authStore.getUser()?.role ?? "")) {
       setWarningMessage("Bạn không có quyền move project này.");
       return;
     }

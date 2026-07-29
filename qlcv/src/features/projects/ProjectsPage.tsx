@@ -7,12 +7,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listProjects, type ProjectSummary } from "@/api/projects.api";
 import { getDebugErrorInfo, getUserFacingErrorMessage } from "@/api/errors";
+import { authStore } from "@/features/auth";
+import { canPerformAction } from "@/layouts/app-shell/model/access";
 import { CreateProjectModal } from "./components/CreateProjectModal";
 import { useProjectWorkflowTemplates } from "./queries/project.queries";
 import { formatCurrency, getConflictColor } from "./projects.utils";
 
 export function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false);
+  const role = authStore.getUser()?.role ?? "";
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: ({ signal }) => listProjects(signal),
@@ -97,24 +100,24 @@ export function ProjectsPage() {
                 key: "actions",
                 render: (_value, record) => (
                   <Space wrap>
-                    {record.actions?.view === false ? null : (
+                    {canPerformAction(record.actions, "view", role) ? (
                       <Link href={`/projects/${record.id}`}>
                         <Button size="small">Chi tiết</Button>
                       </Link>
-                    )}
-                    {record.actions?.move ? (
+                    ) : null}
+                    {canPerformAction(record.actions, "move", role) ? (
                       <Link href="/projects/board">
                         <Button size="small">Move trên board</Button>
                       </Link>
                     ) : null}
-                    {record.actions?.edit ? <Button size="small">Sửa</Button> : null}
-                    {record.actions?.delete ? (
+                    {canPerformAction(record.actions, "edit", role) ? <Button size="small">Sửa</Button> : null}
+                    {canPerformAction(record.actions, "delete", role) ? (
                       <Button size="small" danger>
                         Xóa
                       </Button>
                     ) : null}
-                    {record.actions?.restore ? <Button size="small">Khôi phục</Button> : null}
-                    {record.actions?.lock ? <Button size="small">Khóa</Button> : null}
+                    {canPerformAction(record.actions, "restore", role) ? <Button size="small">Khôi phục</Button> : null}
+                    {canPerformAction(record.actions, "lock", role) ? <Button size="small">Khóa</Button> : null}
                   </Space>
                 ),
               },

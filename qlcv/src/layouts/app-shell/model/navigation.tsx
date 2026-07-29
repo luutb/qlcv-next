@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AdminPanelSettings, Assessment, Assignment, Category, Dashboard, Description, Home, Inventory2, People, Person, ReceiptLong, Settings, TaskAlt, ViewKanban, WorkHistory } from "@mui/icons-material";
 import type { KnownRole } from "./roles";
+import { canAccessPath } from "./access";
 
 export type NavItem = { label: string; href: string; icon: ReactNode; roles?: KnownRole[]; always?: boolean };
 
@@ -25,5 +26,9 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export function getVisibleNavItems(role: string) {
-  return NAV_ITEMS.filter((item) => item.always || item.roles?.includes(role as KnownRole));
+  return NAV_ITEMS.filter(
+    (item) =>
+      canAccessPath(item.href, role) &&
+      (item.always || item.roles?.includes(role as KnownRole)),
+  );
 }
