@@ -59,7 +59,7 @@ export function WorkBoardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createDraft, setCreateDraft] = useState<CreateDraft>(() => defaultCreateDraft());
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settings, setSettings] = useState<Settings>(() => readSettings());
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [toast, setToast] = useState("");
   const [dropTarget, setDropTarget] = useState<WorkStepId | null>(null);
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -88,6 +88,11 @@ export function WorkBoardPage() {
         (dueFilter === "all" || (dueFilter === "overdue" && dueKind === "overdue") || (dueFilter === "today" && diff === 0) || (dueFilter === "week" && diff >= 0 && diff <= 7));
     });
   }, [assigneeFilter, dueFilter, issues, labelFilter, projectFilter, search, statusFilter, workflowFilter]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setSettings(readSettings()));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     applyBodySettings(settings);
