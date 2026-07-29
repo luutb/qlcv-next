@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { DashboardQuery, DashboardSummary } from "@/features/dashboard/dashboard.types";
+import type { DashboardQuery, DashboardSummary } from "./dashboard.types";
 
 export function getDashboardSummary(query: DashboardQuery, signal?: AbortSignal) {
   return apiRequest<DashboardSummary>("/api/v1/dashboard/summary", {

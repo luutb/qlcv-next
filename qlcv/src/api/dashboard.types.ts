@@ -1,3 +1,4 @@
+// Transport contract for the dashboard summary endpoint.
 export type DashboardRange = "7d" | "30d" | "90d" | "custom";
 
 export type DashboardQuery = {

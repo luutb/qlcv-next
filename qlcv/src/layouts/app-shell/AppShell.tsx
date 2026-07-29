@@ -44,7 +44,7 @@ import {
 import { useEffect, useState } from "react";
 import { logout } from "@/api/auth.api";
 import { SessionExpiredError } from "@/api/client";
-import { authStore } from "@/features/auth/auth.store";
+import { authStore } from "@/features/auth";
 
 const drawerWidth = 264;
 

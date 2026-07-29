@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardSummary } from "@/api/dashboard.api";
-import type { DashboardQuery } from "./dashboard.types";
+import type { DashboardQuery } from "@/api/dashboard.types";
 
 export const dashboardQueryKeys = {
   all: ["dashboard"] as const,
