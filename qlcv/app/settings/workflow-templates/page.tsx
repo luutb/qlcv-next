@@ -1,4 +1,4 @@
-import { WorkflowTemplateSettingsPage } from "@/features/workflow-board/WorkflowTemplateSettingsPage";
+import { WorkflowTemplateSettingsPage } from "@/features/workflow-templates";
 
 export default function WorkflowTemplatesRoute() {
   return <WorkflowTemplateSettingsPage />;

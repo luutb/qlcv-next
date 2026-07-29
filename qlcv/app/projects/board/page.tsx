@@ -1,4 +1,4 @@
-import { WorkflowBoardPage } from "@/features/workflow-board/WorkflowBoardPage";
+import { WorkflowBoardPage } from "@/features/project-workflow-board";
 
 export default function ProjectBoardRoute() {
   return <WorkflowBoardPage />;

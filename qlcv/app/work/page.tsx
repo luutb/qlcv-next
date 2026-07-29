@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { WorkBoardPage } from "@/features/work-board/WorkBoardPage";
+import { WorkBoardPage } from "@/features/work-board";
 
 export default function WorkRoute() {
   return (

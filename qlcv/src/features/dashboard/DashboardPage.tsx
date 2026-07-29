@@ -13,7 +13,7 @@ import type {
   DashboardQuery,
   DashboardRange,
   DashboardSummary,
-} from "./dashboard.types";
+} from "@/api/dashboard.types";
 
 const RANGE_OPTIONS: Array<{ value: DashboardRange; label: string }> = [
   { value: "7d", label: "7 ngày" },

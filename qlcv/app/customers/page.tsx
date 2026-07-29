@@ -1,4 +1,4 @@
-import { PlaceholderPage } from "@/features/shared/PlaceholderPage";
+import { PlaceholderPage } from "@/shared/ui";
 
 export default function CustomersPage() {
   return (
