@@ -261,7 +261,7 @@ export function WorkBoardPage() {
   useEffect(() => {
     applyBodySettings(settings);
     return () => {
-      document.body.classList.remove("od-workboard--density-compact", "od-workboard--readonly");
+      document.body.classList.remove("od-workboard--density-compact");
       SETTINGS_FIELDS.forEach((field) => document.body.classList.remove(`od-workboard--hide-${field}`));
     };
   }, [settings]);
@@ -269,6 +269,9 @@ export function WorkBoardPage() {
   useEffect(() => {
     document.body.classList.toggle("od-workboard--readonly", readonly);
     applyFieldVisibility(settings.fields);
+    return () => {
+      document.body.classList.remove("od-workboard--readonly");
+    };
   }, [readonly, settings.fields]);
 
   function notify(message: string) {

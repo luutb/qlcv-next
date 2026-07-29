@@ -155,7 +155,12 @@ export function WorkflowBoardPage() {
             <Button icon={<ReloadOutlined />} onClick={() => boardQuery.refetch()}>
               Tải lại
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={templatesQuery.isLoading || templates.length === 0}
+              onClick={() => setCreateOpen(true)}
+            >
               Tạo project
             </Button>
           </Space>
