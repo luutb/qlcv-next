@@ -10,6 +10,7 @@ Dự án đang trong giai đoạn ổn định lại kiến trúc và chưa sẵ
 - API hiện còn dùng lẫn `src/repositories`, `src/api` và `src/services`.
 - TypeScript, ESLint, test và production build chưa đạt tiêu chuẩn phát hành.
 - Kế hoạch tổng thể nằm tại [docs/ROADMAP.md](docs/ROADMAP.md); backlog chi tiết Story → Task → Issue nằm tại [docs/BACKLOG.md](docs/BACKLOG.md).
+- Quy trình branch và các cổng QA/PO nằm tại [docs/DEVELOPMENT_WORKFLOW.md](docs/DEVELOPMENT_WORKFLOW.md).
 
 ## Chạy dự án
 
@@ -44,7 +45,9 @@ npm test
 npm run build
 ```
 
-Một thay đổi chỉ được xem là hoàn thành khi bốn kiểm tra trên đều vượt qua và luồng liên quan đã được kiểm thử với backend thật.
+Trong giai đoạn ST-01 đến khi ST-05 được QA xác nhận hoàn thành, mỗi thay đổi phải chạy kiểm tra phù hợp phạm vi, không tạo thêm lỗi so với [quality baseline](docs/QUALITY_BASELINE.md) và phải lưu bằng chứng cho các kiểm tra chưa thể chạy. Sau khi ST-05 đạt QA `PASS`, cả bốn lệnh trên trở thành quality gate bắt buộc.
+
+Kiểm thử với backend thật là bắt buộc cho Issue thay đổi contract hoặc luồng tích hợp khi môi trường tương ứng sẵn sàng. Các Issue thuần tài liệu, cấu hình hoặc kiểm thử cô lập dùng evidence phù hợp với phạm vi thay vì giả lập một lần kiểm thử backend không liên quan.
 
 ## Quy ước kiến trúc mục tiêu
 

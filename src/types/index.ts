@@ -1,25 +1,36 @@
-// Core Domain Types
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-  CANCELLED = 'cancelled'
-}
+import type { User } from './user.types';
+import type { Task, TaskStatus } from './task.types';
 
+export type {
+  CreateCertificateRequest,
+  CreateEducationRequest,
+  CreateUserRequest,
+  Role,
+  UpdateProfileRequest,
+  UpdateUserRequest,
+  User,
+  UserCertificate,
+  UserDetail,
+  UserEducation,
+  UserQueryParams,
+} from './user.types';
+export type {
+  PaymentAction,
+  Task,
+  TaskHistory,
+  TaskHistoryAction,
+  TaskStatus,
+  TaskStepStatus,
+  WorkflowStepConfig,
+} from './task.types';
+
+// Core Domain Types
 export enum PaymentStatus {
   UNPAID = 'unpaid',
   PARTIAL = 'partial',
   PAID = 'paid',
   OVERDUE = 'overdue',
   REFUNDED = 'refunded'
-}
-
-export enum UserRole {
-  STAFF = 'staff',
-  ACCOUNTANT = 'accountant',
-  MANAGER = 'manager',
-  ADMIN = 'admin'
 }
 
 export enum Priority {
@@ -37,19 +48,6 @@ export enum CaseStatus {
 }
 
 // Core Interfaces
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  role: UserRole;
-  permissions: Permission[];
-  department?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Permission {
   id: string;
   resource: string;
@@ -88,28 +86,6 @@ export interface Case {
   estimatedHours?: number;
   actualHours?: number;
   members: User[];
-}
-
-export interface Task {
-  id: string;
-  taskCode: string;
-  caseId: string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  priority: Priority;
-  assignee: User;
-  reporter: User;
-  tags: string[];
-  dueDate?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  dependencies: string[];
-  attachments: Attachment[];
-  comments: Comment[];
-  subtasks: Task[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Payment {
