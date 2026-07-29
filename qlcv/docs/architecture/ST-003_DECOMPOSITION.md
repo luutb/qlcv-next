@@ -25,7 +25,8 @@ owning feature entry and no `@/features/*/*` deep import remains.
 - Presentation components use domain-specific nouns; model files use the
   `<domain>.<kind>` convention.
 - The duplicate person-initial helper is now owned by
-  `shared/lib/presentation` and consumed by Dashboard and Work Board.
+  `shared/lib/presentation` and consumed by Dashboard and Work Board. Its
+  optional unassigned label preserves each feature's existing output.
 - Feature-specific CSS selectors, status labels and SVG sets remain local to
   avoid creating styling dependencies through `shared`.
 

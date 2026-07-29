@@ -61,7 +61,7 @@ export function IssueCard({
       <div className="od-workboard__card-foot">
         <span className="field-assignee">
           <span className="od-workboard__avatar" aria-hidden="true">
-            {getInitials(issue.assignee)}
+            {getInitials(issue.assignee, "--")}
           </span>
           {issue.assignee}
         </span>

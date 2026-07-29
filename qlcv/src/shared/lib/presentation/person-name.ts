@@ -1,5 +1,5 @@
-export function getInitials(name: string): string {
-  if (name === "Unassigned") return "--";
+export function getInitials(name: string, unassignedLabel?: string): string {
+  if (name === "Unassigned" && unassignedLabel) return unassignedLabel;
 
   return name
     .split(" ")
