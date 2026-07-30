@@ -1,10 +1,10 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { Suspense } from "react";
+import { UsersListPage } from "../../src/features/users/list/UsersListPage";
 
 export default function UsersRoute() {
   return (
-    <PlaceholderPage
-      title="User Management"
-      description="Route canonical cho quản lý nhân viên. User 360 được triển khai trong ST-011."
-    />
+    <Suspense fallback={null}>
+      <UsersListPage />
+    </Suspense>
   );
 }
