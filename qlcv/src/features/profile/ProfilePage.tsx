@@ -23,6 +23,7 @@ import {
   type ManagedUser,
 } from "@/api/users.api";
 import { authStore } from "@/features/auth";
+import { ProfileDocumentsPanel } from "@/features/profile-documents";
 import { ErrorState, MutationFeedback, StaleDataState } from "@/shared/ui";
 
 type FormValues = { username: string; email: string };
@@ -192,6 +193,22 @@ export function ProfilePage() {
                 {mutationState === "pending" ? "Đang lưu…" : "Lưu thay đổi"}
               </Button>
             </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined">
+        <CardContent>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
+                Hồ sơ đính kèm
+              </Typography>
+              <Typography color="text.secondary" variant="body2">
+                Lưu và quản lý các tài liệu thuộc hồ sơ cá nhân của bạn.
+              </Typography>
+            </Box>
+            <ProfileDocumentsPanel entityType="user" entityId={user.id} active />
           </Stack>
         </CardContent>
       </Card>

@@ -28,12 +28,13 @@ import {
   type ManagedUser,
 } from "@/api/users.api";
 import { authStore } from "@/features/auth";
+import { ProfileDocumentsPanel } from "@/features/profile-documents";
 import { userQueryKeys } from "../model/user-query-keys";
 import { getUserRoleLabel } from "../list/UserListFilters";
 import { AssignedWorkTab } from "./AssignedWorkTab";
 import { canManageUserAction } from "./user-detail-permissions";
 
-type DetailTab = "overview" | "security" | "assigned-work";
+type DetailTab = "overview" | "security" | "assigned-work" | "profile-documents";
 type LifecycleAction = "activate" | "deactivate";
 type Feedback = { type: "success" | "error" | "warning"; message: string } | null;
 
@@ -271,6 +272,17 @@ export function UserDetailPage({ userId }: { userId: string }) {
               key: "assigned-work",
               label: "Công việc được giao",
               children: <AssignedWorkTab userId={user.id} active={activeTab === "assigned-work"} />,
+            },
+            {
+              key: "profile-documents",
+              label: "Hồ sơ đính kèm",
+              children: (
+                <ProfileDocumentsPanel
+                  entityType="user"
+                  entityId={user.id}
+                  active={activeTab === "profile-documents"}
+                />
+              ),
             },
           ]}
         />
