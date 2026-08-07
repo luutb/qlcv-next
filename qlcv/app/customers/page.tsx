@@ -1,12 +1,7 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { CustomersListPage } from "@/features/customers";
 
 export default function CustomersPage() {
   return (
-    <PlaceholderPage
-      title="Customers"
-      description="Danh sách customer, conflict entries và profile documents."
-      actionHref="/dashboard"
-      actionLabel="Về dashboard"
-    />
+    <CustomersListPage />
   );
 }

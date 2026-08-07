@@ -1,10 +1,7 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { LabelsPage } from "@/features/labels";
 
 export default function LabelsRoute() {
   return (
-    <PlaceholderPage
-      title="Labels"
-      description="Quản lý label catalog và label assignments."
-    />
+    <LabelsPage />
   );
 }

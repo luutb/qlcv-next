@@ -7,7 +7,15 @@ import { DisplaySettingsSheet } from "./components/DisplaySettingsSheet";
 import { IssueDrawer } from "./components/IssueDrawer";
 import { WorkBoardControls } from "./components/WorkBoardControls";
 import { WorkBoardViews } from "./components/WorkBoardViews";
-import { INITIAL_ISSUES, STEPS } from "./model/work-board.fixtures";
+import { STEPS } from "./model/work-board.fixtures";
+import {
+  createTask,
+  deleteTask,
+  listTasks,
+  updateTask,
+  updateTaskWorkflowStep,
+  type ProjectTask,
+} from "../../api/tasks.api";
 import {
   DEFAULT_SETTINGS,
   SETTINGS_FIELDS,
@@ -31,7 +39,6 @@ import {
   defaultCreateDraft,
   dueState,
   issueToDraft,
-  parseLabels,
   projectFor,
   stepFor,
 } from "./model/work-board.utils";
@@ -43,7 +50,7 @@ export function WorkBoardPage() {
   const role = searchParams.get("role") === "accountant" ? "ACCOUNTANT" : "PARTNER";
   const createRequested = searchParams.get("new") === "1";
 
-  const [issues, setIssues] = useState<WorkIssue[]>(INITIAL_ISSUES);
+  const [issues, setIssues] = useState<WorkIssue[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [search, setSearch] = useState("");
   const [workflowFilter, setWorkflowFilter] = useState<string>("all");
@@ -68,6 +75,57 @@ export function WorkBoardPage() {
     () => issues.find((issue) => issue.id === selectedIssueId) ?? null,
     [issues, selectedIssueId],
   );
+
+  function taskToIssue(task: ProjectTask): WorkIssue {
+    const stepValue = task.workflow_step_key ?? task.workflow_step_id ?? "unassigned";
+    const step = STEPS.some((candidate) => candidate.id === stepValue)
+      ? (stepValue as WorkStepId)
+      : "unassigned";
+    const labels = (task.labels ?? []).map((label) => typeof label === "string" ? label : label.name ?? "").filter(Boolean);
+    return {
+      id: task.id,
+      title: task.title,
+      projectId: task.project_id,
+      step,
+      workflowStepId: task.workflow_step_id,
+      status: task.status,
+      assignee: task.assignee_name ?? task.assignee_id ?? "Unassigned",
+      due: task.due_date ?? "",
+      labels,
+      description: task.description ?? "",
+      created: task.created_at,
+      updated: task.updated_at,
+      priority: task.priority ?? "MEDIUM",
+    };
+  }
+
+  function issueToTaskPayload(draft: WorkDraft, issue?: WorkIssue) {
+    return {
+      project_id: draft.projectId,
+      workflow_step_id: issue?.workflowStepId ?? (draft.step === "unassigned" ? null : draft.step),
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      status: draft.status,
+      assignee_id: draft.assignee === "Unassigned" ? null : draft.assignee,
+      due_date: draft.due || null,
+    };
+  }
+
+  async function loadBoard() {
+    try {
+      const response = await listTasks({ limit: 200, offset: 0 });
+      setIssues(response.data.map(taskToIssue));
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thể tải Work Board từ API.");
+    }
+  }
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => void loadBoard());
+    return () => window.cancelAnimationFrame(frame);
+    // The board fetch is intentionally performed once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const readonly = role === "ACCOUNTANT";
   const filteredIssues = useMemo(() => {
@@ -131,9 +189,7 @@ export function WorkBoardPage() {
   }
 
   function refreshBoard() {
-    window.setTimeout(() => {
-      notify("Work Board đã được tải lại.");
-    }, 650);
+    void loadBoard();
   }
 
   function clearFilters() {
@@ -160,45 +216,40 @@ export function WorkBoardPage() {
     setSelectedIssueId(null);
   }
 
-  function saveDrawer() {
+  async function saveDrawer() {
     if (!selectedIssueId || !drawerDraft) return;
     if (readonly) {
       notify("Tài khoản read-only không thể lưu issue.");
       return;
     }
 
-    setIssues((current) =>
-      current.map((issue) => {
-        if (issue.id !== selectedIssueId) return issue;
-        return {
-          ...issue,
-          title: drawerDraft.title.trim() || issue.title,
-          projectId: drawerDraft.projectId,
-          step: drawerDraft.step,
-          status: drawerDraft.status,
-          assignee: drawerDraft.assignee,
-          due: drawerDraft.due,
-          labels: parseLabels(drawerDraft.labels),
-          description: drawerDraft.description.trim(),
-          updated: "Vừa xong",
-        };
-      }),
-    );
-
-    notify("Đã lưu thay đổi issue.");
-    closeDrawer();
+    const issue = issues.find((item) => item.id === selectedIssueId);
+    if (!issue) return;
+    try {
+      const task = await updateTask(selectedIssueId, issueToTaskPayload(drawerDraft, issue));
+      setIssues((current) => current.map((item) => item.id === selectedIssueId ? taskToIssue(task) : item));
+      notify("Đã lưu thay đổi issue.");
+      closeDrawer();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thể lưu issue.");
+    }
   }
 
-  function deleteIssue() {
+  async function deleteIssue() {
     if (!selectedIssueId) return;
     if (readonly) {
       notify("Tài khoản read-only không thể xóa issue.");
       return;
     }
 
-    setIssues((current) => current.filter((issue) => issue.id !== selectedIssueId));
-    notify("Đã xóa issue khỏi board.");
-    closeDrawer();
+    try {
+      await deleteTask(selectedIssueId);
+      setIssues((current) => current.filter((issue) => issue.id !== selectedIssueId));
+      notify("Đã xóa issue khỏi board.");
+      closeDrawer();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thể xóa issue.");
+    }
   }
 
   function moveSelectedIssue(nextStep: WorkStepId) {
@@ -207,7 +258,7 @@ export function WorkBoardPage() {
     setDrawerDraft((current) => (current ? { ...current, step: nextStep } : current));
   }
 
-  function createIssue() {
+  async function createIssue() {
     if (readonly) {
       notify("Tài khoản read-only không thể tạo issue.");
       return;
@@ -229,30 +280,20 @@ export function WorkBoardPage() {
       }
     }
 
-    const nextId = `ISS-${2426 + issues.length}`;
-    const nextIssue: WorkIssue = {
-      id: nextId,
-      title,
-      projectId: createDraft.projectId,
-      step: createDraft.step,
-      status: createDraft.status,
-      assignee: createDraft.assignee,
-      due: createDraft.due || "2026-06-21",
-      labels: parseLabels(createDraft.labels),
-      description: createDraft.description.trim(),
-      created: "Hôm nay",
-      updated: "Vừa xong",
-      priority: "MEDIUM",
-    };
-
-    setIssues((current) => [nextIssue, ...current]);
-    closeCreate();
-    setActiveStep(createDraft.step);
-    setCreateDraft(defaultCreateDraft(createDraft.step));
-    notify(`Đã tạo ${nextId}.`);
+    try {
+      const task = await createTask(issueToTaskPayload(createDraft));
+      const nextIssue = taskToIssue(task);
+      setIssues((current) => [nextIssue, ...current]);
+      closeCreate();
+      setActiveStep(nextIssue.step);
+      setCreateDraft(defaultCreateDraft(createDraft.step));
+      notify(`Đã tạo ${nextIssue.id}.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thể tạo issue.");
+    }
   }
 
-  function moveIssue(issueId: string, nextStep: WorkStepId) {
+  async function moveIssue(issueId: string, nextStep: WorkStepId) {
     if (readonly) {
       notify("Tài khoản read-only không thể kéo thả issue.");
       return;
@@ -261,21 +302,14 @@ export function WorkBoardPage() {
     const issue = issues.find((item) => item.id === issueId);
     if (!issue || issue.step === nextStep) return;
 
-    const previousStep = issue.step;
-    setIssues((current) =>
-      current.map((item) => (item.id === issueId ? { ...item, step: nextStep, updated: "Vừa xong" } : item)),
-    );
-    notify(`Đã chuyển ${issueId} sang ${stepFor(nextStep).name}.`);
-
-    if (issueId === "ISS-2420" && nextStep === "signing") {
-      window.setTimeout(() => {
-        setIssues((current) =>
-          current.map((item) =>
-            item.id === issueId ? { ...item, step: previousStep, updated: "09:20" } : item,
-          ),
-        );
-        notify("API từ chối move do thiếu xác nhận khách hàng. Đã rollback.");
-      }, 700);
+    try {
+      const updated = await updateTaskWorkflowStep(issueId, {
+        workflow_step_id: nextStep === "unassigned" ? null : nextStep,
+      });
+      setIssues((current) => current.map((item) => item.id === issueId ? taskToIssue(updated) : item));
+      notify(`Đã chuyển ${issueId} sang ${stepFor(nextStep).name}.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "API từ chối chuyển workflow step.");
     }
   }
 

@@ -6,6 +6,11 @@ export type Customer = {
   organization_id: string;
   name: string;
   tax_code?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  representative_name?: string | null;
+  notes?: string | null;
   deleted_at?: string | null;
   created_at: string;
   actions?: Actions;
@@ -16,6 +21,16 @@ export type CustomerListResponse = PaginatedResponse<Customer>;
 export type CustomerRequest = {
   name: string;
   tax_code?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  representative_name?: string | null;
+  notes?: string | null;
+};
+
+export type CustomerListQuery = ListQuery & {
+  q?: string;
+  include_deleted?: boolean;
 };
 
 export type CustomerConflict = {
@@ -32,7 +47,7 @@ export type CreateCustomerConflictRequest = {
   conflict_name: string;
 };
 
-export function listCustomers(query: ListQuery = {}, signal?: AbortSignal) {
+export function listCustomers(query: CustomerListQuery = {}, signal?: AbortSignal) {
   return apiRequest<CustomerListResponse>("/api/v1/customers", { query, signal });
 }
 

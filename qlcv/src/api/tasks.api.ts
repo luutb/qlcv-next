@@ -18,6 +18,12 @@ export type ProjectTask = {
   position: number;
   created_at: string;
   updated_at: string;
+  /** Optional denormalized fields returned by board/list implementations. */
+  workflow_step_key?: string | null;
+  assignee_name?: string | null;
+  project_name?: string | null;
+  labels?: Array<string | { name?: string | null }>;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT" | null;
 };
 
 export type TaskListQuery = ListQuery & {
@@ -42,6 +48,11 @@ export type TaskRequest = {
 
 export type UpdateTaskStatusRequest = {
   status: TaskStatus;
+};
+
+export type UpdateTaskWorkflowStepRequest = {
+  workflow_step_id?: string | null;
+  position?: number;
 };
 
 export type UpdateTaskAssigneeRequest = {
@@ -80,6 +91,13 @@ export function updateTask(id: string, payload: TaskRequest) {
 
 export function updateTaskStatus(id: string, payload: UpdateTaskStatusRequest) {
   return apiRequest<ProjectTask, UpdateTaskStatusRequest>(`/api/v1/tasks/${id}/status`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function updateTaskWorkflowStep(id: string, payload: UpdateTaskWorkflowStepRequest) {
+  return apiRequest<ProjectTask, UpdateTaskWorkflowStepRequest>(`/api/v1/tasks/${id}/workflow-step`, {
     method: "PATCH",
     body: payload,
   });

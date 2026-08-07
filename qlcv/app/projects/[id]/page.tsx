@@ -1,10 +1,6 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { ProjectDetailPage } from "@/features/projects";
 
-export default function ProjectDetailRoute() {
-  return (
-    <PlaceholderPage
-      title="Project Detail"
-      description="Chi tiết project, workflow step, payment và conflict state."
-    />
-  );
+export default async function ProjectDetailRoute({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <ProjectDetailPage projectId={id} />;
 }

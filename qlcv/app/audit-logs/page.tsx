@@ -1,10 +1,7 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { AuditLogsPage } from "@/features/audit-logs";
 
 export default function AuditLogsRoute() {
   return (
-    <PlaceholderPage
-      title="Audit Logs"
-      description="Tra cứu audit chain và verify integrity."
-    />
+    <AuditLogsPage />
   );
 }

@@ -1,10 +1,7 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { OkrPage } from "@/features/okr";
 
 export default function OkrRoute() {
   return (
-    <PlaceholderPage
-      title="OKR"
-      description="Cycle, objective, key result và summary report."
-    />
+    <OkrPage />
   );
 }

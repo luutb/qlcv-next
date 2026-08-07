@@ -2,7 +2,11 @@ import { PROJECTS, STEPS, TODAY } from "./work-board.fixtures";
 import type { CreateDraft, WorkDraft, WorkIssue, WorkStepId } from "./work-board.types";
 
 export function projectFor(issue: WorkIssue) {
-  return PROJECTS.find((project) => project.id === issue.projectId) ?? PROJECTS[0];
+  return PROJECTS.find((project) => project.id === issue.projectId) ?? {
+    id: issue.projectId,
+    name: issue.projectId,
+    customer: "",
+  };
 }
 
 export function stepFor(id: string) {

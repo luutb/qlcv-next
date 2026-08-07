@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { VersionConflictError } from "@/api/client";
+import { disableMfa, enableMfa, type EnableMfaResponse } from "@/api/auth.api";
 import { getUserFacingErrorMessage } from "@/api/errors";
 import {
   getCurrentUser,
@@ -37,6 +38,10 @@ export function ProfilePage() {
   const [mutationState, setMutationState] = useState<MutationState>("idle");
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaEnrollment, setMfaEnrollment] = useState<EnableMfaResponse | null>(null);
+  const [totpCode, setTotpCode] = useState("");
 
   const loadProfile = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -105,6 +110,18 @@ export function ProfilePage() {
       setMutationError(getUserFacingErrorMessage(error));
       setMutationState("error");
     }
+  }
+
+  async function handleEnableMfa() {
+    if (mfaPending) return;
+    setMfaPending(true); setMfaError(null);
+    try { setMfaEnrollment(await enableMfa()); } catch (error) { setMfaError(getUserFacingErrorMessage(error)); } finally { setMfaPending(false); }
+  }
+
+  async function handleDisableMfa() {
+    if (mfaPending || totpCode.trim().length < 6) return;
+    setMfaPending(true); setMfaError(null);
+    try { const updated = await disableMfa({ totp_code: totpCode.trim() }); authStore.setUser(updated); setUser((current) => current ? { ...current, mfa_enabled: updated.mfa_enabled ?? false } : current); setTotpCode(""); setMfaEnrollment(null); } catch (error) { setMfaError(getUserFacingErrorMessage(error)); } finally { setMfaPending(false); }
   }
 
   if (loading && !user) return <ProfileSkeleton />;
@@ -177,9 +194,7 @@ export function ProfilePage() {
               />
             </Stack>
 
-            {user.mfa_enabled ? (
-              <Alert severity="info">MFA đang bật. Quản lý MFA được tạm hoãn theo phạm vi hiện tại.</Alert>
-            ) : null}
+            <Card variant="outlined"><CardContent><Stack spacing={1.5}><Typography variant="h6">MFA</Typography>{mfaError ? <Alert severity="error">{mfaError}</Alert> : null}{user.mfa_enabled ? <><Alert severity="success">MFA đang bật.</Alert><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><TextField label="Mã TOTP" value={totpCode} onChange={(event) => setTotpCode(event.target.value)} /><Button variant="outlined" color="error" disabled={mfaPending || totpCode.trim().length < 6} onClick={() => void handleDisableMfa()}>Tắt MFA</Button></Stack></> : <><Alert severity="warning">MFA chưa được bật.</Alert><Button variant="outlined" disabled={mfaPending} onClick={() => void handleEnableMfa()}>Bật MFA</Button>{mfaEnrollment ? <Stack spacing={1}><Typography variant="body2">Nhập secret này vào ứng dụng authenticator:</Typography><Typography sx={{ fontFamily: "monospace", wordBreak: "break-all" }}>{mfaEnrollment.secret || "Backend không trả secret"}</Typography>{mfaEnrollment.qr_code_uri || mfaEnrollment.otpauth_url ? <Typography variant="caption" sx={{ wordBreak: "break-all" }}>{mfaEnrollment.qr_code_uri || mfaEnrollment.otpauth_url}</Typography> : null}</Stack> : null}</>}</Stack></CardContent></Card>
 
             <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
               <Button

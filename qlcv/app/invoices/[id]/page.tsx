@@ -1,10 +1,6 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { InvoiceDetailPage } from "@/features/invoices";
 
-export default function InvoiceDetailRoute() {
-  return (
-    <PlaceholderPage
-      title="Invoice Detail"
-      description="Chi tiết invoice và các time entries đã được đưa vào invoice."
-    />
-  );
+export default async function InvoiceDetailRoute({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <InvoiceDetailPage invoiceId={id} />;
 }

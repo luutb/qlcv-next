@@ -1,10 +1,7 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { DocumentsPage } from "@/features/documents";
 
 export default function DocumentsRoute() {
   return (
-    <PlaceholderPage
-      title="Documents"
-      description="Upload, download, lock và soft delete tài liệu dự án."
-    />
+    <DocumentsPage />
   );
 }

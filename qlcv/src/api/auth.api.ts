@@ -30,6 +30,7 @@ export type AuthUser = {
 export type EnableMfaResponse = {
   secret?: string;
   otpauth_url?: string;
+  qr_code_uri?: string;
   qr_code?: string;
   message?: string;
   [key: string]: unknown;

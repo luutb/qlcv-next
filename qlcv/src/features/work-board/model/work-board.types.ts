@@ -30,6 +30,7 @@ export type WorkIssue = {
   created: string;
   updated: string;
   priority: WorkPriority;
+  workflowStepId?: string | null;
 };
 
 export type WorkDraft = {

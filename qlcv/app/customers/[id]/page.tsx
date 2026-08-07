@@ -1,10 +1,6 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { CustomerDetailPage } from "@/features/customers";
 
-export default function CustomerDetailRoute() {
-  return (
-    <PlaceholderPage
-      title="Customer Detail"
-      description="Chi tiết customer, conflict entries và profile documents."
-    />
-  );
+export default async function CustomerDetailRoute({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <CustomerDetailPage customerId={id} />;
 }

@@ -1,10 +1,7 @@
-import { PlaceholderPage } from "@/shared/ui";
+import { PurgePage } from "@/features/admin";
 
 export default function AdminPurgeRoute() {
   return (
-    <PlaceholderPage
-      title="Admin Purge"
-      description="Trang purge dữ liệu và retention cho SUPER_ADMIN."
-    />
+    <PurgePage />
   );
 }
