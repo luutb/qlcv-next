@@ -1,0 +1,21 @@
+"use client";
+import { useState } from "react";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
+import { resetEmployeePassword, setEmployeeRole, setEmployeeStatus, type Employee, type EmployeeRole } from "../../api/employees.api";
+import { useEmployeeAccess, useRefreshEmployees } from "../../hooks/use-employees";
+import { employeeError, employeeRoles } from "../../model/employee-feedback";
+import { isValidEmployeePassword } from "../../model/account-validation";
+export type AccountAction = "status"|"role"|"password";
+export function EmployeeAccountAction({employee,action,onClose,onSaved}:{employee:Employee;action:AccountAction;onClose:()=>void;onSaved:(message:string)=>void}) {
+ const {token,allowed,user}=useEmployeeAccess();const refresh=useRefreshEmployees();const [role,setRole]=useState<EmployeeRole>(employee.role);const [password,setPassword]=useState("");
+ const isSelf=user.data?.id===employee.id;
+ const blocked=!allowed||(isSelf&&action!=="password");
+ const title=action==="role"?"Đổi vai trò tài khoản":action==="password"?"Đặt lại mật khẩu":employee.is_active?"Ngừng hoạt động nhân viên?":"Kích hoạt lại nhân viên?";
+ const save=useMutation({mutationFn:()=>{if(!token||blocked)throw Error("Không có quyền quản lý tài khoản.");if(action==="password"&&!isValidEmployeePassword(password))throw Error("Mật khẩu cần ít nhất 6 ký tự và tối đa 72 byte.");const credentials={accessToken:token};return action==="role"?setEmployeeRole(credentials,employee.id,role):action==="password"?resetEmployeePassword(credentials,employee.id,password):setEmployeeStatus(credentials,employee.id,!employee.is_active);},onSuccess:async()=>{await refresh();onSaved(action==="role"?"Đã cập nhật vai trò tài khoản.":action==="password"?"Đã đặt lại mật khẩu.":employee.is_active?"Đã ngừng hoạt động nhân viên.":"Đã kích hoạt lại nhân viên.");onClose();}});
+ return <Dialog className="directory-dialog" open fullWidth maxWidth="sm" onClose={save.isPending?undefined:onClose} aria-labelledby="employee-account-title"><form onSubmit={event=>{event.preventDefault();if(!blocked&&!save.isPending)save.mutate();}}><DialogTitle id="employee-account-title">{title}</DialogTitle><DialogContent><Stack spacing={2}><p><strong>{employee.full_name}</strong> · {employee.username}</p>
+  {save.error&&<Alert severity="error">{employeeError(save.error,"Không cập nhật được tài khoản.")}</Alert>}
+  {blocked&&<Alert severity="warning">{!allowed?"Bạn không có quyền quản lý tài khoản.":"Bạn không thể tự ngừng hoạt động hoặc tự đổi vai trò của mình."}</Alert>}
+  {action==="status"?<p>{employee.is_active?"Nhân viên sẽ không thể đăng nhập hoặc tiếp tục gọi API bằng phiên cũ. Hồ sơ và thành viên đội nhóm được giữ lại; bạn có thể kích hoạt lại sau.":"Tài khoản sẽ được phép hoạt động trở lại và xuất hiện trong danh sách chọn người nhận việc."}</p>:action==="role"?<><TextField autoFocus select label="Vai trò mới" value={role} onChange={event=>{const value=event.target.value;if(value==="admin"||value==="manager"||value==="staff"||value==="accountant")setRole(value);}} disabled={blocked||save.isPending}>{Object.entries(employeeRoles).map(([value,label])=><MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField><Alert severity="info">Quyền của tài khoản sẽ thay đổi theo vai trò mới.</Alert></>:<TextField autoFocus required label="Mật khẩu mới" type="password" autoComplete="new-password" value={password} onChange={event=>setPassword(event.target.value)} slotProps={{htmlInput:{minLength:6,maxLength:72}}} helperText="Tối thiểu 6 ký tự, tối đa 72 byte. Mật khẩu không được hiển thị lại sau khi lưu." disabled={blocked||save.isPending}/>}
+ </Stack></DialogContent><DialogActions><Button disabled={save.isPending} onClick={onClose}>Hủy</Button><Button type="submit" variant="contained" color={action==="status"&&employee.is_active?"warning":"primary"} disabled={blocked||save.isPending||(action==="role"&&role===employee.role)||(action==="password"&&(!isValidEmployeePassword(password)))}>{save.isPending?"Đang lưu…":action==="status"?employee.is_active?"Ngừng hoạt động":"Kích hoạt lại":"Lưu thay đổi"}</Button></DialogActions></form></Dialog>;
+}

@@ -1,0 +1,58 @@
+version: 1
+name: qlcv-next-delivery
+language: vi
+
+autonomy:
+  human_acceptance_required: false
+  delegated_authority: "PO có quyền nhận nghiệm thu và đóng work item sau evidence QA, approval reviewer và xác nhận traceability của BA."
+  scope: "Agent tự điều phối và thực hiện mọi work item được suy ra từ docs-master; không cần xin người dùng duyệt từng handoff nội bộ. Thay đổi production, quyền hệ thống, chi phí hoặc dữ liệu ngoài workspace vẫn cần authority riêng."
+
+sources_of_truth:
+  - docs-master/QLCV_NEXT_BMAD_MASTER.md
+  - docs-master/QLCV_NEXT_API_MASTER.md
+change_control:
+  rule: "Khi hai master documents không mâu thuẫn, chúng là canonical. Agent không tự thay đổi product scope, API contract, RBAC hay ADR trái với chúng."
+  unresolved_gate: "Nếu master đánh dấu gate/decision là open, agent tự tạo evidence, phân tích tác động và kế hoạch đề xuất; chỉ yêu cầu authority mới khi thao tác nằm ngoài workspace hoặc cần quyết định business policy không suy ra được."
+
+roles:
+  product_owner: po
+  business_analyst: ba
+  product_designer: pd
+  solution_architect: architect
+  delivery_agents: [dev-1, dev-2, dev-3]
+  qa_lead: lead-qa
+  qa_agents: [qa-1, qa-2, qa-3]
+  code_reviewer: reviewer
+
+states: [backlog, analysis, discovery, planning, solutioning, architecture_review, ready_for_development, in_development, ready_for_qa, in_qa, returned_to_development, ready_for_review, in_review, returned_from_review, ready_for_po_acceptance, done, blocked, cancelled]
+
+transitions:
+  - { from: backlog, to: analysis, owner: po, contributors: [ba], required: [business_goal, outcome, initial_scope] }
+  - { from: analysis, to: discovery, owner: po, contributors: [ba], required: [product_brief_or_research_evidence, stakeholder_and_problem_analysis] }
+  - { from: discovery, to: planning, owner: po, contributors: [ba], required: [validated_scope, business_rules, initial_user_journeys] }
+  - { from: planning, to: solutioning, owner: po, contributors: [ba, pd, architect], required: [PRD_or_SPEC, acceptance_criteria, UX_requirements, user_journeys, requirement_traceability] }
+  - { from: solutioning, to: architecture_review, owner: architect, contributors: [pd], required: [architecture_spine, ADRs, API_and_data_contracts, security_and_operational_constraints, epic_story_decomposition, component_map, responsive_accessibility_contract] }
+  - { from: architecture_review, to: ready_for_development, owner: architect, contributors: [po, ba, pd, lead-qa], required: [implementation_readiness_pass, linked_FR_or_ADR, acceptance_criteria, dependency_and_risk_review, api_and_permission_contract, ux_states, component_map, responsive_accessibility_contract, testability_and_test_data, ba_traceability_record] }
+  - { from: ready_for_development, to: in_development, owner: po, assigns_to: [dev-1, dev-2, dev-3] }
+  - { from: in_development, to: ready_for_qa, owner: [dev-1, dev-2, dev-3], required: [implementation_link, self_test_evidence, changed_scope, deploy_or_test_instructions] }
+  - { from: ready_for_qa, to: in_qa, owner: lead-qa, assigns_to: [qa-1, qa-2, qa-3] }
+  - { from: in_qa, to: returned_to_development, owner: [qa-1, qa-2, qa-3], required: [defect_report, severity, reproduction_or_automated_failure, expected_vs_actual] }
+  - { from: returned_to_development, to: in_development, owner: [dev-1, dev-2, dev-3] }
+  - { from: in_qa, to: ready_for_review, owner: lead-qa, required: [test_summary, pass_evidence, residual_risks, traceability_update] }
+  - { from: ready_for_review, to: in_review, owner: reviewer, contributors: [pd] }
+  - { from: in_review, to: returned_from_review, owner: reviewer, required: [review_findings, severity, actionable_recommendation] }
+  - { from: returned_from_review, to: in_development, owner: [dev-1, dev-2, dev-3] }
+  - { from: in_review, to: ready_for_po_acceptance, owner: reviewer, required: [approval, review_evidence] }
+  - { from: ready_for_po_acceptance, to: done, owner: po, contributors: [ba], required: [acceptance_confirmed, ba_traceability_confirmed, release_note_or_close_note] }
+
+feedback_loops:
+  qa_defect: in_qa -> returned_to_development -> in_development -> ready_for_qa
+  review_change: in_review -> returned_from_review -> in_development -> ready_for_qa
+
+assignment_policy:
+  development: "PO chia nhỏ các story độc lập; chỉ chạy song song khi không chạm cùng module/API contract hoặc đã có owner phối hợp rõ ràng."
+  qa: "Lead QA điều phối QA đang rảnh theo kỹ năng và tải; ưu tiên người không tự viết test automation cho thay đổi đó."
+  reviewer: "Reviewer độc lập với developer thực hiện; review sau QA pass, không thay thế QA."
+  escalation: "Mọi blocker quá một ngày làm việc hoặc thay đổi scope/contract được BA phân tích tác động và PO quyết định."
+
+definition_of_done: [acceptance_criteria_passed, required_tests_passed, qa_evidence_attached, reviewer_approved, requirement_traceability_updated, po_acceptance_recorded]

@@ -1,0 +1,61 @@
+project: qlcv-next-rebuild
+planning_track: bmad-method
+generated_from:
+  - docs-master/QLCV_NEXT_BMAD_MASTER.md
+  - docs-master/QLCV_NEXT_API_MASTER.md
+status: planning
+implementation_readiness: CONCERNS
+
+current_phase:
+  name: architecture_review
+  owner: architect
+  collaborators: [po, ba, lead-qa]
+  next_transition: architecture_review -> ready_for_development
+
+workflow_run_log: .agents/artifacts/WORKFLOW_RUN_LOG.md
+implementation_note: "Các slice code hiện tại là exploratory foundation/returned_to_development; chưa phải release Done."
+gate_work_items: .agents/artifacts/GATE_WORK_ITEMS.md
+backend_evidence: .agents/artifacts/BACKEND_EVIDENCE_2026-09-07.md
+
+gates:
+  G-01:
+    status: open
+    owner: [lead-qa, architect]
+    deliverable: "Live canonical /tasks contract smoke and response/error fixtures"
+  G-02:
+    status: open
+    owner: [po, ba, architect]
+    deliverable: "Decision and migration/deprecation plan for legacy Project Workflow Board"
+  G-03:
+    status: open
+    owner: [po, ba, architect]
+    deliverable: "Invoice, payment and time-entry transition matrix with 4xx evidence"
+  G-04:
+    status: open
+    owner: [po, ba, architect, lead-qa]
+    deliverable: "Approved role × action matrix and authorization tests"
+  G-05:
+    status: open
+    owner: [po, architect]
+    deliverable: "One-design-system ADR and migration plan"
+  G-06:
+    status: open
+    owner: [architect, ba, lead-qa]
+    deliverable: "Upload security, retention and error-contract policy"
+  G-07:
+    status: open
+    owner: [ba, architect]
+    deliverable: "Migration/seed mapping, reconciliation and rollback plan"
+
+epics:
+  epic-01-foundation-and-identity: backlog
+  epic-02-customer-project-team: backlog
+  epic-03-task-work-board: blocked_by_G-01_G-02_G-04
+  epic-04-documents-time-billing: blocked_by_G-03_G-04_G-06
+  epic-05-insights-governance: backlog
+  epic-06-migration-release: backlog
+
+rules:
+  - "Không bắt đầu implementation story khi thiếu PASS implementation readiness hoặc waiver được PO ghi rõ."
+  - "Mọi evidence runtime được đính vào story/gate; source-level verification không thay thế smoke hoặc contract test."
+  - "Architect xác nhận tác động ADR/contract trước khi PO chia work song song."

@@ -1,0 +1,36 @@
+# Repository AI development system
+
+Status: Verified for static structure and root/skill discovery; custom-agent activation unverified, behavioral process instructional.
+Owner: primary Codex orchestrator. Task: repository-local development system, 2026-10-19.
+
+The primary agent classifies requests using [routing](routing.md), loads only relevant [skills](../../.agents/skills/project-context/SKILL.md), follows a [workflow](workflows/new-feature.md), and checks [gates](gates.md). Roles in `.codex/agents/*.toml` define who advises or implements; skills define reusable procedures; workflows order handoffs; templates define concrete deliverables. No orchestration runtime, new dependency, hook or CI integration is installed.
+
+## Native integration and enforcement
+
+Verified environment: Codex CLI 0.162.1. Standalone agent TOMLs use only name, description and developer_instructions. Models/effort inherit; no assumed account-specific model or unsupported permission field. Codex discovers project agents from `.codex/agents/`; request delegation by configured name when the host exposes native custom-agent selection. Example: “Use code-reviewer to review this bounded diff without editing files.” The current collaboration API has no custom-role selector: give a generic subagent the exact TOML developer instructions and scope explicitly, disclosing this fallback. Never pretend a file executed itself.
+
+Skills live in `.agents/skills/<name>/SKILL.md`, with name and description frontmatter. Invoke `$requirements-analysis` explicitly or let Codex choose based on its description; the full file is read on selection. AGENTS.md is loaded at session startup, so restart to load changed root guidance. Launch from this workspace root: without Git, instruction discovery from nested directories is limited. Native prompt rendering on this installation shows root instructions and skills but does not expose the agent catalog; custom-agent activation is unverified. Use the explicit charter fallback in hosts without confirmed role selection. If custom agents/skills do not appear, restart and check native discovery; do not silently assume activation or alter trust settings.
+
+Source basis: [official custom-agent schema](https://developers.openai.com/codex/subagents), [skill discovery](https://developers.openai.com/codex/skills), [instruction discovery](https://developers.openai.com/codex/guides/agents-md), checked 2026-10-19. Agent files do not override parent sandbox/approval settings. Read-only roles are behavioral instructions, not separate permission enforcement. Native parent sandbox and approval controls remain authoritative.
+
+Automated: [validator](../../scripts/validate-ai-system.py) parses the maintained minimal TOML/frontmatter schemas, checks roster/paths/local Markdown links and required contract structure. Its optional native probe renders the installed Codex prompt to check root instructions/skill metadata without starting a model turn. Existing architecture check enforces its implemented subset of frontend rules. Manual: task classification, requirement/design/review/acceptance judgments, all six gates, authorizations and evidence interpretation. Neither validator nor YAML workflow blocks application delivery or proves semantic correctness. Run the validator explicitly; it is not wired to CI.
+
+## Authority and bounded delegation
+
+User/authorized stakeholder is final product and approval authority. PO recommends scope/priorities; BA owns clarity and rule analysis; Architect owns design within scope; Tech Lead owns implementation sequencing/consistency; developers own assigned code; QA owns test evidence; reviewer owns independent defect assessment; release engineer owns readiness assessment; PM owns delivery visibility. No role silently overrides another. PO may accept only within actual current delegated authority; a historical prompt is not fresh authorization.
+
+For every delegation supply objective, relevant context/AC, in-scope and out-of-scope files, expected output format, verification required and edit permission. Assign one writer per file; parallelize independent exploration, assessment or implementation only when worthwhile. Small tasks use no subagents. BA/PO/PM/designer/architect/tech-lead/QA/reviewer/release assessment return read-only proposals/evidence; orchestrator writes approved task artifacts. Read-only verification prohibits intentional source/configuration/artifact changes; assigned checks may create standard generated outputs within workspace permissions, preferably with no-write flags where practical. Developers edit assigned scope. Backend activates only for explicitly assigned backend responsibilities with applicable backend instructions and workspace permissions. Release activates for release/CI/infrastructure scope; configuration edits need explicit assignment.
+
+Handoff: recipient needs inputs, AC, constraints, file ownership and unresolved decisions; parent inspects outputs and validates consequential claims instead of trusting completion reports. Findings return to the implementation owner and affected verification is repeated. If independent review is unavailable, disclose self-review; never label it independent.
+
+Resolve conflicts once: state exact disagreement, separate facts/assumptions/preferences, inspect evidence, compare options/trade-offs. Architect resolves in-scope design, PO recommends in-scope product priority; escalate material unresolved scope/policy/architecture to user with concrete options. Record consequential decisions, avoid debate loops, continue independent work where safe.
+
+## Compatibility and memory
+
+Reuse [frontend layer contract](../architecture/FRONTEND_LAYER_RULES.md), current code, applicable docs/product documents and relevant existing ADRs in `.agents/artifacts`. `.agents/*.md`, `workflow.yaml` and `bmad-workflow.md` are preserved historical/manual prompts, not native agent configuration. For newly assigned work this lean process supersedes their mandatory all-role pipeline, unconditional PO closure/delegation and broad permission implications. Existing product/API/ADR evidence remains relevant; do not discard it or treat old sprint plans as current requirements. Explicit user requests for a legacy work item require checking its existing state and authority.
+
+Stable rules belong in AGENTS.md/layer contract; consequential decisions in existing ADR locations or task ADR; current requirements/evidence in `docs/ai-development/tasks/<task-id>/` only when handoff value exists. Do not create the directory for small tasks. Temporary state stays in session; release evidence is dated/versioned. Use statuses Draft, In Review, Approved, In Progress, Verified, Blocked, Superseded. Approved requires recorded authority; Verified requires evidence. Link superseded decisions rather than erasing history. Never persist hidden reasoning transcripts or copied source.
+
+## Future extensions
+
+Add CI invocation of static validation only when CI is introduced. Add behavioral agent evals from real failures; browser automation only with approved tooling/runtime; backend-go/postgresql skills only when recurring backend work moves into authorized scope; deployment skill when actual deployment configuration exists. Do not prebuild speculative optional skills.

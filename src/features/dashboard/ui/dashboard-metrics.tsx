@@ -1,0 +1,3 @@
+import { WorkhubIcon } from "@/components/atoms";
+const metrics = [["briefcase", "Tổng công việc", "128", "12%", "blue"], ["grid", "Đang thực hiện", "34", "8%", "blue"], ["check", "Hoàn thành", "86", "24%", "green"], ["users", "Nhân viên", "24", "2", "purple"], ["trend", "Doanh thu (tháng này)", "528,4 triệu", "18%", "orange"]] as const;
+export function DashboardMetrics() { return <section className="workhub-metrics" aria-label="Chỉ số tổng quan">{metrics.map(([icon, label, value, delta, tone]) => <article className="workhub-metric" key={label}><span className={`metric-icon metric-${tone}`}><WorkhubIcon name={icon} size={22} /></span><div><p>{label}</p><strong>{value}</strong><small><b>↑ {delta}</b> so với tuần trước</small></div></article>)}</section>; }
