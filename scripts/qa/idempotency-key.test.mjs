@@ -4,6 +4,7 @@ import { webcrypto } from 'node:crypto';
 import vm from 'node:vm';
 import { test } from 'node:test';
 import ts from 'typescript';
+import { browserUuid } from './browser-uuid.mjs';
 
 const root = new URL('../../', import.meta.url).pathname;
 const source = await readFile(`${root}/src/services/http/api-client.ts`, 'utf8');
@@ -11,7 +12,7 @@ const teamSource = await readFile(`${root}/src/features/teams/api/teams.api.ts`,
 function load(source, globals = {}) {
   const exports = {};
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(compiled, { exports, Uint8Array, ...globals });
+  vm.runInNewContext(compiled, { exports, Uint8Array, require: name => { assert.equal(name, 'uuid'); return browserUuid(globals.crypto); }, ...globals });
   return exports;
 }
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;

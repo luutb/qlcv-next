@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import ts from 'typescript';
-const compile=source=>ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;
+const compile=source=>ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText.replace(/from [\"']uuid[\"']/g, 'from '+JSON.stringify(import.meta.resolve('uuid')));
 const url=source=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const httpUrl=url(compile(await readFile(new URL('../../src/services/http/api-client.ts',import.meta.url),'utf8'))+'\nexport const apiUrl = path => "http://api.test"+path;');
 const load=async file=>import(url(compile(await readFile(new URL(file,import.meta.url),'utf8')).replace('"@/services/http"',JSON.stringify(httpUrl))));

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import ts from 'typescript';
 
-const compile = source => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
+const compile = source => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText.replace(/from ["']uuid["']/g, 'from ' + JSON.stringify(import.meta.resolve('uuid')));
 const moduleUrl = source => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
 const http = moduleUrl(compile(await readFile(new URL('../../src/services/http/api-client.ts', import.meta.url), 'utf8')) + '\nexport const apiUrl = path => "http://api.test" + path;');
 const api = await import(moduleUrl(compile(await readFile(new URL('../../src/features/teams/api/teams.api.ts', import.meta.url), 'utf8')).replace('"@/services/http"', JSON.stringify(http))));
