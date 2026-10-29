@@ -12,7 +12,16 @@ export function getSafeApiErrorMessage(error: unknown, fallback: string): string
   if (status >= 500) return "Máy chủ đang gặp sự cố. Vui lòng thử lại sau.";
   return fallback;
 }
-export function createIdempotencyKey(): string { return crypto.randomUUID(); }
+export function createIdempotencyKey(): string {
+  const crypto = globalThis.crypto;
+  if (typeof crypto?.randomUUID === "function") return crypto.randomUUID();
+  // HTTP test hosts lack randomUUID, but still expose secure random bytes.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 export async function parseApiResponse<T>(response: Response): Promise<T> {
   if (response.ok) return response.json() as Promise<T>;
   if (response.status === 401 && typeof window !== "undefined") {

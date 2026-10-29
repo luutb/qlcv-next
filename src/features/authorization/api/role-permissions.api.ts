@@ -1,4 +1,4 @@
-import { parseApiResponse } from "@/services/http";
+import { createIdempotencyKey, parseApiResponse } from "@/services/http";
 import { authorizedRequest } from "@/features/auth/api/authorized-request";
 import { AUTHORIZATION_ACTIONS, type AuthorizationAction } from "@/features/auth/model/current-user";
 
@@ -44,7 +44,7 @@ export async function updateRolePermissions(role: CanonicalRole, actions: Partia
   const response = await authorizedRequest({
     path: `/roles/${role}/permissions`,
     method: "PUT",
-    headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+    headers: { "Content-Type": "application/json", "Idempotency-Key": createIdempotencyKey() },
     body: JSON.stringify({ actions, field_level: false, conditions: {} }),
   });
   const payload = await parseApiResponse<{ data: unknown }>(response);
